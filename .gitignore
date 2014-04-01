@@ -2,6 +2,10 @@
 *~
 *.tar.gz
 
+.project
+.cproject
+.pydevproject
+
 .lock-waf*
 .settings/*
 

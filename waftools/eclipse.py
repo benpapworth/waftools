@@ -109,6 +109,7 @@ def _detect_workspace_location(bld):
 	'''Detect and save the top level directory containing Eclipse workspace
 	settings.
 	'''
+	bld.workspace_loc = None
 	path = bld.path.abspath()
 	while not os.path.exists(os.sep.join((path, '.metadata'))):
 		if os.path.dirname(path) == path:
