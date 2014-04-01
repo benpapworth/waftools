@@ -5,16 +5,8 @@
 .lock-waf*
 .settings/*
 
+build/*
 test/build/*
-test/chihuahua*.tar.bz2
-modules/build/*
-modules/doc/_build/*
-
-Makefile
-*.mk
-
-.cproject
-.project
-.pydevproject
+doc/_build/*
 
 
