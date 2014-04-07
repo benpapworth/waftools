@@ -70,25 +70,6 @@ the same time. By doing so exported projects will always use the same settings
 (e.g. compiler options, installation paths) as when building the same task in
 the *waf* build environment from command line.
 
-Besides these normal projects that will be exported based on the task 
-generators that have been defined within the *waf* build environment, a special
-**Visual Studio** project named *waf.vcproj* will also be exported. This project 
-will be stored in the top level directory of the build environment and will
-contain the following build targets;
-
-* build
-* clean
-* install
-* uninstall
-
-If, for instance, an additional build variant named *arm5* has been defined in 
-the *waf* build environment, then the following build targets will be added as
-well;
-
-* build_arm5
-* clean_arm5
-* install_arm5
-* uninstall_arm5
 
 Usage
 -----
@@ -161,8 +142,8 @@ def export(bld):
 			project = MsDevProject(bld, gen, targets)
 			project.export()
 			
-			(name, fname, deps, uuid) = project.get_metadata()
-			solution.add_project(name, fname, deps, uuid)
+			(name, fname, deps, pid) = project.get_metadata()
+			solution.add_project(name, fname, deps, pid)
 	
 	solution.export()
 
@@ -292,20 +273,6 @@ class MsDevSolution(MsDev):
 		'''Returns the workspace's file name.'''
 		return '%s.sln' % self.exp.appname
 
-	def _get_content(self):
-		'''returns the content of a msdev solution file containing references to all 
-		projects and project dependencies.
-		'''
-		g = ''
-		p = ''
-		for n, (f, d, i) in self.projects.items():
-			i = str(i).upper()
-			u = str(uuid.uuid4()).upper()
-			p += 'Project("{%s}") = "%s", "%s", "{%s}"\nEndProject\n' % (u, n, f, i)
-			g += '\t\t{%s}.Debug|Win32.ActiveCfg = Debug|Win32\n\t\t{%s}.Debug|Win32.Build.0 = Debug|Win32\n' % (i, i)
-		content = str(MSDEV_SOLUTION).format(p, g)
-		return content
-
 	def export(self):
 		'''Exports a **Visual Studio** solution.'''	
 		src = '%s/msdev.sln' % os.path.dirname(__file__)
@@ -321,9 +288,12 @@ class MsDevSolution(MsDev):
 			for name, (fname, deps, pid) in self.projects.items():
 				sid = str(uuid.uuid4()).upper()
 				f.write('Project("{%s}") = "%s", "%s", "{%s}"\n' % (sid, name, fname, pid))
-				for d in deps:
-					pass
-					## TODO
+				if len(deps):
+					f.write('\tProjectSection(ProjectDependencies) = postProject\n')
+					for d in deps:
+						(_, _, id) = self.projects[d]
+						f.write('\t\t{%s} = {%s}\n' % (id, id))
+					f.write('\tEndProjectSection\n')
 				f.write('EndProject\n')
 			for line in s[3:8]:
 				f.write(line)
@@ -367,7 +337,7 @@ class MsDevProject(MsDev):
 		super(MsDevProject, self).__init__(bld)
 		self.gen = gen
 		self.targets = targets
-		self.uuid = uuid.uuid4()
+		self.id = str(uuid.uuid4()).upper()
 
 	def _get_fname(self):
 		'''Returns the project's file name.'''
@@ -404,32 +374,33 @@ class MsDevProject(MsDev):
 		'''Returns the content of a project file.'''
 		root = self._get_root()
 		root.set('Name', self.gen.get_name())
-		root.set('ProjectGUID', '{%s}' % str(self.uuid).upper())
+		root.set('ProjectGUID', '{%s}' % self.id)
 		configurations = root.find('Configurations')
 		for configuration in configurations.iter('Configuration'):
 			configuration.set('ConfigurationType', '%s' % self._get_target_type())
 			configuration.set('OutputDirectory', '%s\\msdev' % self._get_buildpath())
 			configuration.set('IntermediateDirectory', '%s\\msdev' % self._get_buildpath())
 			for tool in configuration.iter('Tool'):
-				if tool.get('Name') != 'VCCLCompilerTool':
-					continue
-				tool.set('PreprocessorDefinitions', '%s' % self._get_compiler_defines())
-				includes = []
-				for include in self._get_compiler_includes():
-					includes.append('%s' % include)
-				tool.set('AdditionalIncludeDirectories', ';'.join(includes))
+				name = tool.get('Name')
+			
+				if name == 'VCCLCompilerTool':
+					tool.set('PreprocessorDefinitions', '%s' % self._get_compiler_defines())
+					includes = []
+					for include in self._get_compiler_includes():
+						includes.append('%s' % include)
+					tool.set('AdditionalIncludeDirectories', ';'.join(includes))
+				if name == 'VCLinkerTool':
+					self._update_link_deps(tool)
+					self._update_link_paths(tool)
 
 		files = root.find('Files')
 		self._update_includes(files)
 		self._update_sources(files)
-					
-		# TODO: 
-		# - add static libs
-		# - add shared libs
-		# - add lib_paths		
+
 		return ElementTree.tostring(root)
 
 	def _update_includes(self, files):
+		'''Add include files.'''
 		includes = []
 		for filter in files.iter('Filter'):
 			if filter.get('Name') == 'Header Files':
@@ -445,6 +416,7 @@ class MsDevProject(MsDev):
 				ElementTree.SubElement(filter, 'File', attrib={'RelativePath':'%s' % include})
 
 	def _update_sources(self, files):
+		'''Add source files.'''
 		sources = []
 		for filter in files.iter('Filter'):
 			if filter.get('Name') == 'Source Files':
@@ -459,35 +431,43 @@ class MsDevProject(MsDev):
 			if source not in sources:
 				ElementTree.SubElement(filter, 'File', attrib={'RelativePath':'%s' % source})
 
+	def _update_link_deps(self, tool):
+		'''Add libraries on which this project depends.'''
+		deps = tool.get('AdditionalDependencies')
+		if deps:
+			deps = deps.split(';')
+		else:
+			deps = []
+		libs = self._get_link_libs()
+		for lib in libs:
+			dep = '%s.lib' % lib
+			if dep not in deps:
+				deps.append(dep)
+		if len(deps):
+			tool.set('AdditionalDependencies', ';'.join(deps))
+
+	def _update_link_paths(self, tool):
+		deps = tool.get('AdditionalLibraryDirectories', '')
+		if deps:
+			deps = deps.split(';')
+		else:
+			deps = []
+		dirs = self._get_link_paths()
+		for dep in dirs:
+			if dep not in deps:
+				deps.append(dep)
+		if len(deps):
+			tool.set('AdditionalLibraryDirectories', ';'.join(deps))
+
 	def get_metadata(self):
 		'''Returns a tuple containing project information (name, file name and 
 		dependencies).
 		'''
 		gen = self.gen
 		name = gen.get_name()
-		fname = self._get_fname()
+		fname = self._get_fname().replace('/', '\\')
 		deps = Utils.to_list(getattr(gen, 'use', []))
-		uuid = self.uuid
-		return (name, fname, deps, uuid)
-
-	def _get_target_title(self):
-		bld = self.gen.bld
-		env = self.gen.env
-
-		if bld.variant:
-			title = '%s ' % (bld.variant)
-		elif env.DEST_OS in sys.platform \
-				and env.DEST_CPU == platform.processor():
-			title = ''
-		else:
-			title = '%s-%s' % (env.DEST_OS, env.DEST_CPU)
-
-		if '-g' in env.CFLAGS or '-g' in env.CXXFLAGS:
-			title += 'debug'
-		else:
-			title += 'release'
-
-		return title.title()
+		return (name, fname, deps, self.id)
 
 	def _get_buildpath(self):
 		bld = self.bld
@@ -570,10 +550,13 @@ class MsDevProject(MsDev):
 		bld = self.bld
 		gen = self.gen
 		libs = Utils.to_list(getattr(gen, 'lib', []))
+		for l in ('m'): # remove posix libraries, that integrated in MVSCRT
+			if libs.count(l):
+				libs.remove(l)		
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		for dep in deps:
 			tgen = bld.get_tgen_by_name(dep)
-			if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
+			if set(('cstlib', 'cxxstlib')) & set(tgen.features):
 				libs.append(dep)
 		return libs
 	
@@ -585,7 +568,7 @@ class MsDevProject(MsDev):
 		for dep in deps:
 			tgen = bld.get_tgen_by_name(dep)
 			if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
-				directory = tgen.path.get_bld().path_from(gen.path)
+				directory = '%s\\msdev' % tgen.path.get_bld().path_from(gen.path)
 				dirs.append(directory.replace('/', '\\'))
 		return dirs
 
@@ -599,20 +582,6 @@ class MsDevProject(MsDev):
 					includes.append(include.path_from(gen.path).replace('/', '\\'))
 		return includes
 
-
-MSDEV_SOLUTION = \
-'''Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-{0}Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-{1}	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-EndGlobal
-'''
 
 MSDEV_PROJECT = \
 '''<?xml version="1.0" encoding="UTF-8"?>
