@@ -162,11 +162,6 @@ def export(bld):
 			
 			(name, fname, deps, uuid) = project.get_metadata()
 			solution.add_project(name, fname, deps, uuid)
-
-	#project = WafMSDEVProject(bld)
-	#project.export()
-	#(name, fname, deps) = project.get_metadata()
-	#solution.add_project(name, fname, deps)
 	
 	solution.export()
 
@@ -185,9 +180,6 @@ def cleanup(bld):
 		project = MsDevProject(bld, gen, targets)
 		project.cleanup()
 
-	#project = WafMSDEVProject(bld)
-	#project.cleanup()
-
 	solution = MsDevSolution(bld)
 	solution.cleanup()
 
@@ -204,14 +196,14 @@ class MsDev(object):
 	PROGRAM	= '1'
 	'''Identifier for projects containing an executable'''
 
-	STLIB   = '2'
-	'''Identifier for projects containing a static library'''
+	OBJECT  = '3'
+	'''Identifier for projects for building objects only'''
 
-	SHLIB   = '3'
+	SHLIB   = '2'
 	'''Identifier for projects containing a shared library'''
 	
-	OBJECT  = '4'
-	'''Identifier for projects for building objects only'''
+	STLIB   = '4'
+	'''Identifier for projects containing a static library'''
 
 	def __init__(self, bld):
 		self.bld = bld
@@ -238,6 +230,8 @@ class MsDev(object):
 		for node in cwd.ant_glob('*.user'):
 			node.delete()
 		for node in cwd.ant_glob('*.ncb'):
+			node.delete()
+		for node in cwd.ant_glob('*.suo'):
 			node.delete()
 		node = self._find_node()
 		if node:
@@ -379,8 +373,61 @@ class MsDevProject(MsDev):
 	def _get_content(self):
 		'''Returns the content of a project file.'''
 		root = self._get_root()
-		## TODO: add content
+		root.set('Name', self.gen.get_name())
+		root.set('ProjectGUID', '{%s}' % str(self.uuid).upper())
+		configurations = root.find('Configurations')
+		for configuration in configurations.iter('Configuration'):
+			configuration.set('ConfigurationType', '%s' % self._get_target_type())
+			configuration.set('OutputDirectory', '%s\\msdev' % self._get_buildpath())
+			configuration.set('IntermediateDirectory', '%s\\msdev' % self._get_buildpath())
+			for tool in configuration.iter('Tool'):
+				if tool.get('Name') != 'VCCLCompilerTool':
+					continue
+				tool.set('PreprocessorDefinitions', '%s' % self._get_compiler_defines())
+				includes = []
+				for include in self._get_compiler_includes():
+					includes.append('%s' % include)
+				tool.set('AdditionalIncludeDirectories', ';'.join(includes))
+
+		files = root.find('Files')
+		self._update_includes(files)
+		self._update_sources(files)
+					
+		# TODO: 
+		# - add static libs
+		# - add shared libs
+		# - add lib_paths		
 		return ElementTree.tostring(root)
+
+	def _update_includes(self, files):
+		includes = []
+		for filter in files.iter('Filter'):
+			if filter.get('Name') == 'Header Files':
+				for include in filter.iter('File'):
+					includes.append(include.get('RelativePath'))
+				break
+		if len(includes) == 0:
+			filter = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Header Files', 'Filter':'h;hpp;hxx;hm;inl;inc;xsd'})
+			filter.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
+		
+		for include in self._get_includes_files():
+			if include not in includes:
+				ElementTree.SubElement(filter, 'File', attrib={'RelativePath':'%s' % include})
+
+	def _update_sources(self, files):
+		sources = []
+		for filter in files.iter('Filter'):
+			if filter.get('Name') == 'Source Files':
+				for source in filter.iter('File'):
+					sources.append(source.get('RelativePath'))
+				break		
+		if len(sources) == 0:
+			filter = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Source Files', 'Filter':'cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx'})
+			filter.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
+			
+		for source in self._get_genlist(self.gen, 'source'):
+			if source not in sources:
+				ElementTree.SubElement(filter, 'File', attrib={'RelativePath':'%s' % source})
 
 	def get_metadata(self):
 		'''Returns a tuple containing project information (name, file name and 
@@ -392,7 +439,6 @@ class MsDevProject(MsDev):
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		uuid = self.uuid
 		return (name, fname, deps, uuid)
-
 
 	def _get_target_title(self):
 		bld = self.gen.bld
@@ -417,11 +463,11 @@ class MsDevProject(MsDev):
 		bld = self.bld
 		gen = self.gen
 		pth = '%s/%s' % (bld.path.get_bld().path_from(gen.path), gen.path.relpath())
-		return pth.replace('\\', '/')
+		return pth.replace('/', '\\')
 
 	def _get_output(self):
 		gen = self.gen
-		return '%s/%s' % (self._get_buildpath(), gen.get_name())
+		return '%s\\%s' % (self._get_buildpath(), gen.get_name())
 
 	def _get_object_output(self):
 		return self._get_buildpath()
@@ -434,23 +480,23 @@ class MsDevProject(MsDev):
 		if sdir.startswith(bld.path.abspath()):
 			sdir = os.path.relpath(sdir, gen.path.abspath())
 
-		return sdir.replace('\\', '/')
+		return sdir.replace('/', '\\')
 
 	def _get_target_type(self):
 		gen = self.gen
 		if set(('cprogram', 'cxxprogram')) & set(gen.features):
-			return '1'
+			return self.PROGRAM
 		elif set(('cstlib', 'cxxstlib')) & set(gen.features):
-			return '2'
+			return self.STLIB
 		elif set(('cshlib', 'cxxshlib')) & set(gen.features):
-			return '3'
+			return self.SHLIB
 		else:
-			return '4'
+			return self.OBJECT
 
 	def _get_genlist(self, gen, name):
 		lst = Utils.to_list(getattr(gen, name, []))
 		lst = [l.path_from(gen.path) if isinstance(l, Node.Nod3) else l for l in lst]
-		return [l.replace('\\', '/') for l in lst]
+		return [l.replace('/', '\\') for l in lst]
 
 	def _get_compiler_options(self):
 		bld = self.bld
@@ -475,9 +521,8 @@ class MsDevProject(MsDev):
 		gen = self.gen
 		defines = self._get_genlist(gen, 'defines') + gen.bld.env.DEFINES
 		if 'win32' in sys.platform:
-			defines = [d.replace('"', '\\"') for d in defines]
-		else:
-			defines = [d.replace('"', '\\\\"') for d in defines]
+			defines = [d.replace('"', '\\"') for d in defines]			
+		defines = ';'.join(defines)			
 		return defines
 
 	def _get_link_options(self):
@@ -511,7 +556,7 @@ class MsDevProject(MsDev):
 			tgen = bld.get_tgen_by_name(dep)
 			if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
 				directory = tgen.path.get_bld().path_from(gen.path)
-				dirs.append(directory.replace('\\', '/'))
+				dirs.append(directory.replace('/', '\\'))
 		return dirs
 
 	def _get_includes_files(self):
@@ -521,114 +566,8 @@ class MsDevProject(MsDev):
 			node = gen.path.find_dir(include)
 			if node:
 				for include in node.ant_glob('*.h*'):
-					includes.append(include.path_from(gen.path).replace('\\', '/'))
+					includes.append(include.path_from(gen.path).replace('/', '\\'))
 		return includes
-
-
-class WafMSDEVProject(MsDev):
-	'''Class used for creating a dummy **Visual Studio** project containing
-	only *waf* commands as pre build steps.
-
-	:param bld: Build context as used in *wscript* files of your *waf* build
-				environment.
-	:type bld:	waflib.Build.BuildContext
-	'''
-
-	def __init__(self, bld):
-		super(WafMSDEVProject, self).__init__(bld)
-		self.title = 'waf'
-
-	def _get_fname(self):
-		'''Returns the file name.'''
-		return 'waf.vcproj'
-
-	def _get_root(self):
-		'''Returns a document root, either from an existing file, or from template.
-		'''
-		fname = self._get_fname()
-		if os.path.exists(fname):
-			tree = ElementTree.parse(fname)
-			root = tree.getroot()
-		else:
-			root = ElementTree.fromstring(MSDEV_PROJECT)
-		return root
-
-	def _get_cmd(self, name):
-		'''Returns a string containing command and arguments to be executed.
-		'''
-		if 'win32' in sys.platform:
-			cmd = 'python %s %s' % (str(sys.argv[0]).replace('\\', '/'), name)
-		else:
-			cmd = 'waf %s' % name
-		return cmd
-		
-	def _init_target(self, target, name):
-		'''Initializes a WAF build target.'''
-		target.set('title', name)
-
-		for option in target.iter('Option'):
-			if option.get('output'):
-				option.set('output', '')
-			elif option.get('object_output'):
-				option.set('object_output', '')
-			elif option.get('compiler'):
-				option.set('compiler', 'gcc')
-
-		cmd = target.find('ExtraCommands/Add')
-		cmd.set('before', self._get_cmd(name))
-		return target
-
-	def _add_target(self, project, name):
-		'''Adds a WAF build target with given name.
-
-		Will only be added if target does not exist yet.
-		'''
-		build = project.find('Build')			
-		for target in build.iter('Target'):
-			if target.get('title') == 'XXX':
-				commands = ElementTree.SubElement(target, 'ExtraCommands')
-				ElementTree.SubElement(commands, 'Add', {'before': 'XXX'})
-				return self._init_target(target, name)
-
-			if target.get('title') == name:
-				return self._init_target(target, name)
-
-		target = copy.deepcopy(build.find('Target'))
-		build.append(target)
-		return self._init_target(target, name)
-
-	def _get_content(self):
-		'''Returns the content of a code::blocks project file.
-		'''
-		root = self._get_root()
-		project = root.find('Project')
-		for option in project.iter('Option'):
-			if option.get('title'):
-				option.set('title', self.title)
-
-		bld = self.bld
-		targets = ['build', 'clean', 'install', 'uninstall']
-		if bld.variant:
-			targets = ['%s_%s' % (t, bld.variant) for t in targets]
-
-		for target in project.iter('Build/Target'):
-			name = target.get('title')
-			if name in targets:
-				targets.remove(name)
-
-		for target in targets:
-			self._add_target(project, target)
-
-		return ElementTree.tostring(root)
-
-	def get_metadata(self):
-		'''Returns a tuple containing project information (name, file name and 
-		dependencies).
-		'''
-		name = self.title
-		fname = self._get_fname()
-		deps = []
-		return (name, fname, deps)
 
 
 MSDEV_SOLUTION = \
@@ -650,8 +589,8 @@ MSDEV_PROJECT = \
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="CNF2DAT2"
-	ProjectGUID="{5BCFE62E-B2DA-4844-B255-01F4C7A84D47}"
+	Name=""
+	ProjectGUID=""
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="0"
 	>
@@ -687,13 +626,12 @@ MSDEV_PROJECT = \
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;NDEBUG;_MBCS;_FLOAT_ON;IF_NEST"
+				PreprocessorDefinitions=""
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -734,134 +672,10 @@ MSDEV_PROJECT = \
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
-			ConfigurationType="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;"
-				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
-			<File
-				RelativePath=".\cnftodat.h"
-				>
-			</File>
-			<File
-				RelativePath=".\mos.h"
-				>
-			</File>
-			<File
-				RelativePath=".\parser.h"
-				>
-			</File>
-			<File
-				RelativePath=".\scanner.h"
-				>
-			</File>
-			<File
-				RelativePath=".\types.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
-			>
-		</Filter>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
-			>
-			<File
-				RelativePath=".\CNFTODAT.C"
-				>
-			</File>
-			<File
-				RelativePath=".\parser.c"
-				>
-			</File>
-			<File
-				RelativePath=".\scanner.c"
-				>
-			</File>
-		</Filter>
-		<File
-			RelativePath=".\debug\BuildLog.htm"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
