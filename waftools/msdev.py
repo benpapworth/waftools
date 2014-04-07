@@ -211,7 +211,7 @@ class MsDev(object):
 		self.exp = bld.export
 
 	def export(self):
-		'''Exports a **Visual Studio** workspace or project.'''
+		'''Exports a **Visual Studio** solution or project.'''
 		content = self._get_content()
 		if not content:
 			return
@@ -224,8 +224,8 @@ class MsDev(object):
 		node.write(content)
 
 	def cleanup(self):
-		'''Deletes a **Visual Studio** workspace or project file including 
-		.layout and .depend files.
+		'''Deletes a **Visual Studio** solution or project file including 
+		associated files (e.g. *ncb).
 		'''
 		cwd = self._get_cwd()
 		for node in cwd.ant_glob('*.user'):
@@ -307,37 +307,31 @@ class MsDevSolution(MsDev):
 		return content
 
 	def export(self):
-		''''
-		Project("{19C16D1C-3570-4E15-8C2B-D8B5D3A93A27}") = "chello", "components\chello\chello.vcproj", "{06A3D75F-CDA1-40B4-8143-49AA11D67F25}"
-		EndProject
-
-		{06A3D75F-CDA1-40B4-8143-49AA11D67F25}.Debug|Win32.ActiveCfg = Debug|Win32
-		{06A3D75F-CDA1-40B4-8143-49AA11D67F25}.Debug|Win32.Build.0 = Debug|Win32
-		'''
+		'''Exports a **Visual Studio** solution.'''	
 		src = '%s/msdev.sln' % os.path.dirname(__file__)
 		dst = self._get_fname()
 		shutil.copyfile(src, dst)
 
-		s = open(src, 'r').readlines()
-		d = open(dst, 'w')
-		for line in s[0:3]:
-			d.write(line)
-		
-		for name, (fname, deps, pid) in self.projects.items():
-			sid = str(uuid.uuid4()).upper()
-			d.write('Project("{%s}") = "%s", "%s", "{%s}"\n' % (sid, name, fname, pid))
-			d.write('EndProject\n')
-		
-		for line in s[3:8]:
-			d.write(line)
+		with open(src, 'r') as f:
+			s = f.readlines()
 
-		for _, (_, _, pid) in self.projects.items():			
-			d.write('\t\t{%s}.Debug|Win32.ActiveCfg = Debug|Win32\n' % (pid))
-			d.write('\t\t{%s}.Debug|Win32.Build.0 = Debug|Win32\n' % (pid))
-		
-		for line in s[8:]:
-			d.write(line)
-		d.close()
+		with open(dst, 'w') as f:
+			for line in s[0:3]:
+				f.write(line)
+			for name, (fname, deps, pid) in self.projects.items():
+				sid = str(uuid.uuid4()).upper()
+				f.write('Project("{%s}") = "%s", "%s", "{%s}"\n' % (sid, name, fname, pid))
+				for d in deps:
+					pass
+					## TODO
+				f.write('EndProject\n')
+			for line in s[3:8]:
+				f.write(line)
+			for _, (_, _, pid) in self.projects.items():
+				f.write('\t\t{%s}.Debug|Win32.ActiveCfg = Debug|Win32\n' % (pid))
+				f.write('\t\t{%s}.Debug|Win32.Build.0 = Debug|Win32\n' % (pid))
+			for line in s[8:]:
+				f.write(line)
 
 	def add_project(self, name, fname, deps, pid):
 		'''Adds a project to the workspace.

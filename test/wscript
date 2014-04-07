@@ -13,7 +13,7 @@ out = 'build'
 prefix = 'output'
 
 VERSION = '0.6.2'
-APPNAME = 'ChiHuaHuaTest'
+APPNAME = 'waftest'
 
 POKY = {}
 if 'linux' in sys.platform:
