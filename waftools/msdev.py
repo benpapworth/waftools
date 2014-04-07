@@ -111,6 +111,7 @@ import sys
 import copy
 import uuid
 import platform
+import shutil		
 import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
 from waflib import Utils, Node, Logs
@@ -233,6 +234,8 @@ class MsDev(object):
 			node.delete()
 		for node in cwd.ant_glob('*.suo'):
 			node.delete()
+		for node in cwd.ant_glob('*.sln'):
+			node.delete()
 		node = self._find_node()
 		if node:
 			node.delete()
@@ -303,7 +306,40 @@ class MsDevSolution(MsDev):
 		content = str(MSDEV_SOLUTION).format(p, g)
 		return content
 
-	def add_project(self, name, fname, deps, id):
+	def export(self):
+		''''
+		Project("{19C16D1C-3570-4E15-8C2B-D8B5D3A93A27}") = "chello", "components\chello\chello.vcproj", "{06A3D75F-CDA1-40B4-8143-49AA11D67F25}"
+		EndProject
+
+		{06A3D75F-CDA1-40B4-8143-49AA11D67F25}.Debug|Win32.ActiveCfg = Debug|Win32
+		{06A3D75F-CDA1-40B4-8143-49AA11D67F25}.Debug|Win32.Build.0 = Debug|Win32
+		'''
+		src = '%s/msdev.sln' % os.path.dirname(__file__)
+		dst = self._get_fname()
+		shutil.copyfile(src, dst)
+
+		s = open(src, 'r').readlines()
+		d = open(dst, 'w')
+		for line in s[0:3]:
+			d.write(line)
+		
+		for name, (fname, deps, pid) in self.projects.items():
+			sid = str(uuid.uuid4()).upper()
+			d.write('Project("{%s}") = "%s", "%s", "{%s}"\n' % (sid, name, fname, pid))
+			d.write('EndProject\n')
+		
+		for line in s[3:8]:
+			d.write(line)
+
+		for _, (_, _, pid) in self.projects.items():			
+			d.write('\t\t{%s}.Debug|Win32.ActiveCfg = Debug|Win32\n' % (pid))
+			d.write('\t\t{%s}.Debug|Win32.Build.0 = Debug|Win32\n' % (pid))
+		
+		for line in s[8:]:
+			d.write(line)
+		d.close()
+
+	def add_project(self, name, fname, deps, pid):
 		'''Adds a project to the workspace.
 		
 		:param name:	Name of the project.
@@ -313,7 +349,7 @@ class MsDevSolution(MsDev):
 		:param deps:	List of names on which this project depends
 		:type deps: 	list of str
 		'''
-		self.projects[name] = (fname, deps, id)
+		self.projects[name] = (fname, deps, pid)
 
 
 class MsDevProject(MsDev):
