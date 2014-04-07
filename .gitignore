@@ -6,6 +6,12 @@
 .cproject
 .pydevproject
 
+*.vcproj
+*.sln
+*.user
+*.ncb
+*.suo
+
 .lock-waf*
 .settings/*
 

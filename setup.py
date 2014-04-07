@@ -3,9 +3,9 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 from distutils.core import setup
+import waftools
 
 url = "https://bitbucket.org/Moo7/waftools"
-version = "0.0.9"
 
 with open('README.txt') as file:
 	long_description = file.read()
@@ -13,13 +13,13 @@ with open('README.txt') as file:
 setup(
 	name = "waftools",
 	packages = ["waftools"],
-	version = version,
+	version = waftools.version,
 	description = "Handy tools for the WAF meta build environment",
 	author = "Michel Mooij",
 	author_email = "michel.mooij7@gmail.com",
 	url = url,
-	download_url = "%s/waftools-%s.zip" % (url, version),
-	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++"],
+	download_url = "%s/waftools-%s.zip" % (url, waftools.version),
+	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++", "msdev"],
 	classifiers = [
 		"Programming Language :: Python",
 		"Development Status :: 4 - Beta",

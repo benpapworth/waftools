@@ -18,6 +18,7 @@ formats:
 - CMake makefiles,
 - Code::Blocks projects and workspaces,
 - Eclipse CDT projects
+- Microsoft Visual Studio
 
 Once exported to Make and/or CMake makefiles, all exported (C/C++) tasks can be
 build without any further need for, or dependency, to the *waf* build system 
@@ -63,12 +64,13 @@ exported files from formats not selected will not be removed.
 
 import os
 from waflib import Build, Logs, Scripting, Task, Context
+import waftools
 from waftools import makefile
 from waftools import codeblocks
 from waftools import eclipse
 from waftools import cmake
+from waftools import msdev
 
-VERSION='0.0.2'
 
 def options(opt):
 	'''Adds command line options to the *waf* build environment 
@@ -83,6 +85,7 @@ def options(opt):
 	eclipse.options(opt)
 	makefile.options(opt)
 	cmake.options(opt)
+	msdev.options(opt)
 
 
 def configure(conf):
@@ -96,6 +99,7 @@ def configure(conf):
 	eclipse.configure(conf)
 	makefile.configure(conf)
 	cmake.configure(conf)
+	msdev.configure(conf)
 
 
 def task_process(task):
@@ -136,12 +140,14 @@ def build_postfun(bld):
 		eclipse.cleanup(bld)
 		makefile.cleanup(bld)
 		cmake.cleanup(bld)
+		msdev.cleanup(bld)
 
 	else:
 		codeblocks.export(bld)
 		eclipse.export(bld)
 		makefile.export(bld)
 		cmake.export(bld)
+		msdev.export(bld)
 
 
 class ExportContext(Build.BuildContext):
@@ -201,7 +207,7 @@ class Export(object):
 	:type bld: waflib.Build.BuildContext
 	'''
 	def __init__(self, bld):
-		self.version = VERSION
+		self.version = waftools.version
 		self.wafversion = Context.WAFVERSION
 		try:
 			self.appname = getattr(Context.g_module, Context.APPNAME)
@@ -249,5 +255,4 @@ class Export(object):
 			if isinstance(val, str):
 				val = val.replace('\\', '/')
 				setattr(self, attr, val)
-
 
