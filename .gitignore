@@ -15,6 +15,7 @@
 .lock-waf*
 .settings/*
 
+dist/*
 build/*
 test/build/*
 doc/_build/*
