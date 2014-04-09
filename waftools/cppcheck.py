@@ -686,7 +686,14 @@ class CppcheckGen(Cppcheck):
 					lexer = pygments.lexers.guess_lexer_for_filename(source, "")
 				
 				s = pygments.highlight(srcnode.read(), lexer, formatter)
-				table = ElementTree.fromstring(s)
+				try:
+					table = ElementTree.fromstring(s)
+				except Exception as e:
+					Logs.warn('FILE CONTAINS ILLEGAL CHARACTERS:')
+					Logs.warn('  %s' % source)
+					Logs.info('')
+					raise e
+					
 				content.append(table)
 
 		content = ElementTree.tostring(root, method='html')
