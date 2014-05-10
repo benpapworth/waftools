@@ -2,4 +2,4 @@
 # -*- encoding: utf-8 -*-
 # Michel Mooij, michel.mooij7@gmail.com
 
-version = "0.1.0"
+version = "0.1.1"
