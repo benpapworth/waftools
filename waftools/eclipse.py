@@ -31,7 +31,7 @@ import codecs
 import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
 import waflib
-from waflib import Logs
+from waflib import Logs, Errors
 
 
 def options(opt):
@@ -677,12 +677,16 @@ class CDTProject(Project):
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 			listoption.set('value', '"${workspace_loc:/${ProjName}/%s}"' % (include))
 
-		for use in uses:			
-			tgen = self.bld.get_tgen_by_name(use)
-			includes = getattr(tgen, 'export_includes', [])
-			for include in [i.lstrip('./') for i in includes]:
-				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
-				listoption.set('value', '"${workspace_loc:/%s/%s}"' % (use, include))
+		for use in uses:
+			try:
+				tgen = self.bld.get_tgen_by_name(use)
+			except Errors.WafError:
+				pass
+			else:
+				includes = getattr(tgen, 'export_includes', [])
+				for include in [i.lstrip('./') for i in includes]:
+					listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+					listoption.set('value', '"${workspace_loc:/%s/%s}"' % (use, include))
 
 	def _add_cc_preprocessor(self, compiler, key, language):
 		if not self._is_language(language):
@@ -746,9 +750,13 @@ class CDTProject(Project):
 
 		libs = getattr(self.gen, 'lib', [])
 		for use in getattr(self.gen, 'use', []):
-			tgen = self.bld.get_tgen_by_name(use)
-			if set(('cstlib', 'cshlib','cxxstlib', 'cxxshlib')) & set(tgen.features):
-				libs.append(tgen.get_name())
+			try:
+				tgen = self.bld.get_tgen_by_name(use)
+			except Errors.WafError:
+				pass
+			else:
+				if set(('cstlib', 'cshlib','cxxstlib', 'cxxshlib')) & set(tgen.features):
+					libs.append(tgen.get_name())
 		if not len(libs):
 			return
 
@@ -766,9 +774,13 @@ class CDTProject(Project):
 
 		libs = []
 		for use in getattr(self.gen, 'use', []):
-			tgen = self.bld.get_tgen_by_name(use)
-			if set(('cstlib', 'cshlib','cxxstlib', 'cxxshlib')) & set(tgen.features):
-				libs.append(tgen.get_name())
+			try:
+				tgen = self.bld.get_tgen_by_name(use)
+			except Errors.WafError:
+				pass
+			else:
+				if set(('cstlib', 'cshlib','cxxstlib', 'cxxshlib')) & set(tgen.features):
+					libs.append(tgen.get_name())
 		if not len(libs):
 			return
 
@@ -940,10 +952,14 @@ class CDTLaunch(Project):
 
 		attrib = root.find('mapAttribute')
 		for use in getattr(self.gen, 'use', []):
-			tgen = self.bld.get_tgen_by_name(use)
-			if set(('cshlib', 'cxxshlib')) & set(tgen.features):
-				mapentry = ElementTree.SubElement(attrib, 'mapEntry', {'key':'LD_LIBRARY_PATH'})
-				mapentry.set('value', '${workspace_loc:/%s}/Release' % tgen.get_name())
+			try:
+				tgen = self.bld.get_tgen_by_name(use)
+			except Errors.WafError:
+				pass
+			else:
+				if set(('cshlib', 'cxxshlib')) & set(tgen.features):
+					mapentry = ElementTree.SubElement(attrib, 'mapEntry', {'key':'LD_LIBRARY_PATH'})
+					mapentry.set('value', '${workspace_loc:/%s}/Release' % tgen.get_name())
 
 		return ElementTree.tostring(root)
 

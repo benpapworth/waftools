@@ -95,7 +95,7 @@ import platform
 import shutil		
 import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
-from waflib import Utils, Node, Logs
+from waflib import Utils, Node, Logs, Errors
 
 
 def options(opt):
@@ -291,8 +291,12 @@ class MsDevSolution(MsDev):
 				if len(deps):
 					f.write('\tProjectSection(ProjectDependencies) = postProject\n')
 					for d in deps:
-						(_, _, id) = self.projects[d]
-						f.write('\t\t{%s} = {%s}\n' % (id, id))
+						try:
+							(_, _, id) = self.projects[d]
+						except KeyError:
+							pass
+						else:
+							f.write('\t\t{%s} = {%s}\n' % (id, id))						
 					f.write('\tEndProjectSection\n')
 				f.write('EndProject\n')
 			for line in s[3:8]:
@@ -555,9 +559,13 @@ class MsDevProject(MsDev):
 				libs.remove(l)		
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		for dep in deps:
-			tgen = bld.get_tgen_by_name(dep)
-			if set(('cstlib', 'cxxstlib')) & set(tgen.features):
-				libs.append(dep)
+			try:
+				tgen = bld.get_tgen_by_name(dep)
+			except Errors.WafError:
+				pass
+			else:
+				if set(('cstlib', 'cxxstlib')) & set(tgen.features):
+					libs.append(dep)
 		return libs
 	
 	def _get_link_paths(self):
@@ -566,10 +574,14 @@ class MsDevProject(MsDev):
 		dirs = []
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		for dep in deps:
-			tgen = bld.get_tgen_by_name(dep)
-			if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
-				directory = '%s\\msdev' % tgen.path.get_bld().path_from(gen.path)
-				dirs.append(directory.replace('/', '\\'))
+			try:
+				tgen = bld.get_tgen_by_name(dep)
+			except Errors.WafError:
+				pass
+			else:
+				if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
+					directory = '%s\\msdev' % tgen.path.get_bld().path_from(gen.path)
+					dirs.append(directory.replace('/', '\\'))
 		return dirs
 
 	def _get_includes_files(self):

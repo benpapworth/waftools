@@ -121,7 +121,7 @@ import copy
 import platform
 import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
-from waflib import Utils, Node, Logs
+from waflib import Utils, Node, Logs, Errors
 
 
 def options(opt):
@@ -326,8 +326,12 @@ class CBWorkspace(CodeBlocks):
 			(fname, deps) = self.projects[name]
 			project = ElementTree.SubElement(workspace, 'Project', attrib={'filename':fname})
 			for dep in deps:
-				(fname, _) = self.projects[dep]
-				ElementTree.SubElement(project, 'Depends', attrib={'filename':fname})
+				try:
+					(fname, _) = self.projects[dep]
+				except KeyError:
+					pass
+				else:
+					ElementTree.SubElement(project, 'Depends', attrib={'filename':fname})				
 		return ElementTree.tostring(root)
 
 	def add_project(self, name, fname, deps):
@@ -592,9 +596,13 @@ class CBProject(CodeBlocks):
 		libs = Utils.to_list(getattr(gen, 'lib', []))
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		for dep in deps:
-			tgen = bld.get_tgen_by_name(dep)
-			if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
-				libs.append(dep)
+			try:
+				tgen = bld.get_tgen_by_name(dep)
+			except Errors.WafError:
+				pass
+			else:
+				if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
+					libs.append(dep)			
 		return libs
 	
 	def _get_link_paths(self):
@@ -603,10 +611,14 @@ class CBProject(CodeBlocks):
 		dirs = []
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		for dep in deps:
-			tgen = bld.get_tgen_by_name(dep)
-			if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
-				directory = tgen.path.get_bld().path_from(gen.path)
-				dirs.append(directory.replace('\\', '/'))
+			try:
+				tgen = bld.get_tgen_by_name(dep)
+			except Errors.WafError:
+				pass
+			else:
+				if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
+					directory = tgen.path.get_bld().path_from(gen.path)
+					dirs.append(directory.replace('\\', '/'))
 		return dirs
 
 	def _get_includes_files(self):
