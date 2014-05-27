@@ -162,6 +162,7 @@ def export(bld):
 	if not _selected(bld):
 		return
 
+	cc_name = bld.env.CC_NAME
 	workspace = CBWorkspace(bld)
 	for gen, targets in bld.components.items():
 		if set(('c', 'cxx')) & set(getattr(gen, 'features', [])):
@@ -519,8 +520,7 @@ class CBProject(CodeBlocks):
 		return pth.replace('\\', '/')
 
 	def _get_output(self):
-		gen = self.gen
-		return '%s/%s' % (self._get_buildpath(), gen.get_name())
+		return '%s/%s' % (self._get_buildpath(), self.gen.target)
 
 	def _get_object_output(self):
 		return self._get_buildpath()
@@ -565,9 +565,28 @@ class CBProject(CodeBlocks):
 			flags.extend(bld.env.CXXFLAGS_cxxshlib)
 		return list(set(flags))
 
+	def _get_deps(self, gen):
+		bld = self.bld
+		deps = Utils.to_list(getattr(gen, 'use', []))
+		names = deps[:]
+		for name in names:
+			try:
+				child = bld.get_tgen_by_name(name)
+			except Errors.WafError:
+				pass
+			else:
+				deps += self._get_deps(child)		
+		return deps
+		
 	def _get_compiler_includes(self):
+		bld = self.bld
 		gen = self.gen
 		includes = self._get_genlist(gen, 'includes')
+		deps = self._get_deps(gen)
+		for dep in deps:
+			key = 'INCLUDES_%s' % dep
+			for path in gen.env[key]:
+				includes.append(bld.root.find_node(path).path_from(gen.path).replace('\\', '/'))
 		return includes
 
 	def _get_compiler_defines(self):
@@ -602,7 +621,7 @@ class CBProject(CodeBlocks):
 				pass
 			else:
 				if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
-					libs.append(dep)			
+					libs.append(dep)
 		return libs
 	
 	def _get_link_paths(self):
@@ -614,7 +633,9 @@ class CBProject(CodeBlocks):
 			try:
 				tgen = bld.get_tgen_by_name(dep)
 			except Errors.WafError:
-				pass
+				key = 'LIBPATH_%s' % dep
+				for path in gen.env[key]:
+					dirs.append(bld.root.find_node(path).path_from(gen.path).replace('\\', '/'))
 			else:
 				if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
 					directory = tgen.path.get_bld().path_from(gen.path)

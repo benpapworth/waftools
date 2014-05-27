@@ -9,27 +9,37 @@ Description
 Display dependencies of task generators to other taskgenerators as well as any other
 (external) node or library dependency.
 
-Example below presents a output from the 'depends' command::
+Example below presents an abbreviated output from the 'depends' command::
 
-	depends tree(blib):
-	   +-blib (t)
-		 +-libpal.a (n)
-		 |    (D:\workspace\woef\build\src\base\pal\lib\libpal.a)
-		 +-libsyslog.a (n)
-		 |    (D:\workspace\woef\build\src\base\logging\syslog\lib\libsyslog.a)
-		 +-pthread (lib)
-		 |
-		 +-pal (t)
-		 |
-		 +-syslog (t)
-
-
-	DESCRIPTION
-	t   = build task
-	n   = node (file/directory/build output)
-	lib = external library
-
-	'depends' finished successfully (0.506s)
+		depends tree(cxxstlib):
+		+-cxxstlib (t)
+		depends tree(cxxprogram):
+		+-cxxprogram (t)
+			+-libcxxstlib.a (n)
+			|    (D:\workspace\waftools\test\build\components\cxxlib\static\libcxxstlib.a)
+			+-cxxshlib-1.dll (n)
+			|    (D:\workspace\waftools\test\build\components\cxxlib\shared\cxxshlib-1.dll)
+			+-libcxxshlib.dll.a (n)
+			|    (D:\workspace\waftools\test\build\components\cxxlib\shared\libcxxshlib.dll.a)
+			|
+			+-cxxstlib (t)
+			|
+			+-cxxshlib (t)			
+		...
+		...
+		+-cxxshlib (t)
+		depends tree(cstlib):
+		+-cstlib (t)
+		depends tree(cxxhello):
+		+-cxxhello (t)
+		
+		
+		DESCRIPTION
+		t   = build task
+		n   = node (file/directory/build output)
+		lib = external library
+		
+		'depends' finished successfully (0.340s)
 
 Usage
 -----
