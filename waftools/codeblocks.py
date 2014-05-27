@@ -603,6 +603,10 @@ class CBProject(CodeBlocks):
 		gen = self.gen
 		flags = getattr(gen, 'linkflags', []) + bld.env.LINKFLAGS
 
+		libs = self._get_link_libs()
+		if 'pthread' in libs:
+			flags.append('-pthread')
+
 		if 'cshlib' in gen.features:
 			flags.extend(bld.env.LINKFLAGS_cshlib)
 		elif 'cxxshlib' in gen.features:
