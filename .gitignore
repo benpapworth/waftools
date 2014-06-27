@@ -18,6 +18,7 @@
 dist/*
 build/*
 test/build/*
+test/reports/*
 doc/_build/*
 
 
