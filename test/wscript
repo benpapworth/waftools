@@ -58,6 +58,7 @@ def options(opt):
 	opt.load('export', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('package', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('depends', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('doxygen', tooldir=os.path.dirname(waftools.__file__))
 
 
 def configure(conf):
@@ -76,6 +77,7 @@ def configure(conf):
 	conf.load('export')
 	conf.load('package')
 	conf.load('depends')
+	conf.load('doxygen')
 	_set_cc_options(conf)
 
 
@@ -86,7 +88,7 @@ def build(bld):
 			for f in files:
 				if os.path.basename(f) != name:
 					continue
-				locations.append(cwd)				
+				locations.append(cwd)
 		scripts = []
 		for loc in locations:
 			if any(os.path.dirname(loc).endswith(t) for t in locations):

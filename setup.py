@@ -20,7 +20,7 @@ setup(
 	url = url,
 	download_url = "%s/waftools-%s.zip" % (url, waftools.version),
 	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++", "msdev"],
-	data_files = [('Lib/site-packages/waftools', ['waftools/msdev.sln'])],
+	data_files = [('Lib/site-packages/waftools', ['waftools/msdev.sln', 'waftools/doxy.config'])],
 	classifiers = [
 		"Programming Language :: Python",
 		"Development Status :: 4 - Beta",
@@ -29,7 +29,7 @@ setup(
 		"License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
 		"Operating System :: OS Independent",
 		"Topic :: Software Development :: Libraries :: Python Modules",
-        ],
-    long_description = long_description
+		],
+	long_description = long_description
 )
 
