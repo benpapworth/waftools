@@ -549,7 +549,7 @@ class CDTProject(Project):
 		for extension in module.find('extensions').iter('extension'):
 			if extension.get('point') == 'org.eclipse.cdt.core.BinaryParser':
 				eid = extension.get('id')
-				if self.gen.env.DEST_OS == 'win32':
+				if self.bld.env.DEST_OS == 'win32':
 					extension.set('id', eid.replace('.ELF', '.PE'))
 
 		provider = ElementTree.SubElement(cconfiguration, 'storageModule')
@@ -565,7 +565,10 @@ class CDTProject(Project):
 		config.set('name', name)
 		if self.is_shlib:
 			config.set('buildArtefactType', 'org.eclipse.cdt.build.core.buildArtefactType.sharedLib')
-			config.set('artifactExtension', 'so')
+			if self.bld.env.DEST_OS == 'win32':
+				config.set('artifactExtension', 'dll')
+			else:
+				config.set('artifactExtension', 'so')				
 		elif self.is_stlib:
 			config.set('buildArtefactType', 'org.eclipse.cdt.build.core.buildArtefactType.staticLib')
 			config.set('artifactExtension', 'a')
@@ -1055,12 +1058,12 @@ ECLIPSE_CDT_DATAPROVIDER = '''
 		</externalSetting>
 	</externalSettings>
 	<extensions>
+		<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 		<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 		<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
 		<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 		<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 		<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-		<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 	</extensions>
 </storageModule>
 '''
@@ -1154,13 +1157,12 @@ ECLIPSE_CDT_WAF_CONFIG = '''
 	<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="org.eclipse.cdt.core.default.config.1" moduleId="org.eclipse.cdt.core.settings" name="Default">
 		<externalSettings/>
 		<extensions>
-			<extension id="org.eclipse.cdt.core.VCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+			<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 			<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 			<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 			<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 			<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 			<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
-			<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 		</extensions>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
