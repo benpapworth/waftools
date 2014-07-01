@@ -9,3 +9,9 @@ v0.1.2, 2014-07-01 -- Eclipse export fix when 'includes' and 'use' tgen argument
                       CodeBlocks export improved use LIBPATH_ and INCLUDES_ dependencies, added pthread linker option.
 					  Added 'depend' module and command; users to get an overview of dependencies between tasks.
                       Added Doxygen module; allows users to create C/C++ source documentation.
+
+v0.1.3, 2014-xx-xx -- Changed license to MIT.
+
+					  
+
+					  
