@@ -8,20 +8,18 @@ import waftools
 
 top = '.'
 out = 'build'
-prefix = 'output'
+
 
 VERSION = waftools.version
 APPNAME = 'waftools'
 
 
 def options(opt):
-	opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
-	opt.load('export', tooldir=os.path.dirname(waftools.__file__))
+	opt.add_option('--pypi', dest='pypi', default=False, action='store_true', help='publish package on PyPi')
 
 
 def configure(conf):
 	conf.check_waf_version(mini='1.7.0')
-	conf.load('export')
 
 
 def build(bld):
@@ -29,8 +27,9 @@ def build(bld):
 		bld.cmd_and_log('python setup.py install', cwd=bld.path.abspath())
 
 		
-def dist(ctx):
-	ctx.algo = 'tar.gz'
-	ctx.excl = ' **/*~ **/.lock-w* .git/** build/** dist/** .gitignore **/*.pyc **/__pycache__/**'
-
+def dist(dst):
+	if dst.options.pypi:
+		dst.cmd_and_log('python setup.py sdist upload', cwd=dst.path.abspath())
+	dst.algo = 'tar.gz'
+	dst.excl = ' **/*~ **/.lock-w* .git/** build/** dist/** .gitignore **/*.pyc **/__pycache__/**'
 
