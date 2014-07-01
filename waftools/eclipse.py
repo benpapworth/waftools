@@ -31,7 +31,7 @@ import codecs
 import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
 import waflib
-from waflib import Logs, Errors
+from waflib import Utils, Logs, Errors
 
 
 def options(opt):
@@ -664,8 +664,9 @@ class CDTProject(Project):
 	def _add_cc_includes(self, compiler, key, language):
 		if not self._is_language(language):
 			return
-		uses = getattr(self.gen, 'use', [])
-		includes = getattr(self.gen, 'includes', [])
+		uses = Utils.to_list(getattr(self.gen, 'use', []))
+		includes = Utils.to_list(getattr(self.gen, 'includes', []))
+		
 		if not len(uses) and not len(includes):
 			return
 
@@ -683,7 +684,7 @@ class CDTProject(Project):
 			except Errors.WafError:
 				pass
 			else:
-				includes = getattr(tgen, 'export_includes', [])
+				includes = Utils.to_list(getattr(tgen, 'export_includes', []))
 				for include in [i.lstrip('./') for i in includes]:
 					listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 					listoption.set('value', '"${workspace_loc:/%s/%s}"' % (use, include))

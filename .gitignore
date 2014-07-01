@@ -20,5 +20,6 @@ build/*
 test/build/*
 test/reports/*
 doc/_build/*
+waftools/__pycache__/*
 
 
