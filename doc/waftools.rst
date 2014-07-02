@@ -1,7 +1,9 @@
-waftools Package
+Package waftools
 ================
+.. automodule:: waftools.__init__
+    :members:
 
-:mod:`cmake` Module
+Module :mod:`cmake`
 -------------------
 
 .. automodule:: waftools.cmake
@@ -9,7 +11,7 @@ waftools Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`codeblocks` Module
+Module :mod:`codeblocks`
 ------------------------
 
 .. automodule:: waftools.codeblocks
@@ -17,7 +19,7 @@ waftools Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`cppcheck` Module
+Module :mod:`cppcheck`
 ----------------------
 
 .. automodule:: waftools.cppcheck
@@ -25,23 +27,23 @@ waftools Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`depends` Module
-----------------------
+Module :mod:`depends`
+---------------------
 
 .. automodule:: waftools.depends
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`doxygen` Module
-----------------------
+Module :mod:`doxygen`
+---------------------
 
 .. automodule:: waftools.doxygen
     :members:
     :undoc-members:
     :show-inheritance:
 	
-:mod:`eclipse` Module
+Module :mod:`eclipse`
 ---------------------
 
 .. automodule:: waftools.eclipse
@@ -49,7 +51,7 @@ waftools Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`export` Module
+Module :mod:`export`
 --------------------
 
 .. automodule:: waftools.export
@@ -57,7 +59,7 @@ waftools Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`makefile` Module
+Module :mod:`makefile`
 ----------------------
 
 .. automodule:: waftools.makefile
@@ -65,15 +67,15 @@ waftools Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`msdev` Module
-----------------------
+Module :mod:`msdev`
+-------------------
 
 .. automodule:: waftools.msdev
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`package` Module
+Module :mod:`package`
 ---------------------
 
 .. automodule:: waftools.package
