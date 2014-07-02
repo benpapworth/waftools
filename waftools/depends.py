@@ -4,23 +4,30 @@
 
 
 '''
+Summary
+-------
+Displays dependencies between task generators (*waflib.TaskGenerator*) in a 
+*waf* build environment.
+
 Description
 -----------
-Display dependencies of task generators to other taskgenerators as well as any other
-(external) node or library dependency.
+This module will, when executed, parse all task generators defined within a 
+concrete *waf* build environment and present the dependencies between those
+task generators in a way similar to that of the output of the LINUX **tree** 
+command.
 
-Example below presents an abbreviated output from the 'depends' command::
+Example below presents an abbreviated output from the *depends* command::
 
 		depends tree(cxxstlib):
 		+-cxxstlib (t)
 		depends tree(cxxprogram):
 		+-cxxprogram (t)
 			+-libcxxstlib.a (n)
-			|    (D:\workspace\waftools\test\build\components\cxxlib\static\libcxxstlib.a)
+			|    (~/workspace/waftools/test/build/components/cxxlib/static/libcxxstlib.a)
 			+-cxxshlib-1.dll (n)
-			|    (D:\workspace\waftools\test\build\components\cxxlib\shared\cxxshlib-1.dll)
+			|    (~/workspace/waftools/test/build/components/cxxlib/shared/cxxshlib-1.dll)
 			+-libcxxshlib.dll.a (n)
-			|    (D:\workspace\waftools\test\build\components\cxxlib\shared\libcxxshlib.dll.a)
+			|    (~/workspace/waftools/test/build/components/cxxlib/shared/libcxxshlib.dll.a)
 			|
 			+-cxxstlib (t)
 			|
@@ -43,8 +50,8 @@ Example below presents an abbreviated output from the 'depends' command::
 
 Usage
 -----
-In order to use this waftool simply add it to the 'options' and 'configure' 
-functions of your main *waf* script as shown in the example below::
+In order to use this waftool simply add it to the *options* and *configure*
+functions of your top level **wscript** file as shown in the example below::
 
 	import os
 	import waftools
@@ -55,8 +62,8 @@ functions of your main *waf* script as shown in the example below::
 	def configure(conf):
 		conf.load('depends')
 
-When configured as shown in the example above, the depends can be issued on
-targets, single or range of  targets::
+When configured as shown in the example above, the depends command can be issued 
+on all targets, a single target or a range of targets::
 
 	waf depends --targets=blib
 
@@ -66,15 +73,13 @@ from waflib import Logs, Build, Scripting, Errors
 
 
 class DependsContext(Build.BuildContext):
-	'''display dependencies t=task, n=node(file/dir), lib=(external library)'''
+	'''Derived build context class for displaying dependencies between
+	task generators.'''
 	cmd = 'depends'
 	fun = Scripting.default_cmd
 
 	def _get_task_generators(self):
 		'''Returns a list of task generators for which the command should be executed
-		
-		@return: Returns either the list of target as specified on command line (i.e. 
-		--targets=...) or a list of all targets.
 		'''
 		taskgenerators = []
 		if len(self.targets):
@@ -106,8 +111,8 @@ class DependsContext(Build.BuildContext):
 	def get_childs(self, parent):
 		'''Returns a list of task generator used by the parent.
 		
-		@param parent: Task generator
-		@return: List of task generators
+		:param parent: task generator for which the childs should be returned
+		:type parent: waflib.TaskGen
 		'''
 		childs = []
 		names = parent.to_list(getattr(parent, 'use', []))
@@ -122,8 +127,10 @@ class DependsContext(Build.BuildContext):
 	def print_tree(self, parent, padding):
 		'''Display task dependencies in a tree like manner
 		
-		@param parent: Task generator for which the dependencies should be listed
-		@param padding: Printing left side offset
+		:param parent: task generator for which the dependencies should be listed
+		:type parent: waflib.TaskGen
+		:param padding: tree prefix (i.e. amount of preceeding whitespace spaces)
+		:type padding: str
 		'''
 		Logs.warn('%s+-%s (t)' % (padding[:-1], parent.name))
 		padding = padding + ' '

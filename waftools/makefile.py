@@ -23,8 +23,8 @@ exported from the test directory::
 
 
 		#------------------------------------------------------------------------------
-		# CHIHUAHUA generated makefile
-		# version: 0.0.2
+		# WAFTOOLS generated makefile
+		# version: 0.1.2
 		# waf: 1.7.15
 		#------------------------------------------------------------------------------
 
@@ -261,8 +261,8 @@ that has been exported from the test directory::
 
 
 		#------------------------------------------------------------------------------
-		# CHIHUAHUA generated makefile
-		# version: 0.0.2
+		# WAFTOOLS generated makefile
+		# version: 0.1.2
 		# waf: 1.7.15
 		#------------------------------------------------------------------------------
 
@@ -828,7 +828,7 @@ class MakeChild(Make):
 
 MAKEFILE_ROOT = \
 '''#------------------------------------------------------------------------------
-# CHIHUAHUA generated makefile
+# WAFTOOLS generated makefile
 # version: ==VERSION==
 # waf: ==WAFVERSION==
 #------------------------------------------------------------------------------
@@ -1020,7 +1020,7 @@ $(foreach t,$(uninstall_targets),$(eval $(call domake,$t)))
 
 MAKEFILE_CHILD = \
 '''#------------------------------------------------------------------------------
-# CHIHUAHUA generated makefile
+# WAFTOOLS generated makefile
 # version: ==VERSION==
 # waf: ==WAFVERSION==
 #------------------------------------------------------------------------------
@@ -1047,7 +1047,7 @@ uninstall:
 
 MAKEFILE_CPROGRAM = \
 '''#------------------------------------------------------------------------------
-# CHIHUAHUA generated makefile
+# WAFTOOLS generated makefile
 # version: ==VERSION==
 # waf: ==WAFVERSION==
 #------------------------------------------------------------------------------
@@ -1166,7 +1166,7 @@ $(OBJECTS): $(HEADERS)
 
 MAKEFILE_CXXPROGRAM = \
 '''#------------------------------------------------------------------------------
-# CHIHUAHUA generated makefile
+# WAFTOOLS generated makefile
 # version: ==VERSION==
 # waf: ==WAFVERSION==
 #------------------------------------------------------------------------------
@@ -1284,7 +1284,7 @@ $(OBJECTS): $(HEADERS)
 
 MAKEFILE_CSTLIB = \
 '''#------------------------------------------------------------------------------
-# CHIHUAHUA generated makefile
+# WAFTOOLS generated makefile
 # version: ==VERSION==
 # waf: ==WAFVERSION==
 #------------------------------------------------------------------------------
@@ -1377,7 +1377,7 @@ $(OBJECTS): $(HEADERS)
 
 MAKEFILE_CSHLIB = \
 '''#------------------------------------------------------------------------------
-# CHIHUAHUA generated makefile
+# WAFTOOLS generated makefile
 # version: ==VERSION==
 # waf: ==WAFVERSION==
 #------------------------------------------------------------------------------
@@ -1503,7 +1503,7 @@ $(OBJECTS): $(HEADERS)
 
 MAKEFILE_CXXSHLIB = \
 '''#------------------------------------------------------------------------------
-# CHIHUAHUA generated makefile
+# WAFTOOLS generated makefile
 # version: ==VERSION==
 # waf: ==WAFVERSION==
 #------------------------------------------------------------------------------
@@ -1629,7 +1629,7 @@ $(OBJECTS): $(HEADERS)
 
 MAKEFILE_CXXSTLIB = \
 '''#------------------------------------------------------------------------------
-# CHIHUAHUA generated makefile
+# WAFTOOLS generated makefile
 # version: ==VERSION==
 # waf: ==WAFVERSION==
 #------------------------------------------------------------------------------

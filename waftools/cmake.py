@@ -2,6 +2,64 @@
 # -*- encoding: utf-8 -*-
 # Michel Mooij, michel.mooij7@gmail.com
 
+'''
+Summary
+-------
+Generate *cmake* files of all C/C++ programs, static- and shared libraries
+that have been defined within a *waf* build environment.
+Once exported to *cmake*, all exported (C/C++) tasks can be build without 
+any further need for, or dependency, to the *waf* build system itself.
+
+**cmake** is an open source cross-platform build system designed to build, test 
+and pacjkage software. It is available for all major Desktop Operating Systems 
+(MS Windows, all major Linux distributions and Macintosh OS-X).
+See http://www.cmake.org for a more detailed description on how to install
+and use it for your particular Desktop environment.
+
+
+Description
+-----------
+When exporting *waf* project data, a single top level **CMakeLists.txt** file
+will be exported in the top level directory of your *waf* build environment. 
+This *cmake* build file will contain references to all exported *cmake*
+build files of each individual C/C++ build task, contains generic variables 
+and settings (e.g compiler to use, global preprocessor defines, link options 
+and so on).
+
+Example below presents an overview of an environment in which *cmake* 
+build files already have been exported::
+
+        .
+        ├── components
+        │   └── clib
+        │       ├── program
+        │       │   ├── CMakeLists.txt
+        │       │   └── wscript
+        │       ├── shared
+        │       │   ├── CMakeLists.txt
+        │       │   └── wscript
+        │       └── static
+        │           ├── CMakeLists.txt
+        │           └── wscript
+        │
+        ├── CMakeLists.txt
+        └── wscript
+
+
+Usage
+-----
+Tasks can be exported to *cmake* using the *export* command, as shown in the
+example below::
+
+        $ waf export --cmake
+
+All exported *cmake* build files can be removed in one go using the *export* 
+*cleanup* option::
+
+        $ waf export --cleanup --cmake
+'''
+
+
 import os
 import re
 from waflib import Utils, Node, Tools

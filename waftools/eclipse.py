@@ -14,14 +14,17 @@ amongst others, used for development of C/C++ programs.
 See https://www.eclipse.org and https://www.eclipse.org/cdt for a more detailed 
 description on how to install and use it for your particular Desktop environment.
 
-Description
------------
-*TODO*
-
 Usage
 -----
-*TODO*
+**Eclipse** project and workspace files can be exported using the *export* 
+command, as shown in the example below::
 
+        $ waf export --eclipse
+
+When needed, exported **Eclipse** project- and workspaces files can be 
+removed using the *export-clean* command, as shown in the example below::
+
+        $ waf export --cleanup --eclipse
 '''
 
 import sys

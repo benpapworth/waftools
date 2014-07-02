@@ -110,8 +110,8 @@ removed using the *export-clean* command, as shown in the example below::
 
         $ waf export --cleanup --codeblocks
 
-Once exported simple open the *codeblocks.workspace* using **Code::Blocks**
-this will automatically open all exported projects as well.
+Once exported simple open the *codeblocks.workspace* using **Code::Blocks**.
+This will automatically open all exported projects as well.
 
 '''
 

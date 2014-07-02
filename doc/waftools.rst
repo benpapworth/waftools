@@ -25,6 +25,22 @@ waftools Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`depends` Module
+----------------------
+
+.. automodule:: waftools.depends
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`doxygen` Module
+----------------------
+
+.. automodule:: waftools.doxygen
+    :members:
+    :undoc-members:
+    :show-inheritance:
+	
 :mod:`eclipse` Module
 ---------------------
 
@@ -45,6 +61,14 @@ waftools Package
 ----------------------
 
 .. automodule:: waftools.makefile
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`msdev` Module
+----------------------
+
+.. automodule:: waftools.msdev
     :members:
     :undoc-members:
     :show-inheritance:

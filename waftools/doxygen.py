@@ -3,17 +3,18 @@
 
 
 '''
-DESCRIPTION
+Description
 -----------
 This module contains a wrapper around doxygen; the de facto standard 
 tool for generating documentation from annotated C/C++ sources. Doxygen
 is part of many linux distributions (e.g. Ubuntu, Fedora, ..) but can 
-also be found at:
-    "http://www.doxygen.org/"
+also be found at http://www.doxygen.org/
 
 In order to start generating documentation of C/C++ source code simply 
-issue the following command:
-    "waf doxygen"
+issue the following command::
+
+        $ waf doxygen
+
 
 Note that in contrast to the standard doxygen module this module will only 
 generate documentation for shared- and static C/C++ libraries; i.e. 
@@ -21,22 +22,19 @@ documentation for programs will not be generated.
 
 When needed the generation of documentation for a specific task can be
 skipped by adding the feature 'doxygen_skipme' to the task, as presented
-in the example below:
+in the example below::
 
-   bld.shlib(   ...,
-                doxygen_skipme = True,
-                ...
-    )
+        bld.shlib(..., doxygen_skipme=True)
 
 For each C/C++ static- and shared library task doxygen will store the
-documentation results in:
-    "reports/doxygen/<task-name>"
+documentation results in::
 
-TODO
-----
-Create general index page containing links to index pages of 
-generated components.
+        reports/doxygen/<task-name>
+
 '''
+
+#TODO create index page containing links to generated components.
+
 
 import os, subprocess, time, re, datetime
 from waflib.Build import BuildContext
