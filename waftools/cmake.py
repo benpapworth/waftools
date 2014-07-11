@@ -11,7 +11,7 @@ Once exported to *cmake*, all exported (C/C++) tasks can be build without
 any further need for, or dependency, to the *waf* build system itself.
 
 **cmake** is an open source cross-platform build system designed to build, test 
-and pacjkage software. It is available for all major Desktop Operating Systems 
+and package software. It is available for all major Desktop Operating Systems 
 (MS Windows, all major Linux distributions and Macintosh OS-X).
 See http://www.cmake.org for a more detailed description on how to install
 and use it for your particular Desktop environment.
@@ -22,9 +22,9 @@ Description
 When exporting *waf* project data, a single top level **CMakeLists.txt** file
 will be exported in the top level directory of your *waf* build environment. 
 This *cmake* build file will contain references to all exported *cmake*
-build files of each individual C/C++ build task, contains generic variables 
-and settings (e.g compiler to use, global preprocessor defines, link options 
-and so on).
+build files of each individual C/C++ build task. It will also contain generic 
+variables and settings (e.g compiler to use, global preprocessor defines, link
+options and so on).
 
 Example below presents an overview of an environment in which *cmake* 
 build files already have been exported::
@@ -48,31 +48,29 @@ build files already have been exported::
 
 Usage
 -----
-Tasks can be exported to *cmake* using the *export* command, as shown in the
+Tasks can be exported to *cmake* using the command, as shown in the
 example below::
 
-        $ waf export --cmake
+        $ waf cmake
 
-All exported *cmake* build files can be removed in one go using the *export* 
+All exported *cmake* build files can be removed in 'one go' using the *cmake*
 *cleanup* option::
 
-        $ waf export --cleanup --cmake
+        $ waf cmake --cmake-clean
 '''
 
 
-import os
-import re
-from waflib import Utils, Node, Tools
+from waflib.Build import BuildContext
+from waflib import Utils, Logs, Node, Context
 
 
 def options(opt):
-	'''Adds command line options to the *waf* build environment 
+	'''Adds command line options for the CMake *waftool*.
 
 	:param opt: Options context from the *waf* build environment.
 	:type opt: waflib.Options.OptionsContext
 	'''
-	opt.add_option('--cmake', dest='cmake', default=False, 
-		action='store_true', help='select cmake for export/import actions')
+	opt.add_option('--cmake-clean', dest='cmake_clean', default=False, action='store_true', help='delete exported CMakelists.txt files')
 
 
 def configure(conf):
@@ -82,65 +80,83 @@ def configure(conf):
 	:param conf: Configuration context from the *waf* build environment.
 	:type conf: waflib.Configure.ConfigurationContext
 	'''	
-	if conf.options.cmake:
-		conf.find_program('cmake', var='CMAKE')
+	conf.find_program('cmake', var='CMAKE', mandatory=False)
 
 
-def _selected(bld):
-	'''Returns True when this module has been selected/configured.'''
-	m = bld.env.CMAKE
-	return len(m) > 0 or bld.options.cmake
-
-	
-def export(bld):
-	'''Exports all C and C++ task generators to cmake.
-	
-	:param bld: a *waf* build instance from the top level *wscript*.
-	:type bld: waflib.Build.BuildContext
+class CMakeContext(BuildContext):
+	'''Build context for exporting and deletion of *cmake* specific build
+	build files.
 	'''
-	if not _selected(bld):
-		return
+	cmd = 'cmake'
+
+	def execute(self):
+		'''Will be invoked when issuing the *cmake* command.'''
+		self.restore()
+		if not self.all_envs:
+			self.load_envs()
+		self.recurse([self.run_dir])
+		self.pre_build()
+
+		for group in self.groups:
+			for tgen in group:
+				try:
+					f = tgen.post
+				except AttributeError:
+					pass
+				else:
+					f()
+		try:
+			self.get_tgen_by_name('')
+		except Exception:
+			pass
 		
-	cmakes = {}
+		if self.options.cmake_clean:
+			self.cmake_cleanup()
+		else:
+			self.cmake_export()
+		self.timer = Utils.Timer()
+
+	def cmake_export(self):
+		'''Exports all C and C++ task generators to cmake.
 	
-	loc = bld.path.relpath().replace('\\', '/')
-	top = CMake(bld, loc)
-	cmakes[loc] = top
+		:param bld: a *waf* build instance from the top level *wscript*.
+		:type bld: waflib.Build.BuildContext
+		'''
+		cmakes = {}
+		
+		loc = self.path.relpath().replace('\\', '/')
+		top = CMake(self, loc)
+		cmakes[loc] = top
+		
+		for gen in self.task_gen_cache_names.values():
+			if set(('c', 'cxx')) & set(getattr(gen, 'features', [])):
+				loc = gen.path.relpath().replace('\\', '/')
+				if loc not in cmakes:
+					cmake = CMake(self, loc)
+					cmakes[loc] = cmake
+					top.add_child(cmake)
+				cmakes[loc].add_tgen(gen)
 	
-	for gen, targets in bld.components.items():
-		if set(('c', 'cxx')) & set(getattr(gen, 'features', [])):
+		for cmake in cmakes.values():
+			cmake.export()
+
+	def cmake_cleanup(self):
+		'''Removes all generated makefiles from the *waf* build environment.
+		
+		:param bld: a *waf* build instance from the top level *wscript*.
+		:type bld: waflib.Build.BuildContext
+		'''
+		loc = self.path.relpath().replace('\\', '/')
+		CMake(self, loc).cleanup()
+			
+		for gen in self.task_gen_cache_names.values():
 			loc = gen.path.relpath().replace('\\', '/')
-			if loc not in cmakes:
-				cmake = CMake(bld, loc)
-				cmakes[loc] = cmake
-				top.add_child(cmake)
-			cmakes[loc].add_tgen(gen)
-
-	for cmake in cmakes.values():
-		cmake.export()
-				
-
-def cleanup(bld):
-	'''Removes all generated makefiles from the *waf* build environment.
-	
-	:param bld: a *waf* build instance from the top level *wscript*.
-	:type bld: waflib.Build.BuildContext
-	'''
-	if not _selected(bld):
-		return
-
-	loc = bld.path.relpath().replace('\\', '/')
-	CMake(bld, loc).cleanup()
-		
-	for gen, targets in bld.components.items():
-		loc = gen.path.relpath().replace('\\', '/')
-		CMake(bld, loc).cleanup()
+			CMake(self, loc).cleanup()
 
 
 class CMake(object):
 	def __init__(self, bld, location):
 		self.bld = bld
-		self.exp = bld.export
 		self.location = location
 		self.cmakes = []
 		self.tgens = []
@@ -154,11 +170,13 @@ class CMake(object):
 		if not node:
 			return
 		node.write(content)
+		Logs.pprint('YELLOW', 'exported: %s' % node.abspath())
 
 	def cleanup(self):
 		node = self._find_node()
 		if node:
 			node.delete()
+			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 
 	def add_child(self, cmake):
 		self.cmakes.append(cmake)
@@ -191,7 +209,7 @@ class CMake(object):
 		content = ''
 		if is_top:
 			content += 'cmake_minimum_required (VERSION 2.6)\n'
-			content += 'project (%s)\n' % (self.exp.appname)
+			content += 'project (%s)\n' % (getattr(Context.g_module, Context.APPNAME))
 			content += '\n'
 
 			env = self.bld.env			
@@ -226,7 +244,7 @@ class CMake(object):
 
 		content += 'set(%s_SOURCES' % (name)
 		for src in tgen.source:
-			content += '\n    %s' % src.path_from(tgen.path)
+			content += '\n    %s' % (src.path_from(tgen.path).replace('\\','/'))
 		content += ')\n\n'
 		
 		includes = self._get_genlist(tgen, 'includes')
@@ -234,7 +252,7 @@ class CMake(object):
 			content += 'set(%s_INCLUDES' % (name)
 			for include in includes:
 				content += '\n    %s' % include
-			content += ')\n'
+			content += ')\n\n'
 			content += 'include_directories(${%s_INCLUDES})\n' % (name)
 			content += '\n'
 
