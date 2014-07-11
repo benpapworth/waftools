@@ -32,28 +32,8 @@ CONTEXTS = (
 )
 
 def options(opt):
-	opt.add_option('--prefix', 
-		dest='prefix', 
-		default=prefix, 
-		help='installation prefix [default: %r]' % prefix)
-
-	opt.add_option('--check_c_compiler', 
-		dest='check_c_compiler', 
-		default='gcc', action='store', 
-		help='Selects C compiler type.')
-
-	opt.add_option('--check_cxx_compiler', 
-		dest='check_cxx_compiler', 
-		default='gxx', 
-		action='store', 
-		help='Selects C++ compiler type.')
-
-	opt.add_option('--debug', 
-		dest='debug', 
-		default=False, 
-		action='store_true', 
-		help='Build with debug information.')
-
+	opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
+	waftools.options(opt)
 	opt.load('cppcheck', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('export', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('package', tooldir=os.path.dirname(waftools.__file__))
@@ -78,7 +58,7 @@ def configure(conf):
 	conf.load('package')
 	conf.load('depends')
 	conf.load('doxygen')
-	_set_cc_options(conf)
+	waftools.configure(conf)
 
 
 def build(bld):
@@ -104,24 +84,6 @@ def build(bld):
 def dist(ctx):
 	ctx.algo = 'tar.gz'
 	ctx.excl = ' **/*~ **/.lock-w* **/CVS/** **/.svn/** downloads/** ext/** build/** tmp/**'
-
-
-def _set_cc_options(conf):
-	conf.env.CFLAGS = ['-Wall']
-	conf.env.CXXFLAGS = ['-Wall']
-	if conf.env.DEST_OS != 'win32':
-		conf.env.RPATH = ['/lib', '/usr/lib', '/usr/local/lib']
-		conf.env.append_unique('RPATH', conf.env.LIBDIR)
-
-	if conf.options.debug:
-		conf.env.append_unique('CFLAGS', '-ggdb')
-		conf.env.append_unique('CFLAGS', '-g')
-		conf.env.append_unique('CXXFLAGS', '-ggdb')
-		conf.env.append_unique('CXXFLAGS', '-g')
-	else:
-		conf.env.append_unique('CFLAGS', '-O3')
-		conf.env.append_unique('CXXFLAGS', '-O3')
-		conf.env.append_unique('DEFINES', 'NDEBUG')
 
 
 def _create_poky_env(conf, prefix, name, fname):
@@ -186,7 +148,7 @@ def _add_poky_options(conf, environment):
 	compile environment using the YOCTO/POKY SDK.
 	'''
 	env = dict(environment)
-	_set_cc_options(conf)
+	waftools.configure(conf)
 
 	options = env['CC'].replace('"', '').split()[1:]
 	for option in options:
@@ -224,7 +186,7 @@ def _create_mingw_env(conf, prefix, name='win32'):
 	conf.load('compiler_c')
 	conf.load('compiler_cxx')
 	conf.load('export')
-	_set_cc_options(conf)
+	waftools.configure(conf)
 
 
 for var in VARIANTS:
