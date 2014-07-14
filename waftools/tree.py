@@ -16,7 +16,7 @@ concrete *waf* build environment and present the dependencies between those
 task generators in a way similar to that of the output of the LINUX **tree** 
 command.
 
-Example below presents an abbreviated output from the *depends* command::
+Example below presents an abbreviated output from the *tree* command::
 
 	$ waf tree --targets=cprogram
 	
@@ -62,15 +62,15 @@ functions of your top level **wscript** file as shown in the example below::
 	import waftools
 
 	def options(opt):
-		opt.load('depends', tooldir=os.path.dirname(waftools.__file__))
+		opt.load('tree', tooldir=os.path.dirname(waftools.__file__))
 
 	def configure(conf):
-		conf.load('depends')
+		conf.load('tree')
 
-When configured as shown in the example above, the depends command can be issued 
+When configured as shown in the example above, the *tree* command can be issued 
 on all targets, a single target or a range of targets::
 
-	waf depends --targets=blib
+	$ waf tree --targets=blib
 
 '''
 
