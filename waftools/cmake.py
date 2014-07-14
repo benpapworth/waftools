@@ -70,7 +70,8 @@ def options(opt):
 	:param opt: Options context from the *waf* build environment.
 	:type opt: waflib.Options.OptionsContext
 	'''
-	opt.add_option('--cmake-clean', dest='cmake_clean', default=False, action='store_true', help='delete exported CMakelists.txt files')
+	opt.add_option('--cmake', dest='cmake', default=False, action='store_true', help='select cmake for export/import actions')
+	opt.add_option('--clean', dest='clean', default=False, action='store_true', help='delete exported files')
 
 
 def configure(conf):
@@ -110,48 +111,56 @@ class CMakeContext(BuildContext):
 		except Exception:
 			pass
 		
-		if self.options.cmake_clean:
-			self.cmake_cleanup()
+		self.cmake = True
+		if self.options.clean:
+			cleanup(self)
 		else:
-			self.cmake_export()
+			export(self)
 		self.timer = Utils.Timer()
 
-	def cmake_export(self):
-		'''Exports all C and C++ task generators to cmake.
-	
-		:param bld: a *waf* build instance from the top level *wscript*.
-		:type bld: waflib.Build.BuildContext
-		'''
-		cmakes = {}
-		
-		loc = self.path.relpath().replace('\\', '/')
-		top = CMake(self, loc)
-		cmakes[loc] = top
-		
-		for gen in self.task_gen_cache_names.values():
-			if set(('c', 'cxx')) & set(getattr(gen, 'features', [])):
-				loc = gen.path.relpath().replace('\\', '/')
-				if loc not in cmakes:
-					cmake = CMake(self, loc)
-					cmakes[loc] = cmake
-					top.add_child(cmake)
-				cmakes[loc].add_tgen(gen)
-	
-		for cmake in cmakes.values():
-			cmake.export()
 
-	def cmake_cleanup(self):
-		'''Removes all generated makefiles from the *waf* build environment.
+def export(bld):
+	'''Exports all C and C++ task generators to cmake.
+
+	:param bld: a *waf* build instance from the top level *wscript*.
+	:type bld: waflib.Build.BuildContext
+	'''
+	if not bld.options.cmake and not hasattr(bld, 'cmake'):
+		return
+	
+	cmakes = {}
+	loc = bld.path.relpath().replace('\\', '/')
+	top = CMake(bld, loc)
+	cmakes[loc] = top
+	
+	for tgen in bld.task_gen_cache_names.values():
+		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+			loc = tgen.path.relpath().replace('\\', '/')
+			if loc not in cmakes:
+				cmake = CMake(bld, loc)
+				cmakes[loc] = cmake
+				top.add_child(cmake)
+			cmakes[loc].add_tgen(tgen)
+
+	for cmake in cmakes.values():
+		cmake.export()
+
+
+def cleanup(bld):
+	'''Removes all generated makefiles from the *waf* build environment.
+	
+	:param bld: a *waf* build instance from the top level *wscript*.
+	:type bld: waflib.Build.BuildContext
+	'''
+	if not bld.options.clean:
+		return
+	
+	loc = bld.path.relpath().replace('\\', '/')
+	CMake(bld, loc).cleanup()
 		
-		:param bld: a *waf* build instance from the top level *wscript*.
-		:type bld: waflib.Build.BuildContext
-		'''
-		loc = self.path.relpath().replace('\\', '/')
-		CMake(self, loc).cleanup()
-			
-		for gen in self.task_gen_cache_names.values():
-			loc = gen.path.relpath().replace('\\', '/')
-			CMake(self, loc).cleanup()
+	for gen in bld.task_gen_cache_names.values():
+		loc = gen.path.relpath().replace('\\', '/')
+		CMake(bld, loc).cleanup()
 
 
 class CMake(object):

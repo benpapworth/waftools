@@ -37,7 +37,10 @@ def options(opt):
 	opt.load('cppcheck', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('doxygen', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('package', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('export', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('cmake', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('codeblocks', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('msdev', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('depends', tooldir=os.path.dirname(waftools.__file__))
 
 
@@ -56,7 +59,10 @@ def configure(conf):
 	conf.load('cppcheck')
 	conf.load('doxygen')
 	conf.load('package')
+	conf.load('export')
 	conf.load('cmake')
+	conf.load('codeblocks')	
+	conf.load('msdev')	
 	conf.load('depends')
 	waftools.configure(conf)
 

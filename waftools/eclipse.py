@@ -16,15 +16,15 @@ description on how to install and use it for your particular Desktop environment
 
 Usage
 -----
-**Eclipse** project and workspace files can be exported using the *export* 
+**Eclipse** project and workspace files can be exported using the *eclipse* 
 command, as shown in the example below::
 
-        $ waf export --eclipse
+        $ waf eclipse
 
 When needed, exported **Eclipse** project- and workspaces files can be 
-removed using the *export-clean* command, as shown in the example below::
+removed using the *clean* command, as shown in the example below::
 
-        $ waf export --cleanup --eclipse
+        $ waf eclipse --clean
 '''
 
 import sys
@@ -34,7 +34,8 @@ import codecs
 import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
 import waflib
-from waflib import Utils, Logs, Errors
+from waflib import Utils, Logs, Errors, Context
+from waflib.Build import BuildContext
 
 
 def options(opt):
@@ -43,8 +44,7 @@ def options(opt):
 	:param opt: Options context from the *waf* build environment.
 	:type opt: waflib.Options.OptionsContext
 	'''
-	opt.add_option('--eclipse', dest='eclipse', default=False, 
-		action='store_true', help='select Eclipse for export/import actions')
+	opt.add_option('--eclipse', dest='eclipse', default=False, action='store_true', help='select Eclipse for export/import actions')
 
 
 def configure(conf):
@@ -53,15 +53,43 @@ def configure(conf):
 	
 	:param conf: Configuration context from the *waf* build environment.
 	:type conf: waflib.Configure.ConfigurationContext
-	'''	
-	if conf.options.eclipse:
-		conf.env.append_unique('ECLIPSE', 'eclipse')
+	'''
+	pass
 
 
-def _selected(bld):
-	'''Returns True when this module has been selected/configured.'''
-	m = bld.env.ECLIPSE
-	return len(m) > 0 or bld.options.eclipse
+class EclipseContext(BuildContext):
+	'''Build context for exporting and deletion of *eclipse* specific build
+	build files.
+	'''
+	cmd = 'eclipse'
+
+	def execute(self):
+		'''Will be invoked when issuing the *eclipse* command.'''
+		self.restore()
+		if not self.all_envs:
+			self.load_envs()
+		self.recurse([self.run_dir])
+		self.pre_build()
+
+		for group in self.groups:
+			for tgen in group:
+				try:
+					f = tgen.post
+				except AttributeError:
+					pass
+				else:
+					f()
+		try:
+			self.get_tgen_by_name('')
+		except Exception:
+			pass
+		
+		self.eclipse = True
+		if self.options.clean:
+			cleanup(self)
+		else:
+			export(self)
+		self.timer = Utils.Timer()
 
 
 def export(bld):
@@ -75,15 +103,15 @@ def export(bld):
 	:param bld: a *waf* build instance from the top level *wscript*.
 	:type bld: waflib.Build.BuildContext
 	'''
-	if not _selected(bld):
+	if not bld.options.eclipse and not hasattr(bld, 'eclipse'):
 		return
 
 	_detect_workspace_location(bld)
 	_scan_project_locations(bld)
 
-	for gen, targets in bld.components.items():
-		if set(('c', 'cxx')) & set(getattr(gen, 'features', [])):
-			project = CDTProject(bld, gen, targets)
+	for tgen in bld.task_gen_cache_names.values():
+		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+			project = CDTProject(bld, tgen)
 			project.export()
 
 	project = WafProject(bld)
@@ -96,12 +124,12 @@ def cleanup(bld):
 	:param bld: a *waf* build instance from the top level *wscript*.
 	:type bld: waflib.Build.BuildContext
 	'''
-	if not _selected(bld):
+	if not bld.options.eclipse and not hasattr(bld, 'eclipse'):
 		return
 
-	for gen, targets in bld.components.items():
-		if set(('c', 'cxx')) & set(getattr(gen, 'features', [])):
-			project = CDTProject(bld, gen, targets)
+	for tgen in bld.task_gen_cache_names.values():
+		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+			project = CDTProject(bld, tgen)
 			project.cleanup()
 
 	project = WafProject(bld)
@@ -135,9 +163,9 @@ def _scan_project_locations(bld):
 	locations = { '.': 'waf (top level)' }
 	anomalies = {}
 
-	for gen, _ in bld.components.items():
-		name = gen.get_name()
-		location = str(gen.path.relpath()).replace('\\', '/')
+	for tgen in bld.task_gen_cache_names.values():
+		name = tgen.get_name()
+		location = str(tgen.path.relpath()).replace('\\', '/')
 		
 		if location in locations:
 			anomalies[name] = location
@@ -184,7 +212,7 @@ class Project(object):
 	'''
 	def __init__(self, bld, gen):
 		self.bld = bld
-		self.exp = bld.export
+		self.appname = getattr(Context.g_module, Context.APPNAME)
 		self.gen = gen
 		self.natures = []
 		self.buildcommands = []
@@ -201,12 +229,14 @@ class Project(object):
 		if not node:
 			return
 		node.write(content)
+		Logs.pprint('YELLOW', 'exported: %s' % node.abspath())
 
 	def cleanup(self):
 		'''Deletes an *Eclipse* project or launcher.'''
 		node = self._find_node()
 		if node:
 			node.delete()
+			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 
 	def _find_node(self):
 		name = self._get_fname()
@@ -258,7 +288,7 @@ class Project(object):
 		if self.gen:
 			name = self.gen.get_name()
 		else:
-			name = self.exp.appname
+			name = self.appname
 		return name
 
 	def _xml_clean(self, content):
@@ -282,9 +312,8 @@ class PyDevProject(Project):
 					(deprecated).
 	:type targets: list
 	'''	
-	def __init__(self, bld, gen, targets):
+	def __init__(self, bld, gen):
 		super(PyDevProject, self).__init__(bld, gen)
-		self.targets = targets
 		self.project = Project(bld, gen)
 		self.project.natures.append('org.python.pydev.pythonNature')
 		self.project.buildcommands.append(('org.python.pydev.PyDevBuilder', None, None))
@@ -337,7 +366,7 @@ class WafProject(PyDevProject):
 	:type bld: waflib.Build.BuildContext
 	'''
 	def __init__(self, bld):
-		super(WafProject, self).__init__(bld, None, None)
+		super(WafProject, self).__init__(bld, None)
 		self.cproject = WafCDT(bld, self.project)
 
 		path = os.path.dirname(waflib.__file__)
@@ -381,18 +410,13 @@ class CDTProject(Project):
 	:param gen: Task generator that contains all information of the task to be
 				converted and exported to the *Eclipse* project.
 	:type gen:	waflib.Task.TaskGen
-	
-	:param targets: list of processed tasks from the Task Generator
-					(deprecated).
-	:type targets: list
-	
+		
 	:param project: Reference to *Eclipse* project (which will export the 
 					*.project* file.
 	:param project: Project
 	'''
-	def __init__(self, bld, gen, targets, project=None):
+	def __init__(self, bld, gen, project=None):
 		super(CDTProject, self).__init__(bld, gen)
-		self.targets = targets
 		self.comments = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>','<?fileVersion 4.0.0?>']
 
 		if gen is not None:
@@ -830,7 +854,7 @@ class WafCDT(CDTProject):
 	:param project: Project
 	'''
 	def __init__(self, bld, project):
-		super(WafCDT, self).__init__(bld, None, None, project)
+		super(WafCDT, self).__init__(bld, None, project)
 		self.comments = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>','<?fileVersion 4.0.0?>']
 		self.waf = str(os.path.abspath(sys.argv[0])).replace('\\', '/')
 
@@ -862,7 +886,7 @@ class WafCDT(CDTProject):
 					extension.set('id', eid.replace('.ELF', '.PE'))
 
 		config = cconfig.find('storageModule/configuration')
-		config.set('artifactName', self.exp.appname)
+		config.set('artifactName', self.appname)
 
 		platform = config.find('folderInfo/toolChain/targetPlatform')
 		parser = platform.get('binaryParser')
@@ -878,7 +902,7 @@ class WafCDT(CDTProject):
 		module.append(cconfig)
 
 	def _update_cdt_buildsystem(self, module):
-		name = self.exp.appname
+		name = self.appname
 		ElementTree.SubElement(module, 'project', {'id':'%s.null.1' % name, 'name': name})
 
 	def _update_scanner_configuration(self, module):

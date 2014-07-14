@@ -73,15 +73,15 @@ the *waf* build environment from command line.
 
 Usage
 -----
-**Visual Studio** project and workspace files can be exported using the *export* 
+**Visual Studio** project and workspace files can be exported using the *msdev* 
 command, as shown in the example below::
 
-        $ waf export --msdev
+        $ waf msdev
 
 When needed, exported **Visual Studio** project- and solution files can be 
-removed using the *export-clean* command, as shown in the example below::
+removed using the *clean* command, as shown in the example below::
 
-        $ waf export --cleanup --msdev
+        $ waf msdev --clean
 
 Once exported simply open the *appname.sln* using **Visual Studio**
 this will automatically open all exported projects as well.
@@ -91,12 +91,11 @@ import os
 import sys
 import copy
 import uuid
-import platform
-import shutil		
+import shutil
 import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
-from waflib import Utils, Node, Logs, Errors
-
+from waflib import Utils, Node, Logs, Errors, Context
+from waflib.Build import BuildContext
 
 def options(opt):
 	'''Adds command line options to the *waf* build environment 
@@ -104,8 +103,8 @@ def options(opt):
 	:param opt: Options context from the *waf* build environment.
 	:type opt: waflib.Options.OptionsContext
 	'''
-	opt.add_option('--msdev', dest='msdev', default=False, 
-		action='store_true', help='select msdev for export/import actions')
+	opt.add_option('--msdev', dest='msdev', default=False, action='store_true', help='select msdev for export/import actions')
+	opt.add_option('--clean', dest='clean', default=False, action='store_true', help='delete exported files')
 
 
 def configure(conf):
@@ -114,15 +113,43 @@ def configure(conf):
 	
 	:param conf: Configuration context from the *waf* build environment.
 	:type conf: waflib.Configure.ConfigurationContext
-	'''	
-	if conf.options.msdev:
-		conf.env.append_unique('MSDEV', 'msdev')
+	'''
+	pass
 
 
-def _selected(bld):
-	'''Returns True when this module has been selected/configured.'''
-	m = bld.env.MSDEV
-	return len(m) > 0 or bld.options.msdev
+class MsDevContext(BuildContext):
+	'''Build context for exporting and deletion of *msdev* specific build
+	build files.
+	'''
+	cmd = 'msdev'
+
+	def execute(self):
+		'''Will be invoked when issuing the *msdev* command.'''
+		self.restore()
+		if not self.all_envs:
+			self.load_envs()
+		self.recurse([self.run_dir])
+		self.pre_build()
+
+		for group in self.groups:
+			for tgen in group:
+				try:
+					f = tgen.post
+				except AttributeError:
+					pass
+				else:
+					f()
+		try:
+			self.get_tgen_by_name('')
+		except Exception:
+			pass
+		
+		self.msdev = True
+		if self.options.clean:
+			cleanup(self)
+		else:
+			export(self)
+		self.timer = Utils.Timer()
 
 
 def export(bld):
@@ -133,13 +160,13 @@ def export(bld):
 	:param bld: a *waf* build instance from the top level *wscript*.
 	:type bld: waflib.Build.BuildContext
 	'''
-	if not _selected(bld):
+	if not bld.options.msdev and not hasattr(bld, 'msdev'):
 		return
 
 	solution = MsDevSolution(bld)
-	for gen, targets in bld.components.items():
-		if set(('c', 'cxx')) & set(getattr(gen, 'features', [])):
-			project = MsDevProject(bld, gen, targets)
+	for tgen in bld.task_gen_cache_names.values():
+		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+			project = MsDevProject(bld, tgen)
 			project.export()
 			
 			(name, fname, deps, pid) = project.get_metadata()
@@ -155,11 +182,11 @@ def cleanup(bld):
 	:param bld: a *waf* build instance from the top level *wscript*.
 	:type bld: waflib.Build.BuildContext
 	'''
-	if not _selected(bld):
+	if not bld.options.msdev and not hasattr(bld, 'msdev'):
 		return
 
-	for gen, targets in bld.components.items():
-		project = MsDevProject(bld, gen, targets)
+	for tgen in bld.task_gen_cache_names.values():
+		project = MsDevProject(bld, tgen)
 		project.cleanup()
 
 	solution = MsDevSolution(bld)
@@ -189,7 +216,6 @@ class MsDev(object):
 
 	def __init__(self, bld):
 		self.bld = bld
-		self.exp = bld.export
 
 	def export(self):
 		'''Exports a **Visual Studio** solution or project.'''
@@ -203,6 +229,7 @@ class MsDev(object):
 		if not node:
 			return
 		node.write(content)
+		Logs.pprint('YELLOW', 'exported: %s' % node.abspath())
 
 	def cleanup(self):
 		'''Deletes a **Visual Studio** solution or project file including 
@@ -211,15 +238,20 @@ class MsDev(object):
 		cwd = self._get_cwd()
 		for node in cwd.ant_glob('*.user'):
 			node.delete()
+			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 		for node in cwd.ant_glob('*.ncb'):
 			node.delete()
+			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 		for node in cwd.ant_glob('*.suo'):
 			node.delete()
+			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 		for node in cwd.ant_glob('*.sln'):
 			node.delete()
+			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())			
 		node = self._find_node()
 		if node:
 			node.delete()
+			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 
 	def _get_cwd(self):
 		cwd = os.path.dirname(self._get_fname())
@@ -271,7 +303,7 @@ class MsDevSolution(MsDev):
 
 	def _get_fname(self):
 		'''Returns the workspace's file name.'''
-		return '%s.sln' % self.exp.appname
+		return '%s.sln' % getattr(Context.g_module, Context.APPNAME)
 
 	def export(self):
 		'''Exports a **Visual Studio** solution.'''	
@@ -292,11 +324,11 @@ class MsDevSolution(MsDev):
 					f.write('\tProjectSection(ProjectDependencies) = postProject\n')
 					for d in deps:
 						try:
-							(_, _, id) = self.projects[d]
+							(_, _, pid) = self.projects[d]
 						except KeyError:
 							pass
 						else:
-							f.write('\t\t{%s} = {%s}\n' % (id, id))						
+							f.write('\t\t{%s} = {%s}\n' % (pid, pid))						
 					f.write('\tEndProjectSection\n')
 				f.write('EndProject\n')
 			for line in s[3:8]:
@@ -330,17 +362,12 @@ class MsDevProject(MsDev):
 	
 	:param gen: Task generator that contains all information of the task to be
 				converted and exported to the **Visual Studio** project.
-	:type gen:	waflib.Task.TaskGen
-	
-	:param targets: (deprecated) List of tasks associated with this task 
-					generator and **Visual Studio** project.
-	:type targets: list of waflib.Task.TaskBase instances
+	:type gen:	waflib.Task.TaskGen	
 	'''
 
-	def __init__(self, bld, gen, targets):
+	def __init__(self, bld, gen):
 		super(MsDevProject, self).__init__(bld)
 		self.gen = gen
-		self.targets = targets
 		self.id = str(uuid.uuid4()).upper()
 
 	def _get_fname(self):
@@ -406,34 +433,34 @@ class MsDevProject(MsDev):
 	def _update_includes(self, files):
 		'''Add include files.'''
 		includes = []
-		for filter in files.iter('Filter'):
-			if filter.get('Name') == 'Header Files':
-				for include in filter.iter('File'):
+		for filtr in files.iter('Filter'):
+			if filtr.get('Name') == 'Header Files':
+				for include in filtr.iter('File'):
 					includes.append(include.get('RelativePath'))
 				break
 		if len(includes) == 0:
-			filter = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Header Files', 'Filter':'h;hpp;hxx;hm;inl;inc;xsd'})
-			filter.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
+			filtr = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Header Files', 'Filter':'h;hpp;hxx;hm;inl;inc;xsd'})
+			filtr.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
 		
 		for include in self._get_includes_files():
 			if include not in includes:
-				ElementTree.SubElement(filter, 'File', attrib={'RelativePath':'%s' % include})
+				ElementTree.SubElement(filtr, 'File', attrib={'RelativePath':'%s' % include})
 
 	def _update_sources(self, files):
 		'''Add source files.'''
 		sources = []
-		for filter in files.iter('Filter'):
-			if filter.get('Name') == 'Source Files':
-				for source in filter.iter('File'):
+		for filtr in files.iter('Filter'):
+			if filtr.get('Name') == 'Source Files':
+				for source in filtr.iter('File'):
 					sources.append(source.get('RelativePath'))
 				break		
 		if len(sources) == 0:
-			filter = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Source Files', 'Filter':'cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx'})
-			filter.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
+			filtr = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Source Files', 'Filter':'cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx'})
+			filtr.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
 			
 		for source in self._get_genlist(self.gen, 'source'):
 			if source not in sources:
-				ElementTree.SubElement(filter, 'File', attrib={'RelativePath':'%s' % source})
+				ElementTree.SubElement(filtr, 'File', attrib={'RelativePath':'%s' % source})
 
 	def _update_link_deps(self, tool):
 		'''Add libraries on which this project depends.'''
