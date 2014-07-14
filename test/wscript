@@ -35,10 +35,10 @@ def options(opt):
 	opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
 	waftools.options(opt)
 	opt.load('cppcheck', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('export', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('package', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('depends', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('doxygen', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('package', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('cmake', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('depends', tooldir=os.path.dirname(waftools.__file__))
 
 
 def configure(conf):
@@ -54,10 +54,10 @@ def configure(conf):
 	conf.load('compiler_c')
 	conf.load('compiler_cxx')
 	conf.load('cppcheck')
-	conf.load('export')
-	conf.load('package')
-	conf.load('depends')
 	conf.load('doxygen')
+	conf.load('package')
+	conf.load('cmake')
+	conf.load('depends')
 	waftools.configure(conf)
 
 
@@ -100,7 +100,6 @@ def _create_poky_env(conf, prefix, name, fname):
 	_set_poky_binaries(conf, env)
 	conf.load('compiler_c')
 	conf.load('compiler_cxx')
-	conf.load('export')
 	_add_poky_options(conf, env)
 
 

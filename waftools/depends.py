@@ -18,35 +18,40 @@ command.
 
 Example below presents an abbreviated output from the *depends* command::
 
-		depends tree(cxxstlib):
-		+-cxxstlib (t)
-		depends tree(cxxprogram):
-		+-cxxprogram (t)
-			+-libcxxstlib.a (n)
-			|    (~/workspace/waftools/test/build/components/cxxlib/static/libcxxstlib.a)
-			+-cxxshlib-1.dll (n)
-			|    (~/workspace/waftools/test/build/components/cxxlib/shared/cxxshlib-1.dll)
-			+-libcxxshlib.dll.a (n)
-			|    (~/workspace/waftools/test/build/components/cxxlib/shared/libcxxshlib.dll.a)
-			|
-			+-cxxstlib (t)
-			|
-			+-cxxshlib (t)			
-		...
-		...
-		+-cxxshlib (t)
-		depends tree(cstlib):
-		+-cstlib (t)
-		depends tree(cxxhello):
-		+-cxxhello (t)
-		
-		
-		DESCRIPTION
-		t   = build task
-		n   = node (file/directory/build output)
-		lib = external library
-		
-		'depends' finished successfully (0.340s)
+	$ waf tree --targets=cprogram
+	
+	   +-cprogram
+	     │
+	     │--> program.c.1.o
+	     │
+	     │<-- libcstlib.a
+	     │
+	     │<-- cshlib-1.dll
+	     │
+	     │<-- libcshlib.dll.a
+	     │
+	     │--> cprogram.exe
+	     │
+	     +-cstlib
+	     │ │
+	     │ │--> foo.c.1.o
+	     │ │
+	     │ │--> libcstlib.a
+	     │
+	     +-cshlib
+	       │
+	       │--> bar.c.1.o
+	       │
+	       │--> cshlib-1.dll
+	       │
+	       │--> libcshlib.dll.a
+	
+	
+	DESCRIPTION:
+	m (lib) = uses system library 'm' (i.e. libm.so)
+
+	'tree' finished successfully (0.112s)
+
 
 Usage
 -----
@@ -72,10 +77,20 @@ on all targets, a single target or a range of targets::
 from waflib import Logs, Build, Scripting, Errors
 
 
+def options(opt):
+	'''Adds command line options to the *waf* build environment 
+
+	:param opt: Options context from the *waf* build environment.
+	:type opt: waflib.Options.OptionsContext
+	'''
+	opt.add_option('--tree-loc', dest='tree_loc', default=False,
+		action='store_true', help='use physical file locations when printing tree')
+
+
 class DependsContext(Build.BuildContext):
 	'''Derived build context class for displaying dependencies between
 	task generators.'''
-	cmd = 'depends'
+	cmd = 'tree'
 	fun = Scripting.default_cmd
 
 	def _get_task_generators(self):
@@ -104,7 +119,7 @@ class DependsContext(Build.BuildContext):
 
 		for taskgen in self._get_task_generators():
 			taskgen.post()
-			Logs.info("depends tree(%s):" % taskgen.name)
+			Logs.info('')
 			self.print_tree(taskgen, '    ')
 		self.print_legend()
 
@@ -121,7 +136,7 @@ class DependsContext(Build.BuildContext):
 				child = self.get_tgen_by_name(name)
 				childs.append(child)
 			except Errors.WafError:
-				Logs.warn("Skipping dependency '%s'; Task does not exist" % name)				
+				Logs.warn("skipping dependency '%s'; task does not exist" % name)				
 		return childs
 
 	def print_tree(self, parent, padding):
@@ -132,32 +147,42 @@ class DependsContext(Build.BuildContext):
 		:param padding: tree prefix (i.e. amount of preceeding whitespace spaces)
 		:type padding: str
 		'''
-		Logs.warn('%s+-%s (t)' % (padding[:-1], parent.name))
+		Logs.info('%s+-%s' % (padding[:-1], parent.name))
 		padding = padding + ' '
+
 		for task in parent.tasks:
 			for node in task.dep_nodes:
-				Logs.warn('%s+-%s (n)' % (padding, node))
-				Logs.warn('%s|    (%r)' % (padding, node))
+				Logs.info('%s│' % (padding))
+				if self.options.tree_loc:
+					Logs.warn('%s│<-- %r' % (padding, node))
+				else:
+					Logs.warn('%s│<-- %s' % (padding, node))
+
+			for output in task.outputs:
+				Logs.info('%s│' % (padding))
+				if self.options.tree_loc:
+					Logs.warn('%s│--> %r' % (padding, output))
+				else:
+					Logs.warn('%s│--> %s' % (padding, output))
 
 		for lib in parent.to_list(getattr(parent,'lib', [])):
-			Logs.warn('%s+-%s (lib)' % (padding,lib))
- 
+			Logs.info('%s│' % (padding))
+			Logs.warn('%s│<-- %s (lib)' % (padding,lib))
+
 		childs = self.get_childs(parent)
 		count = 0
 		for child in childs:
 			count += 1
-			Logs.warn('%s|' % padding)
+			Logs.info('%s│' % padding)			
 			if count == len(childs):
 				self.print_tree(child, padding + ' ')
 			else:
-				self.print_tree(child, padding + '|')
+				self.print_tree(child, padding + '│')
 
 	def print_legend(self):
-		'''Displays description for the depends result.'''
-		Logs.info('')
-		Logs.info('')
-		Logs.info('DESCRIPTION')
-		Logs.info('t   = build task')
-		Logs.info('n   = node (file/directory/build output)')
-		Logs.info('lib = external library')
-		Logs.info('')
+		'''Displays description for the tree command.'''
+		Logs.info("")
+		Logs.info("")
+		Logs.info("DESCRIPTION:")
+		Logs.info("m (lib) = uses system library 'm' (i.e. libm.so)")
+		Logs.info("")
