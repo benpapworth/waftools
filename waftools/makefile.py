@@ -404,21 +404,23 @@ Example below presents an overview of an environment in which **GNU**
 
 Usage
 -----
-Tasks can be exported to makefiles using the *export* command, as shown in the
+Tasks can be exported to makefiles using the *makefile* command, as shown in the
 example below::
 
-        $ waf export --makefile
+        $ waf makefile
 
-All exported makefiles can be removed in one go using the *export* *cleanup*
+All exported makefiles can be removed in one go using the *makefile* *clean*
 option::
 
-        $ waf export --cleanup --makefile
+        $ waf makefile --clean
 
 '''
 
 import os
 import re
-from waflib import Utils, Node, Tools
+from waflib import Utils, Node, Tools, Context, Logs
+from waflib.Build import BuildContext
+import waftools
 
 
 def options(opt):
@@ -427,8 +429,8 @@ def options(opt):
 	:param opt: Options context from the *waf* build environment.
 	:type opt: waflib.Options.OptionsContext
 	'''
-	opt.add_option('--makefile', dest='makefile', default=False, 
-		action='store_true', help='select makefile for export/import actions')
+	opt.add_option('--makefile', dest='makefile', default=False, action='store_true', help='select makefile for export/import actions')
+	opt.add_option('--clean', dest='clean', default=False, action='store_true', help='delete exported files')
 
 
 def configure(conf):
@@ -437,15 +439,43 @@ def configure(conf):
 	
 	:param conf: Configuration context from the *waf* build environment.
 	:type conf: waflib.Configure.ConfigurationContext
-	'''	
-	if conf.options.makefile:
-		conf.env.append_unique('MAKEFILE', 'makefile')
+	'''
+	pass
 
 
-def _selected(bld):
-	'''Returns True when this module has been selected/configured.'''
-	m = bld.env.MAKEFILE
-	return len(m) > 0 or bld.options.makefile
+class MakeFileContext(BuildContext):
+	'''Build context for exporting and deletion of *make* specific build
+	build files.
+	'''
+	cmd = 'makefile'
+
+	def execute(self):
+		'''Will be invoked when issuing the *makefile* command.'''
+		self.restore()
+		if not self.all_envs:
+			self.load_envs()
+		self.recurse([self.run_dir])
+		self.pre_build()
+
+		for group in self.groups:
+			for tgen in group:
+				try:
+					f = tgen.post
+				except AttributeError:
+					pass
+				else:
+					f()
+		try:
+			self.get_tgen_by_name('')
+		except Exception:
+			pass
+		
+		self.makefile = True
+		if self.options.clean:
+			cleanup(self)
+		else:
+			export(self)
+		self.timer = Utils.Timer()
 
 
 def export(bld):
@@ -454,12 +484,12 @@ def export(bld):
 	:param bld: a *waf* build instance from the top level *wscript*.
 	:type bld: waflib.Build.BuildContext
 	'''
-	if not _selected(bld):
+	if not bld.options.makefile and not hasattr(bld, 'makefile'):
 		return
 
 	root = MakeRoot(bld)
-	for gen, targets in bld.components.items():
-		child = MakeChild(bld, gen, targets)
+	for tgen in bld.task_gen_cache_names.values():	
+		child = MakeChild(bld, tgen, tgen.tasks)
 		child.export()
 		root.add_child(child.get_data())
 	root.export()
@@ -471,12 +501,12 @@ def cleanup(bld):
 	:param bld: a *waf* build instance from the top level *wscript*.
 	:type bld: waflib.Build.BuildContext
 	'''
-	if not _selected(bld):
+	if not bld.options.makefile and not hasattr(bld, 'makefile'):
 		return
 
 	root = MakeRoot(bld)
-	for gen, targets in bld.components.items():
-		child = MakeChild(bld, gen, targets)
+	for tgen in bld.task_gen_cache_names.values():	
+		child = MakeChild(bld, tgen, tgen.tasks)
 		child.cleanup()
 	root.cleanup()
 
@@ -484,7 +514,6 @@ def cleanup(bld):
 class Make(object):
 	def __init__(self, bld):
 		self.bld = bld
-		self.exp = bld.export
 
 	def export(self):
 		content = self._get_content()
@@ -494,11 +523,13 @@ class Make(object):
 		if not node:
 			return
 		node.write(content)
+		Logs.pprint('YELLOW', 'exported: %s' % node.abspath())
 			
 	def cleanup(self):
 		node = self._find_node()
 		if node:
 			node.delete()
+			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 
 	def _find_node(self):
 		name = self._get_name()
@@ -514,8 +545,8 @@ class Make(object):
 		
 	def populate(self, content):
 		s = content
-		s = re.sub('==WAFVERSION==', self.exp.wafversion, s)
-		s = re.sub('==VERSION==', self.exp.version, s)
+		s = re.sub('==WAFVERSION==', Context.WAFVERSION, s)
+		s = re.sub('==VERSION==', waftools.version, s)
 		return s
 
 	def _get_name(self):
@@ -537,35 +568,51 @@ class MakeRoot(Make):
 		return '%s/Makefile' % (bld.path.relpath().replace('\\', '/'))
 
 	def _get_content(self):
+		bld = self.bld
 		cwd = str(os.getcwd()).replace('\\', '/')
-		prefix = str(os.path.abspath(self.exp.prefix)).replace('\\', '/')
+		prefix = str(os.path.abspath(bld.env.PREFIX)).replace('\\', '/')
 		if prefix.startswith(cwd):
 			prefix = '$(CURDIR)%s' % prefix[len(cwd):]
 
-		out = str(os.path.abspath(self.exp.out)).replace('\\', '/')
+		out = str(os.path.abspath(getattr(Context.g_module, Context.OUT))).replace('\\', '/')
 		if out.startswith(cwd):
 			out = '$(TOP)%s' % out[len(cwd):]
 		if self.bld.variant:
 			out = '%s/%s' % (out, self.bld.variant)
-		
+
+		ar = bld.env.AR
+		if isinstance(ar, list):
+			ar = ar[0]
+		ar = ar.replace('\\', '/')
+		try:
+			cc = bld.env.CC[0]
+		except IndexError:
+			cc = 'gcc'
+		cc = cc.replace('\\', '/')
+		try:
+			cxx = bld.env.CXX[0]
+		except IndexError:
+			cxx = 'g++'
+		cxx = cxx.replace('\\', '/')
+
 		s = MAKEFILE_ROOT
 		s = super(MakeRoot, self).populate(s)
-		s = re.sub('APPNAME:=', 'APPNAME:=%s' % self.exp.appname, s)
-		s = re.sub('APPVERSION:=', 'APPVERSION:=%s' % self.exp.appversion, s)
+		s = re.sub('APPNAME:=', 'APPNAME:=%s' % getattr(Context.g_module, Context.APPNAME), s)
+		s = re.sub('APPVERSION:=', 'APPVERSION:=%s' % getattr(Context.g_module, Context.VERSION), s)
 		s = re.sub('OUT:=', 'OUT:=%s' % out, s)
-		s = re.sub('BINDIR:=', 'BINDIR:=%s' % self.exp.bindir, s)
-		s = re.sub('LIBDIR:=', 'LIBDIR:=%s' % self.exp.libdir, s)
-		s = re.sub('AR:=', 'AR:=%s' % self.exp.ar, s)
-		s = re.sub('CC:=', 'CC:=%s' % self.exp.cc, s)
-		s = re.sub('CXX:=', 'CXX:=%s' % self.exp.cxx, s)
-		s = re.sub('RPATH:=', 'RPATH:=%s' % self.exp.rpath, s)
-		s = re.sub('CFLAGS:=', 'CFLAGS:=%s' % self.exp.cflags, s)
-		s = re.sub('CXXFLAGS:=', 'CXXFLAGS:=%s' % self.exp.cxxflags, s)
-		s = re.sub('DEFINES:=', 'DEFINES:=%s' % self.exp.defines, s)
+		s = re.sub('BINDIR:=', 'BINDIR:=%s' % str(bld.env.BINDIR).replace('\\', '/'), s)
+		s = re.sub('LIBDIR:=', 'LIBDIR:=%s' % str(bld.env.LIBDIR).replace('\\', '/'), s)
+		s = re.sub('AR:=', 'AR:=%s' % ar, s)
+		s = re.sub('CC:=', 'CC:=%s' % cc, s)
+		s = re.sub('CXX:=', 'CXX:=%s' % cxx, s)
+		s = re.sub('RPATH:=', 'RPATH:=%s' % ' '.join(bld.env.RPATH), s)
+		s = re.sub('CFLAGS:=', 'CFLAGS:=%s' % ' '.join(bld.env.CFLAGS), s)
+		s = re.sub('CXXFLAGS:=', 'CXXFLAGS:=%s' % ' '.join(bld.env.CXXFLAGS), s)
+		s = re.sub('DEFINES:=', 'DEFINES:=%s' % ' '.join(bld.env.DEFINES), s)
 		s = re.sub('==MODULES==', self._get_modules(), s)
 		s = re.sub('==MODPATHS==', self._get_modpaths(), s)
 		s = re.sub('==MODDEPS==', self._get_moddeps(), s)	
-		s = re.sub(self.exp.prefix, '$(PREFIX)', s)
+		s = re.sub(bld.env.PREFIX, '$(PREFIX)', s)
 		s = re.sub('PREFIX:=', 'PREFIX:=%s' % prefix, s)
 		return s
 
@@ -636,7 +683,7 @@ class MakeChild(Make):
 		return (name, makefile, deps)
 	
 	def _process(self):
-		bld = self.bld
+		#bld = self.bld
 		self.lib = {}
 		self.lib['static'] = { 'name' : [], 'path' : [] }
 		self.lib['shared'] = { 'name' : [], 'path' : [] }
@@ -644,15 +691,17 @@ class MakeChild(Make):
 		for target in self.targets:
 			if not isinstance(target, Tools.ccroot.link_task):
 				continue
-			for arg in target.cmd:
-				if arg == bld.env.SHLIB_MARKER:
-					key = 'shared'
-				elif arg == bld.env.STLIB_MARKER:
-					key = 'static'
-				elif arg.startswith('-L'):
-					self.lib[key]['path'].append(arg[2:])
-				elif arg.startswith('-l'):
-					self.lib[key]['name'].append(arg[2:])
+			Logs.warn('TODO: lib,libpath for (%s)' % repr(target))
+			# TODO: add lib and libpath
+			#for arg in target.cmd:
+			#	if arg == bld.env.SHLIB_MARKER:
+			#		key = 'shared'
+			#	elif arg == bld.env.STLIB_MARKER:
+			#		key = 'static'
+			#	elif arg.startswith('-L'):
+			#		self.lib[key]['path'].append(arg[2:])
+			#	elif arg.startswith('-l'):
+			#		self.lib[key]['name'].append(arg[2:])
 
 	def _get_cprogram_content(self):
 		bld = self.bld
@@ -785,7 +834,10 @@ class MakeChild(Make):
 	def _get_genlist(self, gen, name):
 		lst = Utils.to_list(getattr(gen, name, []))
 		lst = [l.path_from(gen.path) if isinstance(l, Node.Nod3) else l for l in lst]
-		return [l.replace('\\', '/') for l in lst]
+		return [str(l).replace('\\', '/') for l in lst]
+		# TODO check if ok, used to be;
+		#	return [str(l).replace('\\', '/') for l in lst]
+
 
 	def _get_defines(self, gen):
 		defines = []

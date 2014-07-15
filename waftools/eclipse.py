@@ -45,6 +45,7 @@ def options(opt):
 	:type opt: waflib.Options.OptionsContext
 	'''
 	opt.add_option('--eclipse', dest='eclipse', default=False, action='store_true', help='select Eclipse for export/import actions')
+	opt.add_option('--clean', dest='clean', default=False, action='store_true', help='delete exported files')
 
 
 def configure(conf):

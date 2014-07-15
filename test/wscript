@@ -41,7 +41,8 @@ def options(opt):
 	opt.load('cmake', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('codeblocks', tooldir=os.path.dirname(waftools.__file__))
 	opt.load('msdev', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('depends', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('makefile', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('tree', tooldir=os.path.dirname(waftools.__file__))
 
 
 def configure(conf):
@@ -61,9 +62,10 @@ def configure(conf):
 	conf.load('package')
 	conf.load('export')
 	conf.load('cmake')
-	conf.load('codeblocks')	
-	conf.load('msdev')	
-	conf.load('depends')
+	conf.load('codeblocks')
+	conf.load('msdev')
+	conf.load('makefile')
+	conf.load('tree')
 	waftools.configure(conf)
 
 
