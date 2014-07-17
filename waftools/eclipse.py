@@ -420,6 +420,11 @@ class CDTProject(Project):
 		super(CDTProject, self).__init__(bld, gen)
 		self.comments = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>','<?fileVersion 4.0.0?>']
 
+		if bld.env.DEST_OS == 'win32':
+			self.cdt_config = 'cdt.managedbuild.config.gnu.mingw'
+		else:
+			self.cdt_config = 'cdt.managedbuild.config.gnu'
+			
 		if gen is not None:
 			if 'cxx' in gen.features:
 				self.language = 'cpp'
@@ -518,10 +523,13 @@ class CDTProject(Project):
 		return int(uuid, 16)
 
 	def _update_buildsystem(self, module):
+		s = ''
+		if self.bld.env.DEST_OS == 'win32':
+			s = 'mingw.'
 		attr = {
-			'id': '%s.cdt.managedbuild.target.gnu.%s.%s' % (self.gen.get_name(), self.kind, self._get_uuid()),
+			'id': '%s.cdt.managedbuild.target.gnu.%s%s.%s' % (self.gen.get_name(), s, self.kind, self._get_uuid()),
 			'name': self.kind_name,
-			'projectType': 'cdt.managedbuild.target.gnu.%s' % (self.kind)
+			'projectType': 'cdt.managedbuild.target.gnu.%s%s' % (s, self.kind)
 		}
 		ElementTree.SubElement(module, 'project', attrib=attr)
 
@@ -535,10 +543,13 @@ class CDTProject(Project):
 	def _add_scanner_config_build_info(self, module, key, language):
 		cc_uuid = self.uuid['%s_%s_compiler' % (language, key)]
 		in_uuid = self.uuid['%s_%s_input' % (language, key)]
+		s = ''
+		if self.bld.env.DEST_OS == 'win32':
+			s = 'mingw.'
 		iid = [
-			"cdt.managedbuild.config.gnu.%s.%s.%s" % (self.kind, key, self.uuid[key]),
-			"cdt.managedbuild.config.gnu.%s.%s.%s." % (self.kind, key, self.uuid[key]),
-			"cdt.managedbuild.tool.gnu.%s.compiler.%s.%s.%s" % (language, self.kind, key, cc_uuid),
+			"%s.%s.%s.%s" % (self.cdt_config, self.kind, key, self.uuid[key]),
+			"%s.%s.%s.%s." % (self.cdt_config, self.kind, key, self.uuid[key]),
+			"cdt.managedbuild.tool.gnu.%s.compiler.%s%s.%s.%s" % (language, s, self.kind, key, cc_uuid),
 			"cdt.managedbuild.tool.gnu.%s.compiler.input.%s" % (language, in_uuid)
 		]
 		element = ElementTree.SubElement(module, 'scannerConfigBuildInfo', {'instanceId':';'.join(iid)})
@@ -555,7 +566,7 @@ class CDTProject(Project):
 		self._add_cconfiguration(module, key='release', name='Release')
 
 	def _add_cconfiguration(self, module, key, name):
-		ccid = 'cdt.managedbuild.config.gnu.%s.%s.%s' % (self.kind, key, self.uuid[key])
+		ccid = '%s.%s.%s.%s' % (self.cdt_config, self.kind, key, self.uuid[key])
 		cconfiguration = ElementTree.SubElement(module, 'cconfiguration', {'id':ccid})
 		self._add_configuration_data_provider(cconfiguration, key, name)
 		self._add_configuration_cdt_buildsystem(cconfiguration, key, name)
@@ -574,14 +585,18 @@ class CDTProject(Project):
 					entry.set('name', '/%s/%s' % (self.gen.get_name(),name))
 				if entry.get('kind') == 'libraryFile':
 					entry.set('name', '%s' % self.gen.get_name())
-		for extension in module.find('extensions').iter('extension'):
-			if extension.get('point') == 'org.eclipse.cdt.core.BinaryParser':
-				eid = extension.get('id')
-				if self.bld.env.DEST_OS == 'win32':
+		
+		if self.bld.env.DEST_OS == 'win32':
+			extensions = module.find('extensions')
+			for extension in extensions.iter('extension'):		
+				if extension.get('point') == 'org.eclipse.cdt.core.BinaryParser':
+					eid = extension.get('id')
 					extension.set('id', eid.replace('.ELF', '.PE'))
-
+				if extension.get('id') in ['org.eclipse.cdt.core.GmakeErrorParser', 'org.eclipse.cdt.core.CWDLocator']:
+					extensions.remove(extension)
+					
 		provider = ElementTree.SubElement(cconfiguration, 'storageModule')
-		provider.set('id', 'cdt.managedbuild.config.gnu.%s.%s.%s' % (self.kind, key, self.uuid[key]))
+		provider.set('id', '%s.%s.%s.%s' % (self.cdt_config, self.kind, key, self.uuid[key]))
 		provider.set('name', name)
 		provider.set('buildSystemId', 'org.eclipse.cdt.managedbuilder.core.configurationDataProvider')
 		provider.set('moduleId', 'org.eclipse.cdt.core.settings') 
@@ -603,7 +618,7 @@ class CDTProject(Project):
 		else:
 			config.set('buildArtefactType', 'org.eclipse.cdt.build.core.buildArtefactType.exe')
 
-		config.set('parent', 'cdt.managedbuild.config.gnu.%s.%s' % (self.kind, key))
+		config.set('parent', '%s.%s.%s' % (self.cdt_config, self.kind, key))
 		config.set('id', '%s.%s' % (config.get('parent'), self.uuid[key]))
 
 		btype = 'org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.%s' % key
@@ -611,30 +626,47 @@ class CDTProject(Project):
 		config.set('buildProperties', '%s,%s' % (btype, atype))
 	
 		folder = config.find('folderInfo')
-		folder.set('id','cdt.managedbuild.config.gnu.%s.%s.%s.' % (self.kind, key, self.uuid[key]))
+		folder.set('id','%s.%s.%s.%s.' % (self.cdt_config, self.kind, key, self.uuid[key]))
 		self._update_toolchain(folder, key, name)
 		cconfiguration.append(module)
 
 	def _update_toolchain(self, folder, key, name):
 		toolchain = folder.find('toolChain')
-		toolchain.set('superClass', 'cdt.managedbuild.toolchain.gnu.%s.%s' % (self.kind, key))
+		if self.bld.env.DEST_OS == 'win32':
+			toolchain.set('superClass', 'cdt.managedbuild.toolchain.gnu.mingw.%s.%s' % (self.kind, key))
+			toolchain.set('name', 'MinGW GCC')
+		else:
+			toolchain.set('superClass', 'cdt.managedbuild.toolchain.gnu.%s.%s' % (self.kind, key))
 		toolchain.set('id', '%s.%s' % (toolchain.get('superClass'), self._get_uuid()))
-
+			
 		target = toolchain.find('targetPlatform')
 		target.set('name', '%s Platform' % name)
-		target.set('superClass', 'cdt.managedbuild.target.gnu.platform.%s.%s' % (self.kind, key))
+		if self.bld.env.DEST_OS == 'win32':
+			target.set('superClass', 'cdt.managedbuild.target.gnu.platform.mingw.%s.%s' % (self.kind, key))
+		else:
+			target.set('superClass', 'cdt.managedbuild.target.gnu.platform.%s.%s' % (self.kind, key))
 		target.set('id', '%s.%s' % (target.get('superClass'), self._get_uuid()))
 
 		builder = toolchain.find('builder')
 		builder.set('buildPath', '${workspace_loc:/%s}/%s' % (self.gen.get_name(), key.title()))
-		builder.set('superClass', 'cdt.managedbuild.target.gnu.builder.%s.%s' % (self.kind, key))
+		if self.bld.env.DEST_OS == 'win32':
+			builder.set('name', 'CDT Internal Builder')
+			builder.set('superClass', 'cdt.managedbuild.tool.gnu.builder.mingw.base')
+		else:
+			builder.set('superClass', 'cdt.managedbuild.target.gnu.builder.%s.%s' % (self.kind, key))
 		builder.set('id', '%s.%s' % (builder.get('superClass'), self._get_uuid()))
 
 		archiver = ElementTree.SubElement(toolchain, 'tool', {'name':'GCC Archiver'})
 		if self.is_stlib:
-			archiver.set('superClass', 'cdt.managedbuild.tool.gnu.archiver.lib.%s' % key)
+			if self.bld.env.DEST_OS == 'win32':
+				archiver.set('superClass', 'cdt.managedbuild.tool.gnu.archiver.mingw.lib.%s' % key)
+			else:
+				archiver.set('superClass', 'cdt.managedbuild.tool.gnu.archiver.lib.%s' % key)			
 		else:
-			archiver.set('superClass', 'cdt.managedbuild.tool.gnu.archiver.base')
+			if self.bld.env.DEST_OS == 'win32':
+				archiver.set('superClass', 'cdt.managedbuild.tool.gnu.archiver.mingw.base')
+			else:
+				archiver.set('superClass', 'cdt.managedbuild.tool.gnu.archiver.base')			
 		archiver.set('id', '%s.%s' % (archiver.get('superClass'), self._get_uuid()))
 
 		self._add_compiler(toolchain, key, 'cpp', 'GCC C++ Compiler')
@@ -643,7 +675,10 @@ class CDTProject(Project):
 		self._add_linker(toolchain, key, 'cpp', 'GCC C++ Linker')
 
 		assembler = ElementTree.SubElement(toolchain, 'tool', {'name':'GCC Assembler'})
-		assembler.set('superClass', 'cdt.managedbuild.tool.gnu.assembler.%s.%s' % (self.kind, key))
+		if self.bld.env.DEST_OS == 'win32':
+			assembler.set('superClass', 'cdt.managedbuild.tool.gnu.assembler.mingw.%s.%s' % (self.kind, key))
+		else:
+			assembler.set('superClass', 'cdt.managedbuild.tool.gnu.assembler.%s.%s' % (self.kind, key))			
 		assembler.set('id', '%s.%s' % (assembler.get('superClass'), self._get_uuid()))
 		inputtype = ElementTree.SubElement(assembler, 'inputType')
 		inputtype.set('superClass', 'cdt.managedbuild.tool.gnu.assembler.input')
@@ -652,7 +687,10 @@ class CDTProject(Project):
 	def _add_compiler(self, toolchain, key, language, name):
 		uuid = self.uuid['%s_%s_compiler' % (language, key)]
 		compiler = ElementTree.SubElement(toolchain, 'tool', {'name' : name})
-		compiler.set('superClass', 'cdt.managedbuild.tool.gnu.%s.compiler.%s.%s' % (language, self.kind, key))
+		if self.bld.env.DEST_OS == 'win32':
+			compiler.set('superClass', 'cdt.managedbuild.tool.gnu.%s.compiler.mingw.%s.%s' % (language, self.kind, key))
+		else:
+			compiler.set('superClass', 'cdt.managedbuild.tool.gnu.%s.compiler.%s.%s' % (language, self.kind, key))		
 		compiler.set('id', '%s.%s' % (compiler.get('superClass'), uuid))
 		self._add_cc_options(compiler, key, language)
 		self._add_cc_includes(compiler, key, language)
@@ -671,7 +709,10 @@ class CDTProject(Project):
 			debug_level = 'none'
 
 		option = ElementTree.SubElement(compiler, 'option', {'name':'Optimization Level', 'valueType':'enumerated'})
-		option.set('superClass', 'gnu.%s.compiler.%s.%s.option.optimization.level' % (language, self.kind, key))
+		if self.bld.env.DEST_OS == 'win32':
+			option.set('superClass', 'gnu.%s.compiler.mingw.%s.%s.option.optimization.level' % (language, self.kind, key))
+		else:
+			option.set('superClass', 'gnu.%s.compiler.%s.%s.option.optimization.level' % (language, self.kind, key))
 		option.set('id', '%s.%s' % (option.get('superClass'), self._get_uuid()))
 
 		if language == 'cpp':
@@ -680,7 +721,10 @@ class CDTProject(Project):
 			option.set('value', 'gnu.c.optimization.level.%s' % (optimization_level))
 
 		option = ElementTree.SubElement(compiler, 'option', {'name':'Debug Level', 'valueType':'enumerated'})
-		option.set('superClass', 'gnu.%s.compiler.%s.%s.option.debugging.level' % (language, self.kind, key))
+		if self.bld.env.DEST_OS == 'win32':
+			option.set('superClass', 'gnu.%s.compiler.mingw.%s.%s.option.debugging.level' % (language, self.kind, key))
+		else:
+			option.set('superClass', 'gnu.%s.compiler.%s.%s.option.debugging.level' % (language, self.kind, key))
 		option.set('id', '%s.%s' % (option.get('superClass'), self._get_uuid()))
 		if language == 'cpp':
 			option.set('value', 'gnu.cpp.compiler.debugging.level.%s' % (debug_level))
@@ -728,7 +772,6 @@ class CDTProject(Project):
 			defines.remove('NDEBUG')
 		if not len(defines):
 			return
-		defines = [d.replace('"', '\\"') for d in defines]
 
 		if language == 'cpp':
 			superclass = 'gnu.cpp.compiler.option.preprocessor.def'
@@ -741,7 +784,7 @@ class CDTProject(Project):
 
 		for define in defines:
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
-			listoption.set('value', define)
+			listoption.set('value', '\'%s\'' % define)
 
 	def _add_cc_input(self, compiler, key, language):
 		if not compiler.get('id').count('.%s.' % language):
@@ -758,14 +801,26 @@ class CDTProject(Project):
 
 	def _add_linker(self, toolchain, key, language, name):
 		if self.is_stlib:
-			superclass = 'cdt.managedbuild.tool.gnu.%s.linker.base' % (language)
+			if self.bld.env.DEST_OS == 'win32':
+				superclass = 'cdt.managedbuild.tool.gnu.%s.linker.mingw.base' % (language)
+			else:
+				superclass = 'cdt.managedbuild.tool.gnu.%s.linker.base' % (language)
 		else:
-			superclass = 'cdt.managedbuild.tool.gnu.%s.linker.%s.%s' % (language, self.kind, key)
+			if self.bld.env.DEST_OS == 'win32':
+				superclass = 'cdt.managedbuild.tool.gnu.%s.linker.mingw.%s.%s' % (language, self.kind, key)
+			else:
+				superclass = 'cdt.managedbuild.tool.gnu.%s.linker.%s.%s' % (language, self.kind, key)
 
 		linker = ElementTree.SubElement(toolchain, 'tool', {'name':name})
 		linker.set('superClass', superclass)
 		linker.set('id', '%s.%s' % (superclass, self._get_uuid()))
 
+		if self.bld.env.DEST_OS == 'win32':
+			if language == 'cpp':
+				linker.set('name', 'MinGW C++ Linker')
+			else:
+				linker.set('name', 'MinGW C Linker')
+		
 		if self.is_shlib:
 			option = ElementTree.SubElement(linker, 'option', {'name':'Shared (-shared)', 'defaultValue':'true', 'valueType':'boolean'})
 			option.set('superClass', 'gnu.%s.link.so.%s.option.shared' % (language, key))
@@ -1186,11 +1241,11 @@ ECLIPSE_CDT_WAF_CONFIG = '''
 		<externalSettings/>
 		<extensions>
 			<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+			<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+			<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
 			<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 			<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 			<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-			<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-			<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
 		</extensions>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
