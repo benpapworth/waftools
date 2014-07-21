@@ -418,7 +418,7 @@ option::
 
 import os
 import re
-from waflib import Utils, Node, Tools, Context, Logs
+from waflib import Utils, Node, Context, Logs
 from waflib.Build import BuildContext
 import waftools
 
@@ -681,27 +681,21 @@ class MakeChild(Make):
 		makefile = self._get_name()
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		return (name, makefile, deps)
-	
+		
 	def _process(self):
-		#bld = self.bld
 		self.lib = {}
 		self.lib['static'] = { 'name' : [], 'path' : [] }
 		self.lib['shared'] = { 'name' : [], 'path' : [] }
-			
-		for target in self.targets:
-			if not isinstance(target, Tools.ccroot.link_task):
-				continue
-			Logs.warn('TODO: lib,libpath for (%s)' % repr(target))
-			# TODO: add lib and libpath
-			#for arg in target.cmd:
-			#	if arg == bld.env.SHLIB_MARKER:
-			#		key = 'shared'
-			#	elif arg == bld.env.STLIB_MARKER:
-			#		key = 'static'
-			#	elif arg.startswith('-L'):
-			#		self.lib[key]['path'].append(arg[2:])
-			#	elif arg.startswith('-l'):
-			#		self.lib[key]['name'].append(arg[2:])
+		for use in Utils.to_list(getattr(self.gen, 'use', [])):
+			tg = self.bld.get_tgen_by_name(use)
+			if len(set(tg.features) & set(['cstlib', 'cxxstlib'])):
+				self.lib['static']['name'].append(tg.get_name())
+				self.lib['static']['path'].append(tg.path.relpath().replace('\\','/'))
+			if len(set(tg.features) & set(['cshlib', 'cxxshlib'])):
+				self.lib['shared']['name'].append(tg.get_name())
+				self.lib['shared']['path'].append(tg.path.relpath().replace('\\','/'))
+		for lib in Utils.to_list(getattr(self.gen, 'lib', [])):
+			self.lib['shared']['name'].append(lib)
 
 	def _get_cprogram_content(self):
 		bld = self.bld
@@ -835,9 +829,6 @@ class MakeChild(Make):
 		lst = Utils.to_list(getattr(gen, name, []))
 		lst = [l.path_from(gen.path) if isinstance(l, Node.Nod3) else l for l in lst]
 		return [str(l).replace('\\', '/') for l in lst]
-		# TODO check if ok, used to be;
-		#	return [str(l).replace('\\', '/') for l in lst]
-
 
 	def _get_defines(self, gen):
 		defines = []
