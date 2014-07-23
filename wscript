@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 # Michel Mooij, michel.mooij7@gmail.com
 
-import os
+
 import waftools
 
 
