@@ -27,14 +27,6 @@ Module :mod:`cppcheck`
     :undoc-members:
     :show-inheritance:
 
-Module :mod:`depends`
----------------------
-
-.. automodule:: waftools.depends
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Module :mod:`doxygen`
 ---------------------
 
@@ -82,4 +74,13 @@ Module :mod:`package`
     :members:
     :undoc-members:
     :show-inheritance:
+	
+Module :mod:`tree`
+---------------------
+
+.. automodule:: waftools.tree
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
