@@ -34,15 +34,15 @@ CONTEXTS = (
 def options(opt):
 	opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
 	waftools.options(opt)
-	opt.load('cppcheck', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('doxygen', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('package', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('export', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('cmake', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('codeblocks', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('msdev', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('makefile', tooldir=os.path.dirname(waftools.__file__))
-	opt.load('tree', tooldir=os.path.dirname(waftools.__file__))
+	opt.load('cppcheck', tooldir=waftools.location)
+	opt.load('doxygen', tooldir=waftools.location)
+	opt.load('package', tooldir=waftools.location)
+	opt.load('export', tooldir=waftools.location)
+	opt.load('cmake', tooldir=waftools.location)
+	opt.load('codeblocks', tooldir=waftools.location)
+	opt.load('msdev', tooldir=waftools.location)
+	opt.load('makefile', tooldir=waftools.location)
+	opt.load('tree', tooldir=waftools.location)
 
 
 def configure(conf):
@@ -70,21 +70,7 @@ def configure(conf):
 
 
 def build(bld):
-	def get_scripts(top, name):
-		locations = []
-		for cwd, _, files in os.walk(top):
-			for f in files:
-				if os.path.basename(f) != name:
-					continue
-				locations.append(cwd)
-		scripts = []
-		for loc in locations:
-			if any(os.path.dirname(loc).endswith(t) for t in locations):
-				continue
-			scripts.append(loc)
-		return scripts
-
-	scripts = get_scripts('components', 'wscript')
+	scripts = waftools.get_scripts('components', 'wscript')
 	for script in scripts:
 		bld.recurse(script)
 
