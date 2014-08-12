@@ -7,12 +7,13 @@ v0.1.1, 2014-05-10 -- Added extra check when parsing dependencies ('use') in Cod
 
 v0.1.2, 2014-07-01 -- Eclipse export fix when 'includes' and 'use' tgen arguments are specified as string intead of list.
                       CodeBlocks export improved use LIBPATH_ and INCLUDES_ dependencies, added pthread linker option.
-					  Added 'depend' module and command; users to get an overview of dependencies between tasks.
+                      Added 'depend' module and command; users to get an overview of dependencies between tasks.
                       Added Doxygen module; allows users to create C/C++ source documentation.
 
-v0.1.3, 2014-xx-xx -- Changed license to MIT.
+v0.1.3, 2014-07-21 -- Changed license to MIT.
                       Updated and improved module documentaton.
+                      Improved exporting to foreign build systems and IDE's (msdev, eclipse, cmake, codeblocks,
+                      make).
+                      Improved Eclipse export for Win32/MinGW.
 
-					  
-
-					  
+v0.1.4, 2014-xx-xx -- Added 'tree' module to package documentation

@@ -14,7 +14,7 @@ MANIFEST
 *.suo
 
 .lock-waf*
-.settings/*
+**/.settings/*
 
 dist/*
 build/*

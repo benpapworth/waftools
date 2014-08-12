@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 # Michel Mooij, michel.mooij7@gmail.com
 
-import os
+
 import waftools
 
 
@@ -31,5 +31,15 @@ def dist(dst):
 	if dst.options.pypi:
 		dst.cmd_and_log('python setup.py sdist upload', cwd=dst.path.abspath())
 	dst.algo = 'tar.gz'
-	dst.excl = ' **/*~ **/.lock-w* .git/** build/** dist/** .gitignore **/*.pyc **/__pycache__/**'
+	dst.excl = '**/*~ **/*.pyc **/__pycache__/** \
+		**/.lock-waf_* build/** **/*.tar.gz \
+		MANIFEST dist/** doc/_build/** \
+		.git/** **/.gitignore \
+		**/.settings/** **/.project **/.pydevproject \
+		test/**/.cproject test/**/*.launch test/**/Debug/** \
+		test/output/** test/build/** \
+		test/**/Makefile test/**/*.mk \
+		test/**/CMakeLists.txt \
+		test/**/*.cbp test/**/*.layout test/**/*.workspace test/**/*.workspace.layout \
+		test/**/*.vcproj test/**/*.sln test/**/*.user test/**/*.ncb test/**/*.suo'
 
