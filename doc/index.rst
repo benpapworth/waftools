@@ -6,7 +6,7 @@
 
 Waftools 0.1.3 documentation
 ============================
-Welcome! This is the documentation for the *waftools* package, last updated Jul 2nd 2014.
+Welcome! This is the documentation for the *waftools* package, last updated Aug 13th 2014.
 
 
 Overview
@@ -38,12 +38,11 @@ The code snippet below provides an example on how the *export* function from
 the *waftools* package can be added to (top) level *wscript* file of a (your)
 concrete build solution::
 
-	import os
 	import waftools
 
 	def options(opt):
 		opt.load('compiler_c')
-		opt.load('export', tooldir=os.path.dirname(waftools.__file__))
+		opt.load('export', tooldir=waftools.location)
 	
 	def configure(conf):
 		conf.load('compiler_c')
