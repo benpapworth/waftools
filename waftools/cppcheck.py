@@ -105,8 +105,10 @@ Usage
 In order to use this waftool simply add it to the 'options' and 'configure' 
 functions of your main *waf* script as shown in the example below::
 
+	import waftools
+
 	def options(opt):
-		opt.load('cppcheck', tooldir='./waftools')
+		opt.load('cppcheck', tooldir=waftools.location)
 
 	def configure(conf):
 		conf.load('cppcheck')

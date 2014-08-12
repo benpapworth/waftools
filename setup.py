@@ -19,7 +19,7 @@ setup(
 	author_email = "michel.mooij7@gmail.com",
 	url = url,
 	download_url = "%s/waftools-%s.zip" % (url, waftools.version),
-	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++", "msdev"],
+	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++", "msdev", "doxygen"],
 	data_files = [('Lib/site-packages/waftools', ['waftools/msdev.sln', 'waftools/doxy.config'])],
 	classifiers = [
 		"Programming Language :: Python",

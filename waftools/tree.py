@@ -58,11 +58,10 @@ Usage
 In order to use this waftool simply add it to the *options* and *configure*
 functions of your top level **wscript** file as shown in the example below::
 
-	import os
 	import waftools
 
 	def options(opt):
-		opt.load('tree', tooldir=os.path.dirname(waftools.__file__))
+		opt.load('tree', tooldir=waftools.location)
 
 	def configure(conf):
 		conf.load('tree')
