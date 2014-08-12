@@ -4,16 +4,17 @@
 
 import os
 
-version = "0.1.3"
+version = "0.1.4"
+location = os.path.dirname(__file__)
 
-	
+
 def options(opt):
 	'''Add default (C/C++) command line options.
 	
-	:param opt:	options context 
+	:param opt: options context 
 	:type opt: waflib.Options.OptionsContext
 	'''
-	opt.add_option('--check_c_compiler', dest='check_c_compiler', default='gcc', action='store', help='Selects C compiler type.')		
+	opt.add_option('--check_c_compiler', dest='check_c_compiler', default='gcc', action='store', help='Selects C compiler type.')
 	opt.add_option('--check_cxx_compiler', dest='check_cxx_compiler', default='gxx', action='store', help='Selects C++ compiler type.')
 	opt.add_option('--debug', dest='debug', default=False, action='store_true', help='build with debug information.')
 
@@ -45,7 +46,7 @@ def get_scripts(top, name):
 	
 	:param: top: root where the search should be started.
 	:type top: str
-	:param: name: name of the file to be found.	
+	:param: name: name of the file to be found.
 	:type name: str
 	'''
 	locations = []
