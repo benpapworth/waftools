@@ -3,6 +3,11 @@
 
 
 '''
+Summary
+-------
+Generates C/C++ source code documentation using Doxygen.
+
+
 Description
 -----------
 This module contains a wrapper around doxygen; the de facto standard 
@@ -15,11 +20,6 @@ issue the following command::
 
         $ waf doxygen
 
-
-Note that in contrast to the standard doxygen module this module will only 
-generate documentation for shared- and static C/C++ libraries; i.e. 
-documentation for programs will not be generated.
-
 When needed the generation of documentation for a specific task can be
 skipped by adding the feature 'doxygen_skipme' to the task, as presented
 in the example below::
@@ -31,6 +31,24 @@ documentation results in::
 
         reports/doxygen/<task-name>
 
+Usage
+-----
+In order to use this waftool simply add it to the 'options' and 'configure' 
+functions of your main *waf* script as shown in the example below::
+
+	import waftools
+
+	def options(opt):
+		opt.load('doxygen', tooldir=waftools.location)
+
+	def configure(conf):
+		conf.load('doxygen')
+
+When configured as shown in the example above, **doxygen** will generate 
+source code documentation for all C/C++ tasks that have been defined in your
+*waf* build environment when issuing the 'doxygen' build command::
+
+	waf doxygen --targets=cprogram
 '''
 
 #TODO create index page containing links to generated components.

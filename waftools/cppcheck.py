@@ -112,9 +112,6 @@ functions of your main *waf* script as shown in the example below::
 
 	def configure(conf):
 		conf.load('cppcheck')
-		
-Note that example shown above assumes that the **cppcheck** waftool is located 
-in the sub directory named 'waftools'.
 
 When configured as shown in the example above, **cppcheck** will perform a 
 source code analysis on all C/C++ tasks that have been defined in your *waf* 
