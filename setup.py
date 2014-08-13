@@ -7,8 +7,8 @@ import waftools
 
 url = "https://bitbucket.org/Moo7/waftools"
 
-with open('README.txt') as file:
-	long_description = file.read()
+with open('README.txt') as f:
+	long_description = f.read()
 
 setup(
 	name = "waftools",

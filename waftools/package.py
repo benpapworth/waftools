@@ -6,7 +6,6 @@
 Summary
 -------
 
-
 Description
 -----------
 
@@ -15,6 +14,9 @@ Usage
 -----
 
 '''
+
+# TODO: add 'package' module documentation
+
 
 import shutil, os, sys, platform
 from waflib import Build, Context, Scripting, Logs

@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+# Michel Mooij, michel.mooij7@gmail.com
 
 
 '''
@@ -51,10 +52,10 @@ source code documentation for all C/C++ tasks that have been defined in your
 	waf doxygen --targets=cprogram
 '''
 
-#TODO create index page containing links to generated components.
+# TODO: create index page containing links to generated components.
 
 
-import os, subprocess, time, re, datetime
+import os, re, datetime
 from waflib.Build import BuildContext
 from waflib import Utils, TaskGen, Logs, Scripting, Context
 
@@ -66,7 +67,7 @@ def options(opt):
 	opt.add_option('--doxygen-config', dest='doxygen_config', default='resources/doxy.config',
 		action='store', help='complete path to doxygen configuration file')
 
- 
+
 def configure(conf):
 	conf.find_program('doxygen', var='DOXYGEN')
 	conf.env.DOXYGEN_OUTPUT = conf.options.doxygen_output
@@ -104,7 +105,7 @@ class DoxygenContext(BuildContext):
 					self._exec_doxygen(tgen, doxygen)
 
 	def _get_doxygen_conf(self, tgen):
-		'''Returns a dictionary containing input data for the doxygen
+		'''Returns a dictionary containing files data for the doxygen
 		source code documentation tool
 		
 		Returns None if no documentation should be generated for the task 
@@ -122,27 +123,27 @@ class DoxygenContext(BuildContext):
 		if not set(['c', 'cxx']) & set(features):
 			return None
 
-		# create list inputs files for the documentation (paths to files)
-		input = []
+		# create list of files for the documentation (paths to files)
+		files = []
 		sources = Utils.to_list(getattr(tgen, 'source', ''))
 		for source in sources:
 			src = './%s' % os.path.dirname(source.relpath()).replace('\\','/')
-			input.append(src)   
+			files.append(src)   
 
 		# create list of include paths
 		tgen_path = './%s' % tgen.path.relpath().replace('\\','/')
 		include_path = []
 		includes = tgen.to_incnodes(tgen.to_list(getattr(tgen, 'includes', [])) + tgen.env['INCLUDES'])
 		for include in includes:
-			# add include files from component itself to input
+			# add include files from component itself to files
 			inc = './%s' % include.relpath().replace('\\', '/')
 			if inc.startswith(tgen_path):
-				input.append(inc)
+				files.append(inc)
 			else:
 				include_path.append(inc)
 
 		# remove duplicates and replace '\' with '/'
-		input = list(set(input[:]))
+		files = list(set(files[:]))
 		include_path = list(set(include_path[:]))
 
 		# create a list of defines
@@ -158,7 +159,7 @@ class DoxygenContext(BuildContext):
 		conf['PROJECT_NUMBER']   = '"%s v%s / %s"' % (appname.upper(), version, now.strftime('%Y-%m-%d'))
 		conf['PROJECT_BRIEF']    = '"features: %s"' % ', '.join(features)
 		conf['OUTPUT_DIRECTORY'] = '%s/%s' % (self.env.DOXYGEN_OUTPUT, tgen.name)
-		conf['INPUT']            = ' '.join(input)
+		conf['INPUT']            = ' '.join(files)
 		conf['INCLUDE_PATH']     = ' '.join(include_path)
 		conf['PREDEFINED']       = ' '.join(defines)
 		return conf
