@@ -26,7 +26,7 @@ def build(bld):
 	if bld.cmd == 'install':
 		bld.cmd_and_log('python setup.py install', cwd=bld.path.abspath())
 
-		
+
 def dist(dst):
 	if dst.options.pypi:
 		dst.cmd_and_log('python setup.py sdist upload', cwd=dst.path.abspath())

@@ -18,9 +18,12 @@ MANIFEST
 
 dist/*
 build/*
-test/build/*
-test/reports/*
+
+examples/build/*
+examples/reports/*
+
 doc/_build/*
+
 waftools/__pycache__/*
 
 
