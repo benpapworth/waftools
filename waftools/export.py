@@ -63,13 +63,9 @@ exported files from formats not selected will not be removed.
 '''
 
 import os
-from waflib import Build, Logs, Scripting, Task, Context
+from waflib import Build, Logs, Scripting, Task, Context, Utils
 import waftools
-from waftools import makefile
-from waftools import codeblocks
-from waftools import eclipse
-from waftools import cmake
-from waftools import msdev
+from waftools import makefile, codeblocks, eclipse, cmake, msdev
 
 
 def options(opt):
@@ -101,59 +97,10 @@ def configure(conf):
 	msdev.configure(conf)
 
 
-def task_process(task):
-	'''Collects information of build tasks duing the build process.
-
-	:param task: A concrete task (e.g. compilation of a C source file
-				that is bing processed.
-	:type task: waflib.Task.TaskBase
-	'''
-	if not hasattr(task, 'cmd'):
-		return
-	task.cmd = [arg.replace('\\', '/') for arg in task.cmd]
-	gen = task.generator
-	bld = task.generator.bld
-	if gen not in bld.components:
-		bld.components[gen] = [task]
-	else:
-		bld.components[gen].append(task)
-
-
-def build_postfun(bld):
-	'''Will be called by the build environment after all tasks have been
-	processed.
-
-	Converts all collected information from task, task generator and build
-	context and converts most used info to an Export class. And finally 
-	triggers the actual export modules to start the export process on 
-	available C/C++ build tasks.
-	
-	:param task: A concrete task (e.g. compilation of a C source file
-				that is bing processed.
-	:type task: waflib.Task.TaskBase
-	'''
-	##TODO: REMOVE? bld.export = Export(bld)
-
-	if bld.options.clean:
-		codeblocks.cleanup(bld)
-		eclipse.cleanup(bld)
-		makefile.cleanup(bld)
-		cmake.cleanup(bld)
-		msdev.cleanup(bld)
-
-	else:
-		codeblocks.export(bld)
-		eclipse.export(bld)
-		makefile.export(bld)
-		cmake.export(bld)
-		msdev.export(bld)
-
-
 class ExportContext(Build.BuildContext):
 	'''Exports and converts tasks to external formats (e.g. makefiles, 
 	codeblocks, msdev, ...).
 	'''
-	fun = 'build'
 	cmd = 'export'
 
 	def execute(self, *k, **kw):
@@ -168,96 +115,49 @@ class ExportContext(Build.BuildContext):
 		Note that before executing the *export* command, a *clean* command
 		will forced by the *export* command. This is needed in order to
 		(re)start the task processing sequence.
-		
-		TODO:
-		This introduces way too much time since it requires a rebuild when 
-		exporting... HOWEVER for the makefile export it is needed since it
-		parses the command line result.		
 		'''
-		self.components = {}
+		self.restore()
+		if not self.all_envs:
+			self.load_envs()
+		self.recurse([self.run_dir])
+		self.pre_build()
 
-		old_exec = Task.TaskBase.exec_command
-		def exec_command(self, *k, **kw):
-			ret = old_exec(self, *k, **kw)
-			try:
-				self.cmd = k[0]
-			except IndexError:
-				pass
-			return ret
-		Task.TaskBase.exec_command = exec_command
-
-		old_process = Task.TaskBase.process
-		def process(task):
-			old_process(task)
-			task_process(task)
-		Task.TaskBase.process = process
-
-		def postfun(bld):
-			if not len(bld.components):
-				Logs.warn('export failed: no targets found!')
-			else:
-				build_postfun(bld)
-		super(ExportContext, self).add_post_fun(postfun)
-
-		Scripting.run_command('clean')
-		super(ExportContext, self).execute(*k, **kw)
-
-
-class Export(object):
-	'''Class that collects and converts information from the build 
-	context (e.g. convert back- into forward slashes).
-
-	:param bld: a *waf* build instance from the top level *wscript*.
-	:type bld: waflib.Build.BuildContext
-	'''
-	def __init__(self, bld):
-		self.version = waftools.version
-		self.wafversion = Context.WAFVERSION
+		for group in self.groups:
+			for tgen in group:
+				try:
+					f = tgen.post
+				except AttributeError:
+					pass
+				else:
+					f()
 		try:
-			self.appname = getattr(Context.g_module, Context.APPNAME)
-		except AttributeError:
-			self.appname = os.path.basename(bld.path.abspath())
-		try:
-			self.appversion = getattr(Context.g_module, Context.VERSION)
-		except AttributeError:
-			self.appversion = ""
-		self.prefix = bld.env.PREFIX		
-		try:
-			self.top = os.path.abspath(getattr(Context.g_module, Context.TOP))
-		except AttributeError:
-			self.top = str(bld.path.abspath())
-		try:
-			self.out = os.path.abspath(getattr(Context.g_module, Context.OUT))
-		except AttributeError:
-			self.out = os.sep.join([self.top, 'build'])
+			self.get_tgen_by_name('')
+		except Exception:
+			pass
+		
+		self.makefile = True
+		if self.options.clean:
+			self.do_clean()
+		else:
+			self.do_export()
+		self.timer = Utils.Timer()
 
-		self.bindir = bld.env.BINDIR
-		self.libdir = bld.env.LIBDIR
-		ar = bld.env.AR
-		if isinstance(ar, list):
-			ar = ar[0]
-		self.ar = ar
-		try:
-			self.cc = bld.env.CC[0]
-		except IndexError:
-			self.cc = 'gcc'
-		try:
-			self.cxx = bld.env.CXX[0]
-		except IndexError:
-			self.cxx = 'g++'
-		self.rpath = ' '.join(bld.env.RPATH)
-		self.cflags = ' '.join(bld.env.CFLAGS)
-		self.cxxflags = ' '.join(bld.env.CXXFLAGS)
-		self.defines = ' '.join(bld.env.DEFINES)
-		self.dest_cpu = bld.env.DEST_CPU
-		self.dest_os = bld.env.DEST_OS
-		self._clean_os_separators()
+	def do_export(self):
+		'''Export waf C/C++ build tasks to selected formats (e.g. make).
+		'''
+		codeblocks.export(self)
+		eclipse.export(self)
+		makefile.export(self)
+		cmake.export(self)
+		msdev.export(self)
 
-	def _clean_os_separators(self):
-		'''Replace all backward stabbing slashes with forward ones.'''
-		for attr in self.__dict__:
-			val = getattr(self, attr)
-			if isinstance(val, str):
-				val = val.replace('\\', '/')
-				setattr(self, attr, val)
+	def do_clean(self):
+		'''Delete exported C/C++ build task for the selected formats.
+		'''
+		codeblocks.cleanup(self)
+		eclipse.cleanup(self)
+		makefile.cleanup(self)
+		cmake.cleanup(self)
+		msdev.cleanup(self)
+
 
