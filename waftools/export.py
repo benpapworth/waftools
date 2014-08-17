@@ -132,7 +132,7 @@ def build_postfun(bld):
 				that is bing processed.
 	:type task: waflib.Task.TaskBase
 	'''
-	bld.export = Export(bld)
+	##TODO: REMOVE? bld.export = Export(bld)
 
 	if bld.options.clean:
 		codeblocks.cleanup(bld)

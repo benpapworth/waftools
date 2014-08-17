@@ -1,11 +1,20 @@
 *.pyc
 *~
 *.tar.gz
-
+.lock-waf*
 MANIFEST
+dist/*
+build/*
+doc/_build/*
+waftools/__pycache__/*
+playground/build/*
+playground/reports/*
+
+
 .project
 .cproject
 .pydevproject
+**/.settings/*
 
 *.vcproj
 *.sln
@@ -13,17 +22,11 @@ MANIFEST
 *.ncb
 *.suo
 
-.lock-waf*
-**/.settings/*
+*.cbp
+*.workspace
 
-dist/*
-build/*
+*.mk
+Makefile
 
-examples/build/*
-examples/reports/*
-
-doc/_build/*
-
-waftools/__pycache__/*
-
+CMakeLists.txt
 
