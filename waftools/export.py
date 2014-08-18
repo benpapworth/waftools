@@ -62,9 +62,8 @@ Note that only the formats that have been selected will be cleaned; i.e.
 exported files from formats not selected will not be removed.
 '''
 
-import os
-from waflib import Build, Logs, Scripting, Task, Context, Utils
-import waftools
+
+from waflib import Build, Utils
 from waftools import makefile, codeblocks, eclipse, cmake, msdev
 
 

@@ -94,7 +94,7 @@ import uuid
 import shutil
 import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
-from waflib import Utils, Node, Logs, Errors, Context
+from waflib import Utils, Logs, Errors, Context
 from waflib.Build import BuildContext
 
 def options(opt):

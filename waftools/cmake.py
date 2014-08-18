@@ -61,7 +61,7 @@ All exported *cmake* build files can be removed in 'one go' using the *cmake*
 
 
 from waflib.Build import BuildContext
-from waflib import Utils, Logs, Node, Context
+from waflib import Utils, Logs, Context
 
 
 def options(opt):
