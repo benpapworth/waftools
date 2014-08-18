@@ -20,5 +20,7 @@ v0.1.4, 2014-xx-xx -- Added 'tree' module to package documentation.
                       Added location variable to waftools package.
                       Improved speed when exporting to other build systems (e.g. make, eclipse, cmake, ...) when
                       using the 'export' module.
-
+                      Issue #2, improved installation path of package data files (e.g. msdev.sln). 
+                      Fixed exporting to msdev, cmake, codeblocks on Windows.
+                      
 
