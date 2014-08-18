@@ -572,7 +572,7 @@ class CBProject(CodeBlocks):
 
 	def _get_genlist(self, gen, name):
 		lst = Utils.to_list(getattr(gen, name, []))
-		lst = [l.path_from(gen.path) if isinstance(l, Node.Nod3) else l for l in lst]
+		lst = [str(l.path_from(gen.path)) if hasattr(l, 'path_from') else l for l in lst]
 		return [l.replace('\\', '/') for l in lst]
 
 	def _get_compiler_options(self):

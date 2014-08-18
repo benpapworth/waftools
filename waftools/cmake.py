@@ -290,6 +290,6 @@ class CMake(object):
 
 	def _get_genlist(self, tgen, name):
 		lst = Utils.to_list(getattr(tgen, name, []))
-		lst = [l.path_from(tgen.path) if isinstance(l, Node.Nod3) else l for l in lst]
+		lst = [str(l.path_from(tgen.path)) if hasattr(l, 'path_from') else l for l in lst]
 		return [l.replace('\\', '/') for l in lst]
 		
