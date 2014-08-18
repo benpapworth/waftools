@@ -444,9 +444,7 @@ def configure(conf):
 
 
 class MakeFileContext(BuildContext):
-	'''Build context for exporting and deletion of *make* specific build
-	build files.
-	'''
+	'''export C/C++ tasks to (GNU) make files.'''
 	cmd = 'makefile'
 
 	def execute(self):

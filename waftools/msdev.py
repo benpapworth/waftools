@@ -118,9 +118,7 @@ def configure(conf):
 
 
 class MsDevContext(BuildContext):
-	'''Build context for exporting and deletion of *msdev* specific build
-	build files.
-	'''
+	'''export C/C++ tasks to MS Visual Studio projects and solutions.'''
 	cmd = 'msdev'
 
 	def execute(self):

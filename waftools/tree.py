@@ -87,8 +87,7 @@ def options(opt):
 
 
 class DependsContext(Build.BuildContext):
-	'''Derived build context class for displaying dependencies between
-	task generators.'''
+	'''display dependencies between tasks in a tree like manner.'''
 	cmd = 'tree'
 	fun = Scripting.default_cmd
 

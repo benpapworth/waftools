@@ -16,7 +16,7 @@ v0.1.3, 2014-07-21 -- Changed license to MIT.
                       make).
                       Improved Eclipse export for Win32/MinGW.
 
-v0.1.4, 2014-xx-xx -- Added 'tree' module to package documentation.
+v0.1.4, 2014-08-18 -- Added 'tree' module to package documentation.
                       Added location variable to waftools package.
                       Improved speed when exporting to other build systems (e.g. make, eclipse, cmake, ...) when
                       using the 'export' module.

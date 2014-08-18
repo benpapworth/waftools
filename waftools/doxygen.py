@@ -75,7 +75,7 @@ def configure(conf):
 
 
 class DoxygenContext(BuildContext):
-	'''Base class for generating source code documentation using doxygen.'''
+	'''generates C/C++ source code documentation using doxygen.'''
 	cmd = 'doxygen'
 	fun = Scripting.default_cmd
 

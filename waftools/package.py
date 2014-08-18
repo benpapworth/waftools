@@ -61,6 +61,7 @@ def configure(conf):
 
 
 class PackageContext(Build.InstallContext):
+	'''creates installers (e.g. NSIS) for end users.'''
 	cmd = 'package'
 	fun = 'build'
 

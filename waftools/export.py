@@ -97,9 +97,8 @@ def configure(conf):
 
 
 class ExportContext(Build.BuildContext):
-	'''Exports and converts tasks to external formats (e.g. makefiles, 
-	codeblocks, msdev, ...).
-	'''
+	'''exports and converts C/C++ tasks to external formats (e.g. makefiles, 
+	codeblocks, msdev, ...).'''
 	cmd = 'export'
 
 	def execute(self, *k, **kw):

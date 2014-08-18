@@ -27,7 +27,7 @@ removed using the *clean* command, as shown in the example below::
         $ waf eclipse --clean
 '''
 
-# TODO: add detailed description for module
+# TODO: add detailed description for 'eclipse' module
 
 
 import sys
@@ -62,9 +62,7 @@ def configure(conf):
 
 
 class EclipseContext(BuildContext):
-	'''Build context for exporting and deletion of *eclipse* specific build
-	build files.
-	'''
+	'''export C/C++ tasks to Eclipse CDT projects.'''
 	cmd = 'eclipse'
 
 	def execute(self):

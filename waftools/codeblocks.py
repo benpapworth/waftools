@@ -144,9 +144,7 @@ def configure(conf):
 
 
 class CodeblocksContext(BuildContext):
-	'''Build context for exporting and deletion of *codeblocks* specific build
-	build files.
-	'''
+	'''export C/C++ tasks to Code::Blocks projects and workspaces.'''
 	cmd = 'codeblocks'
 
 	def execute(self):

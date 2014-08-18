@@ -85,9 +85,7 @@ def configure(conf):
 
 
 class CMakeContext(BuildContext):
-	'''Build context for exporting and deletion of *cmake* specific build
-	build files.
-	'''
+	'''export C/C++ tasks to CMake.'''
 	cmd = 'cmake'
 
 	def execute(self):
