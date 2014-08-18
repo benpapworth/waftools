@@ -12,8 +12,8 @@ top = '.'
 out = 'build'
 prefix = 'output'
 
-VERSION = '0.6.2'
-APPNAME = 'waftest'
+VERSION = waftools.version
+APPNAME = 'waftools-test'
 
 POKY = {}
 if 'linux' in sys.platform:
