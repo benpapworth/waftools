@@ -27,6 +27,9 @@ removed using the *clean* command, as shown in the example below::
         $ waf eclipse --clean
 '''
 
+# TODO: add detailed description for module
+
+
 import sys
 import os
 import re
