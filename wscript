@@ -29,7 +29,7 @@ def build(bld):
 
 def dist(dst):
 	if dst.options.pypi:
-		dst.cmd_and_log('python setup.py sdist upload', cwd=dst.path.abspath())
+		dst.cmd_and_log('python setup.py sdist --formats=gztar upload', cwd=dst.path.abspath())
 	dst.algo = 'tar.gz'
 	dst.excl = '**/*~ **/*.pyc **/__pycache__/** \
 		**/.lock-waf_* build/** **/*.tar.gz \
