@@ -25,6 +25,6 @@ v0.1.4, 2014-08-18 -- Added 'tree' module to package documentation.
 
 v0.1.5, 2014-xx-xx -- Corrected download url in setup.py.
                       Always use tar.gz format for released packages.
-					  Extracted 'options' and 'configure' (containing GNU CC stuff) to separate 'gnucc' waftools module
-					  and updated playground/wscript accordingly.
+                      Extracted 'options' and 'configure' (containing GNU CC stuff) to separate 'gnucc' waftools module
+                      and updated playground/wscript accordingly.
 
