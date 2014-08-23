@@ -5,9 +5,22 @@
 '''
 Summary
 -------
+Creates archives (*.tar.gz) and/or installers (e.g. NSIS) for end users 
+containing all build results (i.e. artifacts).
 
 Description
 -----------
+Using this tool, it is possible to create archives and installers containing
+all files, libraries and binaries that are the results of the build and 
+install process. The structure and prefix will be the same as has been defined
+in the *waf* build environment.
+At present the following package formats are supported:
+- windows installers using NSIS 
+- compressed tar.bz2 archives
+- list; displays all files (including complete path) to be packaged
+
+When selecting NSIS as packaging format, a *.nsi* script may be provided, if not 
+a default *.nsi* script will be generated.
 
 
 Usage
