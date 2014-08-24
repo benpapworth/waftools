@@ -25,10 +25,35 @@ a default *.nsi* script will be generated.
 
 Usage
 -----
+For windows targets platforms installers can be created using the NullSoft
+Installable Scripting system (*NSIS*). If no user defined .nsi script is 
+provided a default one will be created in the top level directory of the 
+build system.
+
+The code snippet below presents a *wscript* that provides support for
+creating installers using **NSIS**::
+
+	import waftools
+
+	def options(opt):
+		opt.load('compiler_c')
+		opt.load('package', tooldir=waftools.location)
+	
+	def configure(conf):
+		conf.load('compiler_c')
+		conf.load('package')
+
+	def build(bld):
+		bld.program(target='hello', source='hello.c')
+
+Using this code snippet, a Windows installer can be created using
+the following command::
+
+	waf package --formats=nsis
 
 '''
 
-# TODO: add 'package' module documentation
+# TODO: extend and improve 'package' module documentation
 
 
 import shutil, os, sys, platform

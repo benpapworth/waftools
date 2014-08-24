@@ -7,7 +7,7 @@ Summary
 -------
 Exports and converts *waf* project data, for C/C++ programs, static- and shared
 libraries, into **Microsoft Visual Studio**, also known as **msdev**, 
-project files (.vcproj) and solution (*.sln) files.
+project files (.vcproj) and solution (.sln) files.
 
 **Microsoft Visual Studio** is a mature and stable integrated development 
 environment for, amongst others, the C and C++ programming language. A free

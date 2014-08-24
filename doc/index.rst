@@ -6,7 +6,7 @@
 
 Waftools 0.1.5 documentation
 ============================
-Welcome! This is the documentation for the *waftools* package, last updated Aug 23rd 2014.
+Welcome! This is the documentation for the *waftools* package, last updated Aug 23\ :sup:`rd`\  2014.
 
 
 Overview
@@ -23,9 +23,9 @@ wafbook_ for a detailed description of the **waf** meta build system structure
 and usage.
 
 The *waftools* package provides a collection of *tools* focused on development
-projects using the C/C++ programming languages. Once these tools can be imported 
-and used from any *wscript* build file on your system. Following provides a 
-non-exhausting list of functions provided by this package:
+projects using the C/C++ programming languages. When installed these tools can
+be imported and used from any *wscript* file of a concrete *waf* build system.
+Following provides a non-exhausting list of functions provided by this package:
 
 - C/C++ source code checking using **cppcheck** (including *html* reports)
 - Create C/C++ documentation using **DoxyGen**
@@ -38,32 +38,31 @@ non-exhausting list of functions provided by this package:
 Source code checking
 --------------------
 C/C++ source code can be checked using the **cppcheck** static source analysis 
-tool. Results of source checked by **cppcheck** will be presented in a HTML
-based report, containing a single index file containing a summary of defects 
-containing links to detailed reports, one for each component (i.e. program, 
-static- or shared library):
+tool. Results of sources checked by **cppcheck** will be presented in a HTML
+based report. The report contains a single index file containing a summary of 
+defects containing links to detailed reports, one for each component (i.e. C/C++
+program, static- or shared library):
 
 .. figure:: cppcheck_summary.png
 	:align: center
 	
 	summary of defects found.
 	
-Per component a detailed report contains the defects found stating the
-defect type, severity and line number on which the defect has been detected:
+For each component a detailed report contains the defects found stating the
+defect type, its severity and line number on which the defect has been detected:
 
 .. figure:: cppcheck_detailed.png
 	:align: center
 
 	defects per file.
 
-Clicking the line number will show the source code with a colorfull marker for
-each defect detected:
+Clicking on the line number will show the source code with a colorfull marker for
+each defect that has been detected:
 
 .. figure:: cppcheck_source.png
 	:align: center
 	
 	source code with highlighted defects.
-
 
 The code snippet below presents a *wscript* example using the *cppcheck* source
 code analysis tool::
@@ -84,12 +83,12 @@ code analysis tool::
 Using this code snippet, source code can be inspected and HTML reports can 
 be generated using the following command::
 
-	waf clean
-	waf build --cppcheck --cppcheck-err-resume
+	waf clean build --cppcheck --cppcheck-err-resume
 
-Note that a (re)build is required in order to perform the source code 
-analysis. Once completed the HTML report can be found and at: 
-**./reports/cppcheck/index.html**
+.. note::
+	A (re)build is required in order to perform the source code analysis.
+
+Once completed the HTML report can be found and at: **./reports/cppcheck/index.html**
 
 
 Generating source code documentation
@@ -118,6 +117,9 @@ Using this code snippet, source code documentation can be generated using
 the following command::
 
 	waf doxygen
+
+For more information please refer to the detailed description of the 
+:ref:`doxygen <mod_doxygen>` module.
 
 
 Export to integrated development environments
@@ -161,7 +163,34 @@ For more information please refer to the detailed description of the
 
 Packaging and installers
 ------------------------
-TODO
+For windows targets platforms installers can be created using the NullSoft
+Installable Scripting system (*NSIS*). If no user defined .nsi script is 
+provided a default one will be created in the top level directory of the 
+build system.
+
+The code snippet below presents a *wscript* that provides support for
+creating installers using **NSIS**::
+
+	import waftools
+
+	def options(opt):
+		opt.load('compiler_c')
+		opt.load('package', tooldir=waftools.location)
+	
+	def configure(conf):
+		conf.load('compiler_c')
+		conf.load('package')
+
+	def build(bld):
+		bld.program(target='hello', source='hello.c')
+
+Using this code snippet, a Windows installer can be created using
+the following command::
+
+	waf package --formats=nsis
+
+For more information please refer to the detailed description of the 
+:ref:`package <mod_package>` module.
 
 
 Export to other build systems
@@ -229,4 +258,14 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+Credits
+=======
+The report generations part of the *cppcheck* is based on a script (of which 
+the author is unknown to me) as provided by *cppcheck* itself. Some of the 
+other modules (e.g. **Eclipse**, **Makefile**) are originally based on existing
+tools and example as provided by Thomas Nagy, the author of the *waf* meta 
+build system.
+
 
