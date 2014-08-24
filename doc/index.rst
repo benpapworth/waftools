@@ -13,18 +13,17 @@ Overview
 ========
 The *waftools* package contains a collection of tools for the waf_ build environment.
 
-The **waf** framework provides a meta build system allowing users to create
+The waf_ framework provides a meta build system allowing users to create
 concrete build systems. Out of the box it provides support for building and 
 installation of programs for a myriad of programming languages (C, C++, Java, 
 Python, Fortran, Lua, ...), when needed new functions (e.g. source code 
-checking) can be added to a concrete build solution using **waf** *tools* 
-which can be imported and used in *wscript* build files. See the 
-wafbook_ for a detailed description of the **waf** meta build system structure
-and usage.
+checking) can be added to a concrete build solution using *tools* which can be
+imported and used in *wscript* build files. See the wafbook_ for a detailed 
+description of the waf_ meta build system structure and usage.
 
 The *waftools* package provides a collection of *tools* focused on development
 projects using the C/C++ programming languages. When installed these tools can
-be imported and used from any *wscript* file of a concrete *waf* build system.
+be imported and used from any *wscript* file of a concrete waf_ build system.
 Following provides a non-exhausting list of functions provided by this package:
 
 - C/C++ source code checking using **CppCheck** (including *HTML* reports)
@@ -64,7 +63,7 @@ each defect that has been detected:
 	
 	source code with highlighted defects.
 
-The code snippet below presents a *wscript* example using the *CppCheck* source
+The code snippet below presents a *wscript* example using the *cppcheck* source
 code analysis tool::
 
 	import waftools
@@ -97,7 +96,7 @@ Source code documentation for C/C++ build tasks can be created using
 **DoxyGen**. Once generated the documentation can be found at: 
 **./reports/doxygen/**.
 
-The code snippet below presents a *wscript* example using the **DoxyGen**
+The code snippet below presents a *wscript* example using the *doxygen*
 source code documentation tool::
 
 	import waftools
@@ -197,7 +196,7 @@ Export to other build systems
 -----------------------------
 When needed C/C++ build tasks (programs, static or shared libraries) can be
 exported to other build system formats (e.g. make, cmake). When doing so the 
-definitions and settings as defined within the *waf* build environment will be
+definitions and settings as defined within the waf_ build environment will be
 exported to those foreign build formats with the intend of keeping the same 
 structure and behavior as defined within the waf build system as much as 
 possible. Generated makefiles, for instance, will build out of tree and will 
@@ -237,9 +236,6 @@ or dependency to the waf build system.
 For more information please refer to the detailed description of the 
 :ref:`cmake <mod_cmake>` and :ref:`makefile <mod_makefile>` modules.
 
-.. _waf: https://code.google.com/p/waf/
-.. _wafbook: http://docs.waf.googlecode.com/git/book_17/single.html
-
 
 Detailed description
 ====================
@@ -262,10 +258,13 @@ Indices and tables
 
 Credits
 =======
-The report generations part of the *cppcheck* is based on a script (of which 
-the author is unknown to me) as provided by *cppcheck* itself. Some of the 
-other modules (e.g. **Eclipse**, **Makefile**) are originally based on existing
-tools and example as provided by Thomas Nagy, the author of the *waf* meta 
-build system.
+The report generations part of the *cppcheck* tool is based on a script (of 
+which the author is unknown to me) as provided by **CppCheck** itself. Some of 
+the other modules (e.g. **Eclipse**, **Makefile**) are originally based on 
+existing tools and examples as provided by Thomas Nagy, the author of the waf_
+meta build system.
 
+
+.. _waf: https://code.google.com/p/waf/
+.. _wafbook: http://docs.waf.googlecode.com/git/book_17/single.html
 
