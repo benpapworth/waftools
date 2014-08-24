@@ -6,7 +6,7 @@
 
 Waftools 0.1.5 documentation
 ============================
-Welcome! This is the documentation for the *waftools* package, last updated Aug 23\ :sup:`rd`\  2014.
+Welcome! This is the documentation for the *waftools* package, last updated Aug 24\ :sup:`th`\  2014.
 
 
 Overview
@@ -27,7 +27,7 @@ projects using the C/C++ programming languages. When installed these tools can
 be imported and used from any *wscript* file of a concrete *waf* build system.
 Following provides a non-exhausting list of functions provided by this package:
 
-- C/C++ source code checking using **cppcheck** (including *html* reports)
+- C/C++ source code checking using **CppCheck** (including *HTML* reports)
 - Create C/C++ documentation using **DoxyGen**
 - C/C++ export to IDE's (e.g. **Code::Blocks**, **Eclipse**, **Visual Studio**)
 - Create installers using **NSIS**
@@ -37,8 +37,8 @@ Following provides a non-exhausting list of functions provided by this package:
 
 Source code checking
 --------------------
-C/C++ source code can be checked using the **cppcheck** static source analysis 
-tool. Results of sources checked by **cppcheck** will be presented in a HTML
+C/C++ source code can be checked using the **CppCheck** static source analysis 
+tool. Results of sources checked by **CppCheck** will be presented in a HTML
 based report. The report contains a single index file containing a summary of 
 defects containing links to detailed reports, one for each component (i.e. C/C++
 program, static- or shared library):
@@ -64,7 +64,7 @@ each defect that has been detected:
 	
 	source code with highlighted defects.
 
-The code snippet below presents a *wscript* example using the *cppcheck* source
+The code snippet below presents a *wscript* example using the *CppCheck* source
 code analysis tool::
 
 	import waftools
@@ -94,10 +94,10 @@ Once completed the HTML report can be found and at: **./reports/cppcheck/index.h
 Generating source code documentation
 ------------------------------------
 Source code documentation for C/C++ build tasks can be created using 
-*DoxyGen*. Once generated the documentation can be found at: 
+**DoxyGen**. Once generated the documentation can be found at: 
 **./reports/doxygen/**.
 
-The code snippet below presents a *wscript* example using the *doxygen* 
+The code snippet below presents a *wscript* example using the **DoxyGen**
 source code documentation tool::
 
 	import waftools
@@ -164,7 +164,7 @@ For more information please refer to the detailed description of the
 Packaging and installers
 ------------------------
 For windows targets platforms installers can be created using the NullSoft
-Installable Scripting system (*NSIS*). If no user defined .nsi script is 
+Installable Scripting system (**NSIS**). If no user defined .nsi script is 
 provided a default one will be created in the top level directory of the 
 build system.
 
