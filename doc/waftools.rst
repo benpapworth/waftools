@@ -3,6 +3,9 @@ Package waftools
 .. automodule:: waftools.__init__
     :members:
 
+
+.. _mod_cmake:
+
 Module :mod:`cmake`
 -------------------
 
@@ -10,6 +13,9 @@ Module :mod:`cmake`
     :members:
     :undoc-members:
     :show-inheritance:
+
+
+.. _mod_codeblocks:
 
 Module :mod:`codeblocks`
 ------------------------
@@ -19,6 +25,9 @@ Module :mod:`codeblocks`
     :undoc-members:
     :show-inheritance:
 
+
+.. _mod_cppcheck:
+
 Module :mod:`cppcheck`
 ----------------------
 
@@ -27,6 +36,9 @@ Module :mod:`cppcheck`
     :undoc-members:
     :show-inheritance:
 
+
+.. _mod_doxygen:
+
 Module :mod:`doxygen`
 ---------------------
 
@@ -34,7 +46,10 @@ Module :mod:`doxygen`
     :members:
     :undoc-members:
     :show-inheritance:
-	
+
+
+.. _mod_eclipse:
+
 Module :mod:`eclipse`
 ---------------------
 
@@ -51,6 +66,8 @@ Module :mod:`export`
     :undoc-members:
     :show-inheritance:
 
+.. _mod_makefile:
+
 Module :mod:`makefile`
 ----------------------
 
@@ -58,6 +75,9 @@ Module :mod:`makefile`
     :members:
     :undoc-members:
     :show-inheritance:
+
+
+.. _mod_msdev:
 
 Module :mod:`msdev`
 -------------------
@@ -67,6 +87,9 @@ Module :mod:`msdev`
     :undoc-members:
     :show-inheritance:
 
+
+.. _mod_package:
+
 Module :mod:`package`
 ---------------------
 
@@ -74,7 +97,10 @@ Module :mod:`package`
     :members:
     :undoc-members:
     :show-inheritance:
-	
+
+
+.. _mod_tree:
+
 Module :mod:`tree`
 ---------------------
 

@@ -5,17 +5,55 @@
 '''
 Summary
 -------
+Creates archives (*.tar.gz) and/or installers (e.g. NSIS) for end users 
+containing all build results (i.e. artifacts).
 
 Description
 -----------
+Using this tool, it is possible to create archives and installers containing
+all files, libraries and binaries that are the results of the build and 
+install process. The structure and prefix will be the same as has been defined
+in the *waf* build environment.
+At present the following package formats are supported:
+- windows installers using NSIS 
+- compressed tar.bz2 archives
+- list; displays all files (including complete path) to be packaged
+
+When selecting NSIS as packaging format, a *.nsi* script may be provided, if not 
+a default *.nsi* script will be generated.
 
 
 Usage
 -----
+For windows targets platforms installers can be created using the NullSoft
+Installable Scripting system (*NSIS*). If no user defined .nsi script is 
+provided a default one will be created in the top level directory of the 
+build system.
+
+The code snippet below presents a *wscript* that provides support for
+creating installers using **NSIS**::
+
+	import waftools
+
+	def options(opt):
+		opt.load('compiler_c')
+		opt.load('package', tooldir=waftools.location)
+	
+	def configure(conf):
+		conf.load('compiler_c')
+		conf.load('package')
+
+	def build(bld):
+		bld.program(target='hello', source='hello.c')
+
+Using this code snippet, a Windows installer can be created using
+the following command::
+
+	waf package --formats=nsis
 
 '''
 
-# TODO: add 'package' module documentation
+# TODO: extend and improve 'package' module documentation
 
 
 import shutil, os, sys, platform

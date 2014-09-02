@@ -2,6 +2,9 @@ Summary
 -------
 This package contains a collection of tools for the waf_ build environment.
 
+.. note::
+	the complete package documentation can be found at: 
+	http://pythonhosted.org/waftools/
 
 Description
 -----------
