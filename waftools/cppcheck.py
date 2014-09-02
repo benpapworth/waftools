@@ -402,7 +402,7 @@ class Cppcheck(object):
 				td = ElementTree.SubElement(tr, 'td')
 				a = ElementTree.SubElement(td, 'a')
 				a.text = str(name)
-				a.set('href', index.replace('\\', '/'))
+				a.set('href', 'file:///%s' % index.replace('\\', '/'))
 				td = ElementTree.SubElement(tr, 'td')
 				td.text = ','.join(set(severities))
 				if 'error' in severities:
@@ -491,7 +491,7 @@ class CppcheckGen(Cppcheck):
 				h1.text = 'cppcheck report - %s' % (name)
 			if div.get('id') == 'menu':
 				a = div.find('a')
-				a.set('href', home.replace('\\', '/'))
+				a.set('href', 'file:///%s' % home.replace('\\', '/'))
 			if div.get('id') == 'content':
 				content = div
 				self._create_html_table(content, files)
@@ -644,9 +644,12 @@ class CppcheckGen(Cppcheck):
 		name = self.taskgen.get_name()
 		
 		# create the path to the top level HTML index page of the report
-		home = '%s/%s/index.html' % (bld.path.abspath() ,self.root)
+		home = '%s/%s/index.html' % (bld.path.abspath() , self.root)
 		home = home.replace('\\', '/')
-		
+
+		defects_list = '%s/%s/%s/index.html' % (bld.path.abspath() , self.root, os.path.dirname(fname))
+		defects_list = defects_list.replace('\\', '/')
+
 		root = ElementTree.fromstring(CPPCHECK_HTML_FILE)
 		title = root.find('head/title')
 		title.text = 'cppcheck - report - %s' % (name)
@@ -663,11 +666,11 @@ class CppcheckGen(Cppcheck):
 				
 			if div.get('id') == 'menu':
 				a = div.find('a')
-				a.set('href', home.replace('\\', '/'))
+				a.set('href', 'file:///%s' % home.replace('\\', '/'))
 				a = ElementTree.SubElement(div, 'a')
 				a.text = 'Defect list'
-				a.set('href', 'index.html')
-				
+				a.set('href', 'file:///%s' % defects_list)
+
 			if div.get('id') == 'content':
 				content = div
 				srcnode = bld.root.find_node(source)
@@ -675,7 +678,7 @@ class CppcheckGen(Cppcheck):
 				formatter = CppcheckHtmlFormatter(linenos=True, style='colorful', hl_lines=hl_lines, lineanchors='line')
 				formatter.errors = [e for e in errors if getattr(e, 'line')]
 				css_style_defs = formatter.get_style_defs('.highlight')
-				
+
 				# TODO: TEMP fix for pygments when using python3
 				# only support C/C++ highlighting
 				if sys.version_info[0] > 2:
@@ -707,7 +710,7 @@ class CppcheckGen(Cppcheck):
 		for name, val in files.items():
 			f = '%s/%s' % (bld.path.abspath(), val['htmlfile'])
 			f = f.replace('\\', '/')
-			s = '<tr><td colspan="4"><a href="%s">%s</a></td></tr>\n' % (f, name)
+			s = '<tr><td colspan="4"><a href="file:///%s">%s</a></td></tr>\n' % (f, name)
 			s = minidom.parseString(s).toprettyxml(indent="\t")
 			row = ElementTree.fromstring(s)
 			table.append(row)
@@ -720,7 +723,7 @@ class CppcheckGen(Cppcheck):
 					attr = ''
 					if e.severity == 'error':
 						attr = 'class="error"'
-					s = '<tr><td><a href="%s#line-%s">%s</a></td>' % (f, e.line, e.line)
+					s = '<tr><td><a href="file:///%s#line-%s">%s</a></td>' % (f, e.line, e.line)
 					s+= '<td>%s</td><td>%s</td><td %s>%s</td></tr>\n' % (e.id, e.severity, attr, e.msg)
 				s = minidom.parseString(s).toprettyxml(indent="\t")
 				row = ElementTree.fromstring(s)

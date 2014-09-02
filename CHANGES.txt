@@ -23,8 +23,10 @@ v0.1.4, 2014-08-18 -- Added 'tree' module to package documentation.
                       Issue #2, improved installation path of package data files (e.g. msdev.sln). 
                       Fixed exporting to msdev, cmake, codeblocks on Windows.
 
-v0.1.5, 2014-xx-xx -- Corrected download url in setup.py.
+v0.1.5, 2014-08-24 -- Corrected download url in setup.py.
                       Always use tar.gz format for released packages.
                       Extracted 'options' and 'configure' (containing GNU CC stuff) to separate 'gnucc' waftools module
                       and updated playground/wscript accordingly.
 
+v0.1.6, 2014-09-02 -- Makefile export; fixed creation of relative source paths.
+                      CppCheck reports; use 'file:///' as prefix in 'href'.
