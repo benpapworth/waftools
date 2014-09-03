@@ -28,5 +28,9 @@ v0.1.5, 2014-08-24 -- Corrected download url in setup.py.
                       Extracted 'options' and 'configure' (containing GNU CC stuff) to separate 'gnucc' waftools module
                       and updated playground/wscript accordingly.
 
-v0.1.6, 2014-09-02 -- Makefile export; fixed creation of relative source paths.
-                      CppCheck reports; use 'file:///' as prefix in 'href'.
+v0.1.6, 2014-09-03 -- Makefiles export:
+                      - fixed creation of relative source paths.
+                      - fixed problem when using underscores in directory or task names.
+                      CppCheck reports:
+                      - fixed broken hyperlinks when using FireFox (use 'file:///' as prefix in 'href').
+                      
