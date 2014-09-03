@@ -4,9 +4,9 @@
    contain the root `toctree` directive.
 
 
-Waftools 0.1.5 documentation
+Waftools 0.1.6 documentation
 ============================
-Welcome! This is the documentation for the *waftools* package, last updated Aug 24\ :sup:`th`\  2014.
+Welcome! This is the documentation for the *waftools* package, last updated Sept 3\ :sup:`rd`\  2014.
 
 
 Overview
@@ -44,6 +44,7 @@ program, static- or shared library):
 
 .. figure:: cppcheck_summary.png
 	:align: center
+	:scale: 75 %
 	
 	summary of defects found.
 	
@@ -52,6 +53,7 @@ defect type, its severity and line number on which the defect has been detected:
 
 .. figure:: cppcheck_detailed.png
 	:align: center
+	:scale: 75 %
 
 	defects per file.
 
@@ -60,6 +62,7 @@ each defect that has been detected:
 
 .. figure:: cppcheck_source.png
 	:align: center
+	:scale: 75 %
 	
 	source code with highlighted defects.
 
