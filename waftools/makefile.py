@@ -24,7 +24,7 @@ exported from the test directory::
 
 		#------------------------------------------------------------------------------
 		# WAFTOOLS generated makefile
-		# version: 0.1.2
+		# version: 0.1.5
 		# waf: 1.7.15
 		#------------------------------------------------------------------------------
 
@@ -42,74 +42,77 @@ exported from the test directory::
 		# token for separating list elements:
 		lsep:=,
 
-		export APPNAME:=ChiHuaHuaTest
-		export APPVERSION:=0.6.2
+		# token for joining command and component names (e.g. 'build.hello')
+		csep:=.
+
+		export APPNAME:=waftools-test
+		export APPVERSION:=0.1.5
 		export PREFIX:=$(CURDIR)/output
 		export TOP:=$(CURDIR)
 		export OUT:=$(TOP)/build
-		export AR:=D:/usr/mingw/bin/ar.exe
-		export CC:=D:/usr/mingw/bin/gcc.exe
-		export CXX:=D:/usr/mingw/bin/g++.exe
-		export CFLAGS:=-Wall -ggdb -g
-		export CXXFLAGS:=-Wall -ggdb -g
+		export AR:=/usr/bin/ar
+		export CC:=/usr/lib64/ccache/gcc
+		export CXX:=/usr/lib64/ccache/g++
+		export CFLAGS:=-Wall -g -ggdb
+		export CXXFLAGS:=-Wall -g -ggdb
 		export DEFINES:=
 		export RPATH:=
 		export BINDIR:=$(PREFIX)/bin
-		export LIBDIR:=$(PREFIX)/bin
+		export LIBDIR:=$(PREFIX)/lib
 
 		SEARCHPATH=components/
 		SEARCHFILE=Makefile
 
 		#------------------------------------------------------------------------------
 		# list of unique logical module names;
-		modules= \\
-			cxxstlib \\
-			ciambad \\
-			cstlib \\
-			cxxshlib \\
-			cprogram \\
-			cmath \\
-			cleaking \\
-			cshlib \\
-			chello \\
-			cxxprogram \\
-			cxxhello
+		modules= \
+			cleaking \
+			cxxshlib \
+			ciambad \
+			cstlib \
+			chello \
+			cprogram \
+			cxxstlib \
+			cxxhello \
+			cmath \
+			cxxprogram \
+			cshlib
 
 		# dictionary of modules names (key) and paths to modules;
-		paths= \\
-			cxxstlib;components/cxxlib/static \\
-			ciambad;components/ciambad \\
-			cstlib;components/clib/static \\
-			cxxshlib;components/cxxlib/shared \\
-			cprogram;components/clib/program \\
-			cmath;components/cmath \\
-			cleaking;components/cleaking \\
-			cshlib;components/clib/shared \\
-			chello;components/chello \\
-			cxxprogram;components/cxxlib/program \\
-			cxxhello;components/cxxhello
+		paths= \
+			cleaking;components/cleaking \
+			cxxshlib;components/cxxlib/shared \
+			ciambad;components/ciambad \
+			cstlib;components/clib/static \
+			chello;components/chello \
+			cprogram;components/clib/program \
+			cxxstlib;components/cxxlib/static \
+			cxxhello;components/cxxhello \
+			cmath;components/cmath \
+			cxxprogram;components/cxxlib/program \
+			cshlib;components/clib/shared
 
 		# dictionary of modules names (key) and module dependencies;
-		deps= \\
-			cxxstlib; \\
-			ciambad;cleaking \\
-			cstlib; \\
-			cxxshlib; \\
-			cprogram;cstlib,cshlib \\
-			cmath; \\
-			cleaking; \\
-			cshlib; \\
-			chello; \\
-			cxxprogram;cxxstlib,cxxshlib \\
-			cxxhello;
+		deps= \
+			cleaking; \
+			cxxshlib; \
+			ciambad;cleaking \
+			cstlib; \
+			chello; \
+			cprogram;cstlib,cshlib \
+			cxxstlib; \
+			cxxhello; \
+			cmath; \
+			cxxprogram;cxxstlib,cxxshlib \
+			cshlib;
 
 		#------------------------------------------------------------------------------
 		# define targets
 		#------------------------------------------------------------------------------
-		build_targets=$(addprefix build_,$(modules))
-		clean_targets=$(addprefix clean_,$(modules))
-		install_targets=$(addprefix install_,$(modules))
-		uninstall_targets=$(addprefix uninstall_,$(modules))
+		build_targets=$(addprefix build$(csep),$(modules))
+		clean_targets=$(addprefix clean$(csep),$(modules))
+		install_targets=$(addprefix install$(csep),$(modules))
+		uninstall_targets=$(addprefix uninstall$(csep),$(modules))
 
 		cmds=build clean install uninstall
 		commands=$(sort $(cmds) all help find list modules $(foreach prefix,$(cmds),$($(prefix)_targets)))
@@ -129,7 +132,7 @@ exported from the test directory::
 		# $2 = dictionary
 		#------------------------------------------------------------------------------
 		define getdval
-		$(subst $(lastword $(subst _,$(sp),$1))$(dsep),$(sp),$(filter $(lastword $(subst _,$(sp),$1))$(dsep)%,$2))
+		$(subst $(lastword $(subst $(csep),$(sp),$1))$(dsep),$(sp),$(filter $(lastword $(subst $(csep),$(sp),$1))$(dsep)%,$2))
 		endef
 
 		#------------------------------------------------------------------------------
@@ -145,7 +148,7 @@ exported from the test directory::
 		# $1 = key, where key is the functional name of the component.
 		#------------------------------------------------------------------------------
 		define getdeps
-		$(addprefix $(firstword $(subst _,$(sp),$1))_,$(subst $(lsep),$(sp),$(call getdval, $1, $(deps))))
+		$(addprefix $(firstword $(subst $(csep),$(sp),$1))$(csep),$(subst $(lsep),$(sp),$(call getdval, $1, $(deps))))
 		endef
 
 		#------------------------------------------------------------------------------
@@ -156,11 +159,11 @@ exported from the test directory::
 		#      <name>     is the name of the component
 		#      <command>  is the make action to be executed, e.g. build, install, clean
 		#
-		# $1 = key, where key is the functional recipe name (e.g. build_a).
+		# $1 = key, where key is the functional recipe name (e.g. build.a).
 		#------------------------------------------------------------------------------
 		define domake
 		$1: $(call getdeps, $1)
-			$(MAKE) -r -C $(call getpath,$1) -f $(lastword $(subst _,$(sp),$1)).mk $(firstword $(subst _,$(sp),$1))
+			$(MAKE) -r -C $(call getpath,$1) -f $(lastword $(subst $(csep),$(sp),$1)).mk $(firstword $(subst $(csep),$(sp),$1))
 		endef
 
 		#------------------------------------------------------------------------------
@@ -176,7 +179,7 @@ exported from the test directory::
 		# definitions of recipes (i.e. make targets)
 		#------------------------------------------------------------------------------
 		all: build
-			
+
 		build: $(build_targets)
 
 		clean: $(clean_targets)
@@ -214,13 +217,13 @@ exported from the test directory::
 			@echo "commands:"
 			@echo "  all                                 builds all modules"
 			@echo "  build                               builds all modules"
-			@echo "  build_a                             builds module 'a' and it's dependencies"
+			@echo "  build$(csep)a                             builds module 'a' and it's dependencies"
 			@echo "  clean                               removes all build intermediates and outputs"
-			@echo "  clean_a                             cleans module 'a' and it's dependencies"
+			@echo "  clean$(csep)a                             cleans module 'a' and it's dependencies"
 			@echo "  install                             installs files in $(PREFIX)"
-			@echo "  install_a                           installs module 'a' and it's dependencies"
+			@echo "  install$(csep)a                           installs module 'a' and it's dependencies"
 			@echo "  uninstall                           removes all installed files from $(PREFIX)"
-			@echo "  uninstall_a                         removes module 'a' and it's dependencies"
+			@echo "  uninstall$(csep)a                         removes module 'a' and it's dependencies"
 			@echo "  list                                list available make commands (i.e. recipes)"
 			@echo "  modules                             list logical names of all modules"
 			@echo "  find [SEARCHPATH=] [SEARCHFILE=]    searches for files default(path=$(SEARCHPATH),file=$(SEARCHFILE))"
@@ -247,7 +250,7 @@ list of the functional names of the modules, path to those modules and finally
 dependencies between modules (if any). The remainder of the makefile is generic
 and will be the same for each project.
 
-		
+
 For each single task generator (*waflib.TaskGenerator*), for instance a 
 *bld.program(...)* which has been defined within a *wscript* file somewhere in
 the build environment, a single **GNU Make** file will be generated in the same
@@ -262,7 +265,7 @@ that has been exported from the test directory::
 
 		#------------------------------------------------------------------------------
 		# WAFTOOLS generated makefile
-		# version: 0.1.2
+		# version: 0.1.5
 		# waf: 1.7.15
 		#------------------------------------------------------------------------------
 
@@ -291,11 +294,11 @@ that has been exported from the test directory::
 		#------------------------------------------------------------------------------
 		# component data
 		#------------------------------------------------------------------------------
-		BIN=chello.exe
+		BIN=chello
 		OUTPUT=$(OUT)/$(BIN)
 
 		# REMARK: use $(wildcard src/*.c) to include all sources.
-		SOURCES= \\
+		SOURCES= \
 			src/hello.c
 
 		OBJECTS=$(SOURCES:.c=.1.o)
@@ -303,7 +306,7 @@ that has been exported from the test directory::
 		DEFINES+=HELLO_VERSION='"1.2.3"'
 		DEFINES:=$(addprefix -D,$(DEFINES))
 
-		INCLUDES+= \\
+		INCLUDES+= \
 			./include
 
 		HEADERS:=$(foreach inc,$(INCLUDES),$(wildcard $(inc)/*.h))
@@ -357,18 +360,18 @@ that has been exported from the test directory::
 		# definitions of recipes (i.e. make targets)
 		#------------------------------------------------------------------------------
 		all: build
-			
+
 		build: $(OBJECTS)
 			$(CC) $(LINKFLAGS) $(addprefix $(OUT)/,$(OBJECTS)) -o $(OUTPUT) $(RPATH) $(LINK_ST) $(LINK_SH)
 
 		clean:
-			$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)	
+			$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)
 			rm -f $(OUTPUT)
 
 		install: build
 			mkdir -p $(BINDIR)
 			cp $(OUTPUT) $(BINDIR)
-			
+
 		uninstall:
 			rm -f $(BINDIR)/$(BIN)
 
@@ -378,11 +381,11 @@ that has been exported from the test directory::
 
 		.PHONY: $(commands)
 
-		
+
 Note that only one segment of this file, the named *component* *data* contains 
 project specific data; the remainder of this makefile is generic.
 
-		
+
 Example below presents an overview of an environment in which **GNU** 
 **Makefiles** already have been exported::
 
@@ -467,7 +470,7 @@ class MakeFileContext(BuildContext):
 			self.get_tgen_by_name('')
 		except Exception:
 			pass
-		
+
 		self.makefile = True
 		if self.options.clean:
 			cleanup(self)
@@ -486,7 +489,7 @@ def export(bld):
 		return
 
 	root = MakeRoot(bld)
-	for tgen in bld.task_gen_cache_names.values():	
+	for tgen in bld.task_gen_cache_names.values():
 		child = MakeChild(bld, tgen, tgen.tasks)
 		child.export()
 		root.add_child(child.get_data())
@@ -503,7 +506,7 @@ def cleanup(bld):
 		return
 
 	root = MakeRoot(bld)
-	for tgen in bld.task_gen_cache_names.values():	
+	for tgen in bld.task_gen_cache_names.values():
 		child = MakeChild(bld, tgen, tgen.tasks)
 		child.cleanup()
 	root.cleanup()
@@ -609,7 +612,7 @@ class MakeRoot(Make):
 		s = re.sub('DEFINES:=', 'DEFINES:=%s' % ' '.join(bld.env.DEFINES), s)
 		s = re.sub('==MODULES==', self._get_modules(), s)
 		s = re.sub('==MODPATHS==', self._get_modpaths(), s)
-		s = re.sub('==MODDEPS==', self._get_moddeps(), s)	
+		s = re.sub('==MODDEPS==', self._get_moddeps(), s)
 		s = re.sub(bld.env.PREFIX, '$(PREFIX)', s)
 		s = re.sub('PREFIX:=', 'PREFIX:=%s' % prefix, s)
 		return s
@@ -642,7 +645,7 @@ class MakeRoot(Make):
 		s = ' \\\n\t'.join(d)
 		return s
 
-	
+
 class MakeChild(Make):
 	def __init__(self, bld, gen, targets):
 		super(MakeChild, self).__init__(bld)
@@ -655,7 +658,7 @@ class MakeChild(Make):
 		name = '%s/%s.mk' % (gen.path.relpath(), gen.get_name())
 		return name.replace('\\', '/')
 
-	def _get_content(self):		
+	def _get_content(self):
 		if 'cprogram' in self.gen.features:
 			return self._get_cprogram_content()
 		elif 'cstlib' in self.gen.features:
@@ -670,7 +673,7 @@ class MakeChild(Make):
 			return self._get_cxxshlib_content()
 
 		s = MAKEFILE_CHILD
-		s = super(MakeChild, self).populate(s)		
+		s = super(MakeChild, self).populate(s)
 		return s
 		
 	def get_data(self):
@@ -716,7 +719,7 @@ class MakeChild(Make):
 		s = re.sub('LIBPATH_SH\+=', 'LIBPATH_SH+=%s' % self._get_libpath('shared'),s)
 		s = re.sub('LIB_SH\+=', 'LIB_SH+=%s' % self._get_lib('shared'),s)
 		return s
-	
+
 	def _get_cxxprogram_content(self):
 		bld = self.bld
 		gen = self.gen
@@ -995,7 +998,7 @@ endef
 # definitions of recipes (i.e. make targets)
 #------------------------------------------------------------------------------
 all: build
-	
+
 build: $(build_targets)
 
 clean: $(clean_targets)
@@ -1072,7 +1075,7 @@ MAKEFILE_CHILD = \
 commands:= build clean install uninstall all
 
 all: build
-	
+
 build:
 	@echo BUILD $(abspath $(@D))
 
@@ -1185,18 +1188,18 @@ commands= build clean install uninstall all
 # definitions of recipes (i.e. make targets)
 #------------------------------------------------------------------------------
 all: build
-	
+
 build: $(OBJECTS)
 	$(CC) $(LINKFLAGS) $(addprefix $(OUT)/,$(OBJECTS)) -o $(OUTPUT) $(RPATH) $(LINK_ST) $(LINK_SH)
 
 clean:
-	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)	
+	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)
 	rm -f $(OUTPUT)
 
 install: build
 	mkdir -p $(BINDIR)
 	cp $(OUTPUT) $(BINDIR)
-	
+
 uninstall:
 	rm -f $(BINDIR)/$(BIN)
 
@@ -1303,12 +1306,12 @@ commands= build clean install uninstall all
 # definitions of recipes (i.e. make targets)
 #------------------------------------------------------------------------------
 all: build
-	
+
 build: $(OBJECTS)
 	$(CXX) $(LINKFLAGS) $(addprefix $(OUT)/,$(OBJECTS)) -o $(OUTPUT) $(RPATH) $(LINK_ST) $(LINK_SH)
 
 clean:
-	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)	
+	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)
 	rm -f $(OUTPUT)
 
 install: build
@@ -1399,12 +1402,12 @@ commands= build clean install uninstall all
 # definitions of recipes (i.e. make targets)
 #------------------------------------------------------------------------------
 all: build
-	
+
 build: $(OBJECTS)
 	$(AR) $(ARFLAGS) $(OUTPUT) $(addprefix $(OUT)/,$(OBJECTS))
 
 clean:
-	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)	
+	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)
 	rm -f $(OUTPUT)
 
 install:
@@ -1516,12 +1519,12 @@ commands= build clean install uninstall all
 # definitions of recipes (i.e. make targets)
 #------------------------------------------------------------------------------
 all: build
-	
+
 build: $(OBJECTS)
 	$(CC) $(LINKFLAGS) $(addprefix $(OUT)/,$(OBJECTS)) -o $(OUTPUT) $(RPATH) $(LINK_ST) $(LINK_SH)
 
 clean:
-	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)	
+	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)
 	rm -f $(OUTPUT)
 
 install: build
@@ -1642,12 +1645,12 @@ commands= build clean install uninstall all
 # definitions of recipes (i.e. make targets)
 #------------------------------------------------------------------------------
 all: build
-	
+
 build: $(OBJECTS)
 	$(CXX) $(LINKFLAGS) $(addprefix $(OUT)/,$(OBJECTS)) -o $(OUTPUT) $(RPATH) $(LINK_ST) $(LINK_SH)
 
 clean:
-	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)	
+	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)
 	rm -f $(OUTPUT)
 
 install: build
@@ -1744,16 +1747,16 @@ commands= build clean install uninstall all
 # definitions of recipes (i.e. make targets)
 #------------------------------------------------------------------------------
 all: build
-	
+
 build: $(OBJECTS)
 	$(AR) $(ARFLAGS) $(OUTPUT) $(addprefix $(OUT)/,$(OBJECTS))
 
 clean:
-	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)	
+	$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)
 	rm -f $(OUTPUT)
 
 install:
-	
+
 uninstall:
 
 $(OBJECTS): $(HEADERS)
