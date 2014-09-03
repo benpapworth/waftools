@@ -888,6 +888,9 @@ dsep:=;
 # token for separating list elements:
 lsep:=,
 
+# token for joining command and component names (e.g. 'build.hello')
+csep:=.
+
 export APPNAME:=
 export APPVERSION:=
 export PREFIX:=
@@ -922,10 +925,10 @@ deps= \\
 #------------------------------------------------------------------------------
 # define targets
 #------------------------------------------------------------------------------
-build_targets=$(addprefix build_,$(modules))
-clean_targets=$(addprefix clean_,$(modules))
-install_targets=$(addprefix install_,$(modules))
-uninstall_targets=$(addprefix uninstall_,$(modules))
+build_targets=$(addprefix build$(csep),$(modules))
+clean_targets=$(addprefix clean$(csep),$(modules))
+install_targets=$(addprefix install$(csep),$(modules))
+uninstall_targets=$(addprefix uninstall$(csep),$(modules))
 
 cmds=build clean install uninstall
 commands=$(sort $(cmds) all help find list modules $(foreach prefix,$(cmds),$($(prefix)_targets)))
@@ -945,7 +948,7 @@ endef
 # $2 = dictionary
 #------------------------------------------------------------------------------
 define getdval
-$(subst $(lastword $(subst _,$(sp),$1))$(dsep),$(sp),$(filter $(lastword $(subst _,$(sp),$1))$(dsep)%,$2))
+$(subst $(lastword $(subst $(csep),$(sp),$1))$(dsep),$(sp),$(filter $(lastword $(subst $(csep),$(sp),$1))$(dsep)%,$2))
 endef
 
 #------------------------------------------------------------------------------
@@ -961,7 +964,7 @@ endef
 # $1 = key, where key is the functional name of the component.
 #------------------------------------------------------------------------------
 define getdeps
-$(addprefix $(firstword $(subst _,$(sp),$1))_,$(subst $(lsep),$(sp),$(call getdval, $1, $(deps))))
+$(addprefix $(firstword $(subst $(csep),$(sp),$1))$(csep),$(subst $(lsep),$(sp),$(call getdval, $1, $(deps))))
 endef
 
 #------------------------------------------------------------------------------
@@ -972,11 +975,11 @@ endef
 #      <name>     is the name of the component
 #      <command>  is the make action to be executed, e.g. build, install, clean
 #
-# $1 = key, where key is the functional recipe name (e.g. build_a).
+# $1 = key, where key is the functional recipe name (e.g. build.a).
 #------------------------------------------------------------------------------
 define domake
 $1: $(call getdeps, $1)
-	$(MAKE) -r -C $(call getpath,$1) -f $(lastword $(subst _,$(sp),$1)).mk $(firstword $(subst _,$(sp),$1))
+	$(MAKE) -r -C $(call getpath,$1) -f $(lastword $(subst $(csep),$(sp),$1)).mk $(firstword $(subst $(csep),$(sp),$1))
 endef
 
 #------------------------------------------------------------------------------
@@ -1030,13 +1033,13 @@ help:
 	@echo "commands:"
 	@echo "  all                                 builds all modules"
 	@echo "  build                               builds all modules"
-	@echo "  build_a                             builds module 'a' and it's dependencies"
+	@echo "  build$(csep)a                             builds module 'a' and it's dependencies"
 	@echo "  clean                               removes all build intermediates and outputs"
-	@echo "  clean_a                             cleans module 'a' and it's dependencies"
+	@echo "  clean$(csep)a                             cleans module 'a' and it's dependencies"
 	@echo "  install                             installs files in $(PREFIX)"
-	@echo "  install_a                           installs module 'a' and it's dependencies"
+	@echo "  install$(csep)a                           installs module 'a' and it's dependencies"
 	@echo "  uninstall                           removes all installed files from $(PREFIX)"
-	@echo "  uninstall_a                         removes module 'a' and it's dependencies"
+	@echo "  uninstall$(csep)a                         removes module 'a' and it's dependencies"
 	@echo "  list                                list available make commands (i.e. recipes)"
 	@echo "  modules                             list logical names of all modules"
 	@echo "  find [SEARCHPATH=] [SEARCHFILE=]    searches for files default(path=$(SEARCHPATH),file=$(SEARCHFILE))"
