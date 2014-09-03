@@ -2,9 +2,6 @@ Summary
 -------
 This package contains a collection of tools for the waf_ build environment.
 
-.. note::
-	the complete package documentation can be found at: 
-	http://pythonhosted.org/waftools/
 
 Description
 -----------
@@ -61,5 +58,11 @@ For more information on using *waf* commands and options use::
 	waf --help
 
 
+.. note::
+	the complete package documentation can be found at: 
+	http://pythonhosted.org/waftools/
+
+
 .. _waf: https://code.google.com/p/waf/
 .. _wafbook: http://docs.waf.googlecode.com/git/book_17/single.html
+
