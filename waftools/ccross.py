@@ -63,7 +63,7 @@ def configure(conf):
 		conf.load('compiler_c')
 		conf.load('compiler_cxx')
 		conf.load('cppcheck')
-		conf.load('codeblocks')
+		conf.load('codeblocks') # TODO: contains errors for cross-compilers (WIN32 specific?)
 		# TODO: conf.load('eclipse')
 		# TODO: conf.load('makefile')
 		conf.load('gnucc')
