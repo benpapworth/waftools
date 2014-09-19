@@ -10,7 +10,7 @@ environments:
 	- cmake
 	- doxygen
 	- eclipse (TODO: to be supported)
-	- makefile (TODO: to be supported)
+	- makefile
 	- msdev
 	- package (already includes build results from cross-compiles) 
 
@@ -28,7 +28,7 @@ from waflib import Scripting
 from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallContext
 import waftools
 from waftools.codeblocks import CodeblocksContext
-
+from waftools.makefile import MakeFileContext
 
 def options(opt):
 	opt.add_option('--all', dest='all', default=False, action='store_true', 
@@ -109,8 +109,8 @@ def _get_config(name):
 	c.read(name)
 	for s in c.sections():
 		cross[s] = {}
-		cross[s]['prefix'] = c[s].get('prefix')
-		cross[s]['shlib'] = [l for l in str(c[s].get('shlib')).split(',') if not l == ''] 
+		cross[s]['prefix'] = c.get(s,'prefix')
+		cross[s]['shlib'] = [l for l in str(c.get(s,'shlib')).split(',') if not l == ''] 
 	return cross
 
 
@@ -120,5 +120,5 @@ def variants(name):
 
 
 def contexts():
-	return [ BuildContext, CleanContext, InstallContext, UninstallContext, CodeblocksContext ]
+	return [ BuildContext, CleanContext, InstallContext, UninstallContext, CodeblocksContext, MakeFileContext ]
 

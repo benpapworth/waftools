@@ -5,6 +5,7 @@
 import os
 
 version = "0.1.7"
+location = os.path.abspath(os.path.dirname(__file__))
 
 
 def get_scripts(top, name):
