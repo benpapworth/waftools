@@ -16,10 +16,12 @@ APPNAME = 'waftools'
 
 def options(opt):
 	opt.add_option('--pypi', dest='pypi', default=False, action='store_true', help='publish package on PyPi')
+	opt.load('eclipse', tooldir=waftools.location)
 
 
 def configure(conf):
 	conf.check_waf_version(mini='1.7.0')
+	conf.load('eclipse')
 
 
 def build(bld):

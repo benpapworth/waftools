@@ -45,7 +45,7 @@ exported from the test directory::
 		# token for joining command and component names (e.g. 'build.hello')
 		csep:=.
 
-		export APPNAME:=waftools-test
+		export APPNAME:=ccross-test
 		export APPVERSION:=0.1.5
 		export PREFIX:=$(CURDIR)/output
 		export TOP:=$(CURDIR)
@@ -423,7 +423,7 @@ import os
 import re
 from waflib import Utils, Node, Context, Logs
 from waflib.Build import BuildContext
-import waftools
+from waftools import ccross
 
 
 def options(opt):
@@ -547,7 +547,7 @@ class Make(object):
 	def populate(self, content):
 		s = content
 		s = re.sub('==WAFVERSION==', Context.WAFVERSION, s)
-		s = re.sub('==VERSION==', waftools.version, s)
+		s = re.sub('==VERSION==', ccross.version, s)
 		return s
 
 	def _get_name(self):
