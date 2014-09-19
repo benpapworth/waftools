@@ -206,9 +206,9 @@ def export(bld):
 		Logs.warn("Remember to setup your toolchain in Code::Blocks for these projects!")
 		Logs.info("")
 		Logs.info("Toolchain name: '%s'" % cc_name)
-		Logs.info("CC            : '%s'" % bld.export.cc)
-		Logs.info("CXX           : '%s'" % bld.export.cxx)
-		Logs.info("AR            : '%s'" % bld.export.ar)
+		Logs.info("CC            : '%s'" % bld.env.CC[0])
+		Logs.info("CXX           : '%s'" % bld.env.CXX[0])
+		Logs.info("AR            : '%s'" % bld.env.AR)
 		Logs.info("")
 
 	project = WafCBProject(bld)

@@ -3,8 +3,8 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 
-'''Selects GNU as default C/C++ compiler and adds common release/debug 
-settings.
+'''Selects GNU as default C/C++ compiler, adds common release/debug 
+settings
 '''
 
 
