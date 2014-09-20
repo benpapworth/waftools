@@ -8,4 +8,8 @@ build/*
 doc/_build/*
 waftools/__pycache__/*
 
+.project
+.cproject
+.pydevproject
 **/.settings/*
+

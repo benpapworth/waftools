@@ -1,0 +1,9 @@
+This directory contains an example of a C/C++ build environment using the ARM
+cross compile toolchain from Linaro (http://www.linaro.org).
+In order for this environment to work the path to arm gcc compiler must have been
+added to the system path. 
+
+Native build commands for the current host can be build in the usual way, build commands 
+for the ARM platform can be started by adding the _arm postfix (e.g. ' waf build_arm' 
+will start a build for the ARM target). See 'waf --help' for more information.  
+

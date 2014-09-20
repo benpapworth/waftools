@@ -421,7 +421,7 @@ option::
 
 import os
 import re
-from waflib import Utils, Node, Context, Logs
+from waflib import Utils, Context, Logs
 from waflib.Build import BuildContext
 import waftools
 
@@ -565,8 +565,12 @@ class MakeRoot(Make):
 		self.childs = []
 
 	def _get_name(self):
-		bld = self.bld
-		return '%s/Makefile' % (bld.path.relpath().replace('\\', '/'))
+		name = self.bld.path.relpath().replace('\\', '/')		
+		if self.bld.variant:
+			name += '/makefile_%s.mk' % (self.bld.variant)
+		else:
+			name += '/Makefile'
+		return name
 
 	def _get_content(self):
 		bld = self.bld
@@ -655,7 +659,10 @@ class MakeChild(Make):
 
 	def _get_name(self):
 		gen = self.gen
-		name = '%s/%s.mk' % (gen.path.relpath(), gen.get_name())
+		if self.bld.variant:
+			name = '%s/%s_%s.mk' % (gen.path.relpath(), gen.get_name(), self.bld.variant)
+		else:
+			name = '%s/%s.mk' % (gen.path.relpath(), gen.get_name())			
 		return name.replace('\\', '/')
 
 	def _get_content(self):
