@@ -8,6 +8,19 @@ version = "0.1.7"
 location = os.path.abspath(os.path.dirname(__file__))
 
 
+def build(bld, trees=[]):
+	'''Perform build command on all given source trees.
+	
+	:param: bld: build context
+	:type bld: waflib.Build.BuildContext
+	:param: trees: list of source tree names
+	:type trees: list
+	'''
+	for tree in trees:
+		for script in get_scripts(tree, 'wscript'):
+			bld.recurse(script)
+
+
 def get_scripts(top, name):
 	'''Returns a list of top level paths containing the specified file name.
 	

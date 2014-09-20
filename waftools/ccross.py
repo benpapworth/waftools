@@ -17,7 +17,6 @@ environments:
 TODO: create complete module documentation
 ''' 
 
-
 import os
 try:
 	import ConfigParser as configparser
@@ -30,16 +29,16 @@ import waftools
 from waftools.codeblocks import CodeblocksContext
 from waftools.makefile import MakeFileContext
 
+
 def options(opt):
 	opt.add_option('--all', dest='all', default=False, action='store_true', 
 				help='execute command for cross-compile environments as well')
-	
 	opt.load('cmake', tooldir=waftools.location)
 	opt.load('codeblocks', tooldir=waftools.location)
 	opt.load('cppcheck', tooldir=waftools.location)
 	opt.load('doxygen', tooldir=waftools.location)
 	opt.load('eclipse', tooldir=waftools.location)
-	opt.load('gnucc', tooldir=waftools.location) # selects GNU as default C/C++ compiler
+	opt.load('gnucc', tooldir=waftools.location)
 	opt.load('makefile', tooldir=waftools.location)
 	opt.load('msdev', tooldir=waftools.location)
 	opt.load('package', tooldir=waftools.location)
@@ -49,9 +48,9 @@ def options(opt):
 def configure(conf):	
 	conf.check_waf_version(mini='1.7.6')
 	prefix = str(conf.env.PREFIX).replace('\\', '/')
-	cross = _get_config(conf.env.CCROSSINI)
+	cross = get_config(conf.env.CCROSSINI)
 
-	for name, cc in cross.items(): # setup cross compile environment
+	for name, cc in cross.items(): # setup cross compile environment(s)
 		conf.setenv(name)
 		conf.env.CCROSS = cross
 		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
@@ -65,7 +64,7 @@ def configure(conf):
 		conf.load('cppcheck')
 		conf.load('codeblocks') # TODO: contains errors for cross-compilers (WIN32 specific?)
 		# TODO: conf.load('eclipse')
-		# TODO: conf.load('makefile')
+		conf.load('makefile')
 		conf.load('gnucc')
 		conf.load('tree')
 
@@ -92,7 +91,7 @@ def build(bld, trees=[]):
 			bld.read_shlib(lib, paths=bld.env.LIBPATH)
 
 	elif bld.options.all:
-		if bld.cmd in ('build', 'install', 'clean'):
+		if bld.cmd in ('build', 'clean', 'install', 'uninstall', 'codeblocks', 'makefile'):
 			for variant in bld.env.CCROSS.keys():
 				Scripting.run_command('%s_%s' % (bld.cmd, variant))
 
@@ -101,7 +100,7 @@ def build(bld, trees=[]):
 			bld.recurse(script)
 
 
-def _get_config(name):
+def get_config(name):
 	if not os.path.exists(name):
 		return {}	
 	cross = {}
@@ -115,7 +114,7 @@ def _get_config(name):
 
 
 def variants(name):
-	cross = _get_config(name)
+	cross = get_config(name)
 	return list(cross.keys())
 
 

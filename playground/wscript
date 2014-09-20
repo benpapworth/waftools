@@ -20,7 +20,6 @@ APPNAME = 'waftools-test'
 
 def options(opt):
 	opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
-	print(waftools.location)
 	opt.load('ccross', tooldir=waftools.location)
 
 
