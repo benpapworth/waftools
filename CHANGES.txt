@@ -33,4 +33,10 @@ v0.1.6, 2014-09-03 -- Makefiles export:
                       - fixed problem when using underscores in directory or task names.
                       CppCheck reports:
                       - fixed broken hyperlinks when using FireFox (use 'file:///' as prefix in 'href').
+
+v0.1.7, 2014-09-xx -- Added support for multiple build environments for Makefile, Codeblocks modules.
+                      Added new module 'ccross'; to be used for multiple build environments; e.g. one native
+                      build environment and one or more cross compile environments.
+
+                      
                       
