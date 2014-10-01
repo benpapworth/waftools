@@ -80,7 +80,7 @@ for one or more target platforms using a C/C++ cross compiler::
 				cmd = name + '_' + var
 				variant = var
 
-When loading and configuring the _ccross_ tool, as shown in the example above, all 
+When loading and configuring the *ccross* tool, as shown in the example above, all 
 required C/C++ tools for each build environment variant (i.e. native or cross-
 compile) will be loaded and configured as well; e.g. compilers, makefile-, cmake-, 
 eclipse-, codeblocks- and msdev exporters, cppcheck source code checking, doxygen 
@@ -91,7 +91,7 @@ in the example above) using following syntax::
 	[arm]
 	prefix = arm-linux-gnueabihf
 
-The section name, _arm_ in the example above, specifies the name of the cross-compile
+The section name, *arm* in the example above, specifies the name of the cross-compile
 build environment variant. The prefix will be in used to create the concrete names of
 the cross compile toolchain binaries::
 
@@ -100,10 +100,10 @@ the cross compile toolchain binaries::
 	CXX	= arm-linux-gnueabihf-g++
 
 Concrete build scripts (i.e. wscript files) for components can be placed somewhere 
-within the _components_ sub-directory. Any top level wscript file of a tree (being 
-_components_ in this example) will be detected and incorporated within the build 
+within the *components* sub-directory. Any top level wscript file of a tree (being 
+*components* in this example) will be detected and incorporated within the build 
 environment. Any wscript files below those top level script files will have to be 
-included using the _bld.recurse('../somepath')_ command from the top level script 
+included using the *bld.recurse('../somepath')* command from the top level script 
 of that tree.
 
 .. note::
