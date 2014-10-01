@@ -29,6 +29,19 @@ package:
 - List dependencies between build tasks
 
 
+Installation
+------------
+The package can be installed using pip::
+
+	pip install waftools
+
+or by cloning the repository and using distutils::
+
+	git clone https://Moo7@bitbucket.org/Moo7/waftools.git
+	cd waftools
+	python setup.py install 
+
+
 Usage
 -----
 The code snippet below provides an example of how a complete build environment

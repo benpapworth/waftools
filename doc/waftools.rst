@@ -37,6 +37,17 @@ Module :mod:`cppcheck`
     :show-inheritance:
 
 
+.. _mod_ccross:
+
+Module :mod:`ccross`
+----------------------
+
+.. automodule:: waftools.ccross
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 .. _mod_doxygen:
 
 Module :mod:`doxygen`
