@@ -69,7 +69,7 @@ def options(opt):
 
 
 def configure(conf):
-	conf.find_program('doxygen', var='DOXYGEN')
+	conf.find_program('doxygen', var='DOXYGEN', mandatory=False)
 	conf.env.DOXYGEN_OUTPUT = conf.options.doxygen_output
 	conf.env.DOXYGEN_CONFIG = conf.options.doxygen_config
 
@@ -89,6 +89,9 @@ class DoxygenContext(BuildContext):
 		if not self.all_envs:
 			self.load_envs()
 		self.recurse([self.run_dir])
+
+		if self.env.DOXYGEN == []:
+			self.fatal('doxygen not available; please install it and reconfigure.')
 
 		for group in self.groups:
 			for tgen in group:
