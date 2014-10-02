@@ -28,7 +28,7 @@ from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallCo
 import waftools
 from waftools.codeblocks import CodeblocksContext
 from waftools.makefile import MakeFileContext
-
+from waftools.eclipse import EclipseContext
 
 def options(opt):
 	opt.add_option('--all', dest='all', default=False, action='store_true', 
@@ -119,5 +119,5 @@ def variants(name):
 
 
 def contexts():
-	return [ BuildContext, CleanContext, InstallContext, UninstallContext, CodeblocksContext, MakeFileContext ]
+	return [ BuildContext, CleanContext, InstallContext, UninstallContext, CodeblocksContext, MakeFileContext, EclipseContext ]
 
