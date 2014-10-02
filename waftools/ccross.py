@@ -28,7 +28,7 @@ from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallCo
 import waftools
 from waftools.codeblocks import CodeblocksContext
 from waftools.makefile import MakeFileContext
-
+from waftools.eclipse import EclipseContext
 
 def options(opt):
 	opt.add_option('--all', dest='all', default=False, action='store_true', 
@@ -63,9 +63,9 @@ def configure(conf):
 		conf.load('compiler_cxx')
 		conf.load('cppcheck')
 		conf.load('codeblocks') # TODO: contains errors for cross-compilers (WIN32 specific?)
-		# TODO: conf.load('eclipse')
-		conf.load('makefile')
+		conf.load('eclipse')
 		conf.load('gnucc')
+		conf.load('makefile')
 		conf.load('tree')
 
 	conf.setenv('')
@@ -119,5 +119,5 @@ def variants(name):
 
 
 def contexts():
-	return [ BuildContext, CleanContext, InstallContext, UninstallContext, CodeblocksContext, MakeFileContext ]
+	return [ BuildContext, CleanContext, InstallContext, UninstallContext, CodeblocksContext, MakeFileContext, EclipseContext ]
 
