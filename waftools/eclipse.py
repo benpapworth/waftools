@@ -28,6 +28,7 @@ removed using the *clean* command, as shown in the example below::
 '''
 
 # TODO: add detailed description for 'eclipse' module
+# TODO: add support for multiple variant (e.g. cross-compile)
 
 
 import sys
@@ -94,6 +95,27 @@ class EclipseContext(BuildContext):
 		self.timer = Utils.Timer()
 
 
+def get_targets(bld):
+	'''Returns a list of user specified build targets or None if no specific
+	build targets has been selected using the *--targets=* command line option.
+
+	:param bld: a *waf* build instance from the top level *wscript*.
+	:type bld: waflib.Build.BuildContext
+	:returns: a list of user specified target names (using --targets=x,y,z) or None
+	'''
+	if bld.targets == '':
+		return None
+	
+	targets = bld.targets.split(',')
+	deps = []
+	for target in targets:
+		uses = Utils.to_list(getattr(bld.get_tgen_by_name(target), 'use', None))
+		if uses:
+			deps += uses
+	targets += list(set(deps))
+	return targets
+
+
 def export(bld):
 	'''Generates Eclipse CDT projects for each C/C++ task.
 
@@ -111,13 +133,16 @@ def export(bld):
 	_detect_workspace_location(bld)
 	_scan_project_locations(bld)
 
+	targets = get_targets(bld)
+
 	for tgen in bld.task_gen_cache_names.values():
-		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+		if tgen.get_name() in targets and set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			project = CDTProject(bld, tgen)
 			project.export()
 
-	project = WafProject(bld)
-	project.export()
+	if targets == None:
+		project = WafProject(bld)
+		project.export()
 
 
 def cleanup(bld):
@@ -129,13 +154,16 @@ def cleanup(bld):
 	if not bld.options.eclipse and not hasattr(bld, 'eclipse'):
 		return
 
+	targets = get_targets(bld)
+
 	for tgen in bld.task_gen_cache_names.values():
-		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+		if tgen.get_name() in targets and set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			project = CDTProject(bld, tgen)
 			project.cleanup()
 
-	project = WafProject(bld)
-	project.cleanup()
+	if targets == None:
+		project = WafProject(bld)
+		project.cleanup()
 
 
 def _detect_workspace_location(bld):
@@ -484,10 +512,12 @@ class CDTProject(Project):
 		'''		
 		super(CDTProject, self).export()
 		self.project.export()
-		if hasattr(self, 'launch'):
-			self.launch.export()
-		if hasattr(self, 'launch_debug'):
-			self.launch_debug.export()
+		
+		# TODO: is export of launchers really needed?
+		#if hasattr(self, 'launch'):
+		#	self.launch.export()
+		#if hasattr(self, 'launch_debug'):
+		#	self.launch_debug.export()
 
 	def cleanup(self):
 		'''Deletes all *Eclipse* *CDT* project files associated with an C/C++ 

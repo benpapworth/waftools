@@ -63,9 +63,9 @@ def configure(conf):
 		conf.load('compiler_cxx')
 		conf.load('cppcheck')
 		conf.load('codeblocks') # TODO: contains errors for cross-compilers (WIN32 specific?)
-		# TODO: conf.load('eclipse')
-		conf.load('makefile')
+		conf.load('eclipse')
 		conf.load('gnucc')
+		conf.load('makefile')
 		conf.load('tree')
 
 	conf.setenv('')
