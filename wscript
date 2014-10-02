@@ -16,6 +16,7 @@ APPNAME = 'waftools'
 
 def options(opt):
 	opt.add_option('--pypi', dest='pypi', default=False, action='store_true', help='publish package on PyPi')
+	opt.add_option('--user', dest='user', default=False, action='store_true', help='install waftools in user directory')	
 	opt.load('eclipse', tooldir=waftools.location)
 
 
@@ -26,7 +27,10 @@ def configure(conf):
 
 def build(bld):
 	if bld.cmd == 'install':
-		bld.cmd_and_log('python setup.py install', cwd=bld.path.abspath())
+		cmd = 'python setup.py install'
+		if bld.options.user:
+			cmd += ' --user'
+		bld.cmd_and_log(cmd, cwd=bld.path.abspath())
 
 
 def dist(dst):
