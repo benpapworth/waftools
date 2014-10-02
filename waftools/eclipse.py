@@ -138,7 +138,7 @@ def export(bld):
 		if targets and tgen.get_name() not in targets:
 			continue
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
-			project = Project(bld, tgen)
+			project = CDTProject(bld, tgen)
 			project.export()
 
 
@@ -157,7 +157,7 @@ def cleanup(bld):
 		if targets and tgen.get_name() not in targets:
 			continue
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
-			project = Project(bld, tgen)
+			project = CDTProject(bld, tgen)
 			project.cleanup()
 
 
@@ -230,42 +230,36 @@ class Project(object):
 	:param bld: a *waf* build instance from the top level *wscript*.
 	:type bld: waflib.Build.BuildContext
 
-	:param gen: Task generator that contains all information of the task to be
+	:param tgen: Task generator that contains all information of the task to be
 				converted and exported to the *Eclipse* project.
-	:type gen:	waflib.Task.TaskGen
+	:type tgen:	waflib.Task.TaskGen
 	'''
-	def __init__(self, bld, gen):
+	def __init__(self, bld, tgen):
 		self.bld = bld
 		self.appname = getattr(Context.g_module, Context.APPNAME)
-		self.gen = gen
+		self.tgen = tgen
 		self.natures = []
 		self.buildcommands = []
 		self.comments = ['<?xml version="1.0" encoding="UTF-8"?>']
 
 	def export(self):
 		'''Exports an *Eclipse* project or an Eclipse (CDT) launcher.'''
-		content = self._get_content()
-		if not content:
-			return
-		content = self._xml_clean(content)
-
-		node = self._make_node()
-		if not node:
-			return
+		content = self.xml_clean(self.get_content())
+		node = self.make_node()
 		node.write(content)
 		Logs.pprint('YELLOW', 'exported: %s' % node.abspath())
 
 	def cleanup(self):
 		'''Deletes an *Eclipse* project or launcher.'''
-		node = self._find_node()
+		node = self.find_node()
 		if node:
 			node.delete()
 			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 
-	def _get_root(self):
+	def get_root(self):
 		'''Returns a document root, either from an existing file, or from template.
 		'''
-		fname = self._get_fname()
+		fname = self.get_fname()
 		if os.path.exists(fname):
 			tree = ElementTree.parse(fname)
 			root = tree.getroot()
@@ -273,37 +267,37 @@ class Project(object):
 			root = ElementTree.fromstring(ECLIPSE_PROJECT)
 		return root
 
-	def _find_node(self):
-		name = self._get_fname()
-		if not name:
-			return None    
+	def find_node(self):
+		name = self.get_fname()   
 		return self.bld.srcnode.find_node(name)
 
-	def _make_node(self):
-		name = self._get_fname()
-		if not name:
-			return None    
+	def make_node(self):
+		name = self.get_fname()   
 		return self.bld.srcnode.make_node(name)
 
-	def _get_fname(self):
-		if self.gen:
-			name = '%s/.project' % (self.gen.path.relpath().replace('\\', '/'))
-		else:
-			name = '.project'
-		return name
+	def get_fname(self):
+		return '%s/.project' % (self.tgen.path.relpath().replace('\\', '/'))
 
-	def _get_content(self):
-		root = self._get_root()
+	def get_name(self):
+		return self.tgen.get_name()
+
+	def xml_clean(self, content):
+		s = minidom.parseString(content).toprettyxml(indent="\t")
+		lines = [l for l in s.splitlines() if not l.isspace() and len(l)]
+		lines = self.comments + lines[1:] + ['']
+		return '\n'.join(lines)
+
+	def get_content(self):
+		root = self.get_root()
 		name = root.find('name')
-		name.text = self._get_name()
+		name.text = self.get_name()
 
-		if self.gen:
-			projects = root.find('projects')
-			uses = getattr(self.gen, 'use', [])
-			for project in projects.findall('project'):
-				if project.text in uses: uses.remove(project.text)
-			for use in uses:
-				ElementTree.SubElement(projects, 'project').text = use
+		projects = root.find('projects')
+		uses = getattr(self.tgen, 'use', [])
+		for project in projects.findall('project'):
+			if project.text in uses: uses.remove(project.text)
+		for use in uses:
+			ElementTree.SubElement(projects, 'project').text = use
 
 		buildcommands = list(self.buildcommands)
 		buildspec = root.find('buildSpec')
@@ -328,18 +322,131 @@ class Project(object):
 
 		return ElementTree.tostring(root)
 
-	def _get_name(self):
-		if self.gen:
-			name = self.gen.get_name()
-		else:
-			name = self.appname
-		return name
 
-	def _xml_clean(self, content):
-		s = minidom.parseString(content).toprettyxml(indent="\t")
-		lines = [l for l in s.splitlines() if not l.isspace() and len(l)]
-		lines = self.comments + lines[1:] + ['']
-		return '\n'.join(lines)
+class CDTProject(Project):
+	'''Class for exporting C/C++ task generators to an *Eclipse* *CDT* 
+	project.
+	When exporting this class exports three files associated with C/C++
+	projects::
+	
+		.project
+		.cproject
+		target_name.launch
+
+	The first file mostly contains perspective, the second contains the actual
+	C/C++ project while the latter is a launcher which can be import into
+	*Eclipse* and used to run and/or debug C/C++ programs. 
+	
+	:param bld: a *waf* build instance from the top level *wscript*.
+	:type bld: waflib.Build.BuildContext
+
+	:param tgen: Task generator that contains all information of the task to be
+				converted and exported to the *Eclipse* project.
+	:type tgen:	waflib.Task.TaskGen
+		
+	:param project: Reference to *Eclipse* project (which will export the 
+					*.project* file.
+	:param project: Project
+	'''
+	def __init__(self, bld, tgen):
+		super(CDTProject, self).__init__(bld, tgen)
+		self.comments = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>','<?fileVersion 4.0.0?>']
+		self.cdt_config = 'cdt.managedbuild.config.gnu'
+		if bld.env.DEST_OS == 'win32':
+			self.cdt_config += '.mingw'
+		self.language = 'c'
+		if 'cxx' in tgen.features:
+			self.language = 'cpp'
+		self.is_program = set(('cprogram', 'cxxprogram')) & set(tgen.features)
+		self.is_shlib = set(('cshlib', 'cxxshlib')) & set(tgen.features)
+		self.is_stlib = set(('cstlib', 'cxxstlib')) & set(tgen.features)
+		self.project = Project(bld, tgen)
+		self.project.natures.append('org.eclipse.cdt.core.cnature')
+		if self.language == 'cpp':
+			self.project.natures.append('org.eclipse.cdt.core.ccnature')
+		self.project.natures.append('org.eclipse.cdt.managedbuilder.core.managedBuildNature')
+		self.project.natures.append('org.eclipse.cdt.managedbuilder.core.ScannerConfigNature')
+		self.project.buildcommands.append(('org.eclipse.cdt.managedbuilder.core.genmakebuilder', 'clean,full,incremental,', None))
+		self.project.buildcommands.append(('org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder', 'full,incremental,', None))
+
+		self.uuid = {
+			'debug': self.get_uuid(),
+			'release': self.get_uuid(),
+			'c_debug_compiler': self.get_uuid(),
+			'c_debug_input': self.get_uuid(),
+			'c_release_compiler': self.get_uuid(),
+			'c_release_input': self.get_uuid(),
+			'cpp_debug_compiler': self.get_uuid(),
+			'cpp_debug_input': self.get_uuid(),
+			'cpp_release_compiler': self.get_uuid(),
+			'cpp_release_input': self.get_uuid(),
+		}
+
+		if self.is_shlib:
+			self.kind_name = 'Shared Library'
+			self.kind = 'so'
+		elif self.is_stlib:
+			self.kind_name = 'Static Library'
+			self.kind = 'lib'
+		elif self.is_program:
+			self.kind_name = 'Executable'
+			self.kind = 'exe'
+
+	def export(self):
+		'''Exports all *Eclipse* *CDT* project files for an C/C++ task 
+		generator at the location of the task generator.
+		'''		
+		super(CDTProject, self).export()
+		self.project.export()
+
+	def cleanup(self):
+		'''Deletes all *Eclipse* *CDT* project files associated with an C/C++ 
+		task generator at the location of the task generator.
+		'''
+		super(CDTProject, self).cleanup()
+		self.project.cleanup()
+
+	def get_fname(self):
+		return '%s/.cproject' % (self.tgen.path.relpath().replace('\\', '/'))
+
+	def get_root(self):
+		'''Returns a document root, either from an existing file, or from template.
+		'''
+		fname = self.get_fname()
+		if os.path.exists(fname):
+			tree = ElementTree.parse(fname)
+			root = tree.getroot()
+		else:
+			root = ElementTree.fromstring(ECLIPSE_CDT_PROJECT)
+		return root
+
+	def get_uuid(self):
+		uuid = codecs.encode(os.urandom(4), 'hex_codec')
+		return int(uuid, 16)
+
+	def get_content(self):
+		root = self.get_root()
+		for module in root.findall('storageModule'):
+			if module.get('moduleId') == 'org.eclipse.cdt.core.settings':
+				pass #self._update_cdt_core_settings(module)
+			if module.get('moduleId') == 'cdtBuildSystem':
+				pass #self._update_buildsystem(module)
+			if module.get('moduleId') == 'scannerConfiguration':
+				pass #self._update_scannerconfiguration(module)
+			if module.get('moduleId') == 'refreshScope':
+				self.update_refreshscope(module)
+		return ElementTree.tostring(root)
+
+	def update_refreshscope(self, module):
+		name = '%s_%s' % (self.bld.env.DEST_OS.lower(), self.bld.env.DEST_CPU.lower())
+		for configuration in module.findall('configuration'):
+			if configuration.get('configurationName') == name:
+				return
+		configuration = ElementTree.SubElement(module, 'configuration')
+		configuration.set('configurationName', name)
+		resource = ElementTree.SubElement(configuration, 'resource')
+		resource.set('resourceType', 'PROJECT')
+		resource.set('workspacePath', '/%s' % self.tgen.get_name())
 
 
 ECLIPSE_PROJECT = \
@@ -355,5 +462,22 @@ ECLIPSE_PROJECT = \
 </projectDescription>
 '''
 
+
+ECLIPSE_CDT_PROJECT = \
+'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?>
+<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+	</storageModule>
+</cproject>
+'''
 
 
