@@ -136,7 +136,9 @@ def export(bld):
 	targets = get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
-		if tgen.get_name() in targets and set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+		if targets and tgen.get_name() not in targets:
+			continue
+		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			project = CDTProject(bld, tgen)
 			project.export()
 
@@ -157,7 +159,9 @@ def cleanup(bld):
 	targets = get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
-		if tgen.get_name() in targets and set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+		if targets and tgen.get_name() not in targets:
+			continue
+		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			project = CDTProject(bld, tgen)
 			project.cleanup()
 
@@ -513,11 +517,10 @@ class CDTProject(Project):
 		super(CDTProject, self).export()
 		self.project.export()
 		
-		# TODO: is export of launchers really needed?
-		#if hasattr(self, 'launch'):
-		#	self.launch.export()
-		#if hasattr(self, 'launch_debug'):
-		#	self.launch_debug.export()
+		if hasattr(self, 'launch'):
+			self.launch.export()
+		if hasattr(self, 'launch_debug'):
+			self.launch_debug.export()
 
 	def cleanup(self):
 		'''Deletes all *Eclipse* *CDT* project files associated with an C/C++ 
@@ -1077,7 +1080,7 @@ class CDTLaunch(Project):
 			else:
 				if set(('cshlib', 'cxxshlib')) & set(tgen.features):
 					mapentry = ElementTree.SubElement(attrib, 'mapEntry', {'key':'LD_LIBRARY_PATH'})
-					mapentry.set('value', '${workspace_loc:/%s}/Release' % tgen.get_name())
+					mapentry.set('value', '${workspace_loc:/%s}/%s' % (tgen.get_name(), self.build_dir))
 
 		return ElementTree.tostring(root)
 
