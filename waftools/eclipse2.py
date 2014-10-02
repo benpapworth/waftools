@@ -130,8 +130,8 @@ def export(bld):
 	if not bld.options.eclipse and not hasattr(bld, 'eclipse'):
 		return
 
-	_detect_workspace_location(bld)
-	_scan_project_locations(bld)
+	get_workspace_loc(bld)
+	detect_project_duplicates(bld)
 
 	targets = get_targets(bld)
 
@@ -170,7 +170,7 @@ def cleanup(bld):
 		project.cleanup()
 
 
-def _detect_workspace_location(bld):
+def get_workspace_loc(bld):
 	'''Detect and save the top level directory containing Eclipse workspace
 	settings.
 	'''
@@ -184,7 +184,7 @@ def _detect_workspace_location(bld):
 	bld.workspace_loc = path.replace('\\', '/')
 
 
-def _scan_project_locations(bld):
+def detect_project_duplicates(bld):
 	'''Warns when multiple TaskGen's has been defined in the same directory.
 
 	Since Eclipse works with static project filenames, only one project	per
