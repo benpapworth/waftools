@@ -239,7 +239,7 @@ class Project(object):
 		self.appname = getattr(Context.g_module, Context.APPNAME)
 		self.tgen = tgen
 		self.natures = []
-		self.buildcommands = []
+		self.buildcommands = {}
 		self.comments = ['<?xml version="1.0" encoding="UTF-8"?>']
 
 	def export(self):
@@ -299,13 +299,14 @@ class Project(object):
 		for use in uses:
 			ElementTree.SubElement(projects, 'project').text = use
 
-		buildcommands = list(self.buildcommands)
+		buildcommands = self.buildcommands
 		buildspec = root.find('buildSpec')
 		for buildcommand in buildspec.findall('buildCommand'):
-			if buildcommand.text in buildcommands: buildcommands.remove(buildcommand.text)
+			name = buildcommand.find('name').text
+			try: buildcommands.pop(name) 
+			except KeyError: pass
 		
-		for buildcommand in buildcommands:
-			(name, triggers, arguments) = buildcommand
+		for name, (triggers, arguments) in buildcommands.items():
 			element = ElementTree.SubElement(buildspec, 'buildCommand')
 			ElementTree.SubElement(element, 'name').text = name
 			if triggers is not None:
@@ -366,8 +367,8 @@ class CDTProject(Project):
 			self.project.natures.append('org.eclipse.cdt.core.ccnature')
 		self.project.natures.append('org.eclipse.cdt.managedbuilder.core.managedBuildNature')
 		self.project.natures.append('org.eclipse.cdt.managedbuilder.core.ScannerConfigNature')
-		self.project.buildcommands.append(('org.eclipse.cdt.managedbuilder.core.genmakebuilder', 'clean,full,incremental,', None))
-		self.project.buildcommands.append(('org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder', 'full,incremental,', None))
+		self.project.buildcommands['org.eclipse.cdt.managedbuilder.core.genmakebuilder'] = ('clean,full,incremental,', None)
+		self.project.buildcommands['org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder'] = ('full,incremental,', None)
 
 		self.uuid = {
 			'debug': self.get_uuid(),
@@ -430,12 +431,26 @@ class CDTProject(Project):
 			if module.get('moduleId') == 'org.eclipse.cdt.core.settings':
 				pass #self._update_cdt_core_settings(module)
 			if module.get('moduleId') == 'cdtBuildSystem':
-				pass #self._update_buildsystem(module)
+				self.update_buildsystem(module)
 			if module.get('moduleId') == 'scannerConfiguration':
 				pass #self._update_scannerconfiguration(module)
 			if module.get('moduleId') == 'refreshScope':
 				self.update_refreshscope(module)
 		return ElementTree.tostring(root)
+
+	def update_buildsystem(self, module):
+		s = ''
+		if self.bld.env.DEST_OS == 'win32':
+			s = 'mingw.'
+		pid = '%s.cdt.managedbuild.target.gnu.%s%s' % (self.tgen.get_name(), s, self.kind)
+		for project in module.findall('project'):
+			if project.get('id').startswith(pid):
+				return
+		attr = {
+			'id': '%s.%s' % (pid,self.get_uuid()), 
+			'name': self.kind_name, 
+			'projectType': 'cdt.managedbuild.target.gnu.%s%s' % (s, self.kind) }
+		ElementTree.SubElement(module, 'project', attrib=attr)
 
 	def update_refreshscope(self, module):
 		name = '%s_%s' % (self.bld.env.DEST_OS.lower(), self.bld.env.DEST_CPU.lower())
