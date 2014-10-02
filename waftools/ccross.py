@@ -91,7 +91,7 @@ def build(bld, trees=[]):
 			bld.read_shlib(lib, paths=bld.env.LIBPATH)
 
 	elif bld.options.all:
-		if bld.cmd in ('build', 'clean', 'install', 'uninstall', 'codeblocks', 'makefile'):
+		if bld.cmd in ('build', 'clean', 'install', 'uninstall', 'codeblocks', 'makefile', 'eclipse'):
 			for variant in bld.env.CCROSS.keys():
 				Scripting.run_command('%s_%s' % (bld.cmd, variant))
 
