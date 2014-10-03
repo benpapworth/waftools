@@ -505,20 +505,9 @@ class CDTProject(EclipseProject):
 			if storage.get('moduleId') == 'cdtBuildSystem':
 				self.cconfig_buildsystem_update(storage)
 
-	def	cconfig_settings_get_binparser(self, storage):
-		extensions = storage.find('extensions')				
-		for extension in extensions:
-			if extension.get('point') == 'org.eclipse.cdt.core.BinaryParser':
-				return extension
-		extension = ElementTree.Element('extension', {'point':'org.eclipse.cdt.core.BinaryParser'})
-		extensions.insert(0, extension)
-		return extension
-
 	def	cconfig_settings_update(self, storage):
 		storage.set('name', self.cdt['name'])
 		storage.set('id', self.cdt['instance'])
-		binparser = self.cconfig_settings_get_binparser(storage)		
-		binparser.set('id', self.cdt['parser'])
 
 		settings = storage.find('externalSettings')
 		if self.cdt['ext'] == 'exe':
@@ -573,6 +562,7 @@ class CDTProject(EclipseProject):
 		if self.cross:
 			target.set('archList', self.cdt['archList'])
 			target.set('osList', self.cdt['osList'])
+		target.set('binaryParser', 'org.eclipse.cdt.core.PE;org.eclipse.cdt.core.ELF;org.eclipse.cdt.core.GNU_ELF')
 
 	def toolchain_builder_update(self, toolchain):
 		builder = toolchain.find('builder')
@@ -859,6 +849,9 @@ ECLIPSE_CDT_CCONFIGURATION = '''
 			</externalSetting>
 		</externalSettings>
 		<extensions>
+			<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+			<extension id="org.eclipse.cdt.core.PE" point="org.eclipse.cdt.core.BinaryParser"/>
+			<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 			<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 			<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 			<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
