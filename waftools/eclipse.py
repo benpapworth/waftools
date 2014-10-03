@@ -378,35 +378,52 @@ class CDTProject(EclipseProject):
 			self.cdt['kind'] = 'Static Library'
 			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.staticLib'
 			self.cdt['artifactExtension'] = 'a'
-			
-		self.cdt['cc'] = 'gnu%s' % ('.mingw' if sys.platform == 'win32' else '')
+
+		ar = os.path.splitext(os.path.basename(tgen.env.AR))[0]	
+		self.cdt['c'] = os.path.splitext(os.path.basename(tgen.env.CC[0]))[0]
+		self.cdt['cpp'] = os.path.splitext(os.path.basename(tgen.env.CXX[0]))[0]
+		self.cdt['ar'] = ar
+		self.cdt['as'] = ar.replace('ar', 'as')
+
+		self.cdt['gnu'] = 'gnu%s' % ('.mingw' if sys.platform == 'win32' else '')
 		self.cdt['build'] = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
-		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s' % (self.cdt['cc'], self.cdt['build'])
+		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s' % (self.cdt['gnu'], self.cdt['build'])
 		self.cdt['instance'] = '%s.%s' % (self.cdt['parent'], self.get_uuid())
 		self.cdt['name'] = '%s_%s' % (tgen.env.DEST_OS, tgen.env.DEST_CPU)
 		self.cdt['parser'] = 'org.eclipse.cdt.core.PE' if tgen.env.DEST_OS=='win32' else 'org.eclipse.cdt.core.ELF' 		
 
-		c = 'cdt.managedbuild.tool.gnu.%s.compiler.%s' % (self.language, 'mingw.' if sys.platform=='win32' else '')
-		c += '%s.%s' % (self.cdt['ext'], 'debug' if '-g' in tgen.env.CFLAGS else 'release')
-		self.cdt['compiler'] = '%s.%s' % (c, self.get_uuid())	
+		s = 'cdt.managedbuild.tool.gnu.%s.compiler.%s' % (self.language, 'mingw.' if sys.platform=='win32' else '')
+		s += '%s.%s' % (self.cdt['ext'], 'debug' if '-g' in tgen.env.CFLAGS else 'release')
+		self.cdt['compiler'] = '%s.%s' % (s, self.get_uuid())	
 		self.cdt['input'] = 'cdt.managedbuild.tool.gnu.%s.compiler.input.%s' % (self.language, self.get_uuid())
 
 		d = tgen.env.DEST_OS
 		c = tgen.env.DEST_CPU
+		self.cdt['archiver'] = 'cdt.managedbuild.tool.gnu.archiver%s.base' % ('.mingw' if d=='win32' else '')
+		
 		# TODO: assuming host is i386 only!!!		
 		if sys.platform.startswith(d) and c in ('x86_64', 'x86', 'ia'):
 			self.cross = False
-			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.%s.%s.%s' % (self.cdt['cc'], self.cdt['build'], self.cdt['ext'])
-			self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platform%s.%s.%s' % ('.mingw' if d=='win32' else '', '', '')
+			t = '%s.%s' % (self.cdt['build'], self.cdt['ext'])
+			tt = '%s.%s' % ('.mingw' if d=='win32' else '', t)
+			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.%s.%s' % (self.cdt['gnu'], t)
+			self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platform%s' % (tt)
+			self.cdt['assembler'] = 'cdt.managedbuild.tool.gnu.assembler%s' % (tt)
+			self.cdt['c_compiler'] = 'cdt.managedbuild.tool.gnu.c.compiler%s' % (tt)
+			self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler%s' % (tt)
+			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker%s' % (tt)
+			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker%s' % (tt)
 		else:
 			self.cross = True
 			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.base'
 			self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platforms.base'
 			self.cdt['archList'] = 'all'
 			self.cdt['osList'] = 'linux,hpux,aix,qnx'
-
-		self.cdt['archiver'] = 'cdt.managedbuild.tool.gnu.archiver%s.base' % ('.mingw' if d=='win32' else '')
-
+			self.cdt['assembler'] = 'cdt.managedbuild.tool.gnu.assembler.base'
+			self.cdt['c_compiler'] = 'cdt.managedbuild.tool.gnu.c.compiler.base'
+			self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler.base'
+			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker.base'
+			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker.base'
 
 	def get_uuid(self):
 		uuid = codecs.encode(os.urandom(4), 'hex_codec')
@@ -439,8 +456,8 @@ class CDTProject(EclipseProject):
 		project = module.find('project')
 		if project == None:
 			project = ElementTree.SubElement(module, 'project')
-		ptype = 'cdt.managedbuild.target.%s.%s' % (self.cdt['cc'], self.cdt['ext'])
-		
+		ptype = 'cdt.managedbuild.target.%s.%s' % (self.cdt['gnu'], self.cdt['ext'])
+
 		project.set('id', '%s.%s.%s' % (self.tgen.get_name(), ptype, self.get_uuid()))
 		project.set('name', self.cdt['kind'])
 		project.set('projectType', ptype)
@@ -530,7 +547,16 @@ class CDTProject(EclipseProject):
 		toolchain.set('superClass', self.cdt['toolchain'])
 		toolchain.set('id', '%s.%s' % (self.cdt['toolchain'], self.get_uuid()))
 		toolchain.set('name', '%s' % ('MinGW GCC' if d=='win32' else 'Linux GCC'))
-		
+
+		self.toolchain_target_update(toolchain)
+		self.toolchain_builder_update(toolchain)
+		self.toolchain_archiver_update(toolchain)
+		self.toolchain_assembler_update(toolchain)
+		self.toolchain_compiler_update(toolchain, 'c')
+		self.toolchain_compiler_update(toolchain, 'cpp')
+		self.toolchain_linker_update(toolchain, self.language)
+
+	def toolchain_target_update(self, toolchain):		
 		target = toolchain.find('targetPlatform')
 		target.set('name', self.cdt['name'])
 		target.set('superClass', self.cdt['platform'])
@@ -539,30 +565,77 @@ class CDTProject(EclipseProject):
 			target.set('archList', self.cdt['archList'])
 			target.set('osList', self.cdt['osList'])
 
+	def toolchain_builder_update(self, toolchain):
 		builder = toolchain.find('builder')
 		builder.set('buildPath', '${workspace_loc:/%s}/%s' % (self.tgen.get_name(), self.cdt['name']))
 		builder.set('superClass', 'cdt.managedbuild.target.gnu.builder.base')
 		builder.set('id', '%s.%s' % (builder.get('superClass'), self.get_uuid()))
 		builder.set('name', 'Gnu Make Builder%s' % ('.%s' % self.cdt['name'] if self.cross else ''))
 
-		archiver = self.toolchain_archiver_get(toolchain)
-		archiver.set('name', 'GCC Archiver')
-		archiver.set('superClass', self.cdt['archiver'])
-		archiver.set('id', '%s.%s' % (self.cdt['archiver'], self.get_uuid()))
-
-		''' TODO:
-		add remaining:
-		- compiler
-		- linker
-		- assembler
-		- input
-		'''
-
 	def toolchain_archiver_get(self, toolchain):
 		for tool in toolchain.findall('tool'):
 			if tool.get('superClass').count('.gnu.archiver.'):
 				return tool
-		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'', 'superClass':''})
+		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC Archiver', 'superClass':''})
+
+	def toolchain_archiver_update(self, toolchain):
+		archiver = self.toolchain_archiver_get(toolchain)
+		archiver.set('superClass', self.cdt['archiver'])
+		archiver.set('id', '%s.%s' % (self.cdt['archiver'], self.get_uuid()))
+		if self.cross:
+			archiver.set('command', self.cdt['ar'])
+
+	def toolchain_assembler_get(self, toolchain):
+		for tool in toolchain.findall('tool'):
+			if tool.get('superClass').count('.gnu.assembler.'):
+				return tool
+		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC Assembler', 'superClass':''})
+
+	def toolchain_assembler_update(self, toolchain):
+		assembler = self.toolchain_assembler_get(toolchain)
+		assembler.set('superClass', self.cdt['assembler'])
+		assembler.set('id', '%s.%s' % (self.cdt['assembler'], self.get_uuid()))
+		if self.cross:
+			assembler.set('command', self.cdt['as'])
+		
+		inputtype = assembler.find('inputType')
+		if inputtype is None:
+			inputtype = ElementTree.SubElement(assembler, 'inputType')
+		inputtype.set('superClass', 'cdt.managedbuild.tool.gnu.assembler.input')
+		inputtype.set('id', '%s.%s' % (inputtype.get('superClass'), self.get_uuid()))
+
+	def toolchain_compiler_get(self, toolchain, language):
+		for tool in toolchain.findall('tool'):
+			if tool.get('superClass').count('.gnu.%s.compiler.' % language):
+				return tool
+		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC %s Compiler' % language.upper().replace('P', '+'), 'superClass':''})
+
+	def toolchain_compiler_update(self, toolchain, language):
+		compiler = self.toolchain_compiler_get(toolchain, language)
+		compiler.set('superClass', self.cdt['%s_compiler' % language])
+		compiler.set('id', '%s.%s' % (compiler.get('superClass'), self.get_uuid()))
+		if self.cross:
+			compiler.set('command', self.cdt[language])
+		# TODO: add compile options
+		# TODO: add includes
+		# TODO: add preprocessor
+		# TODO: add inputs
+
+	def toolchain_linker_get(self, toolchain, language):
+		for tool in toolchain.findall('tool'):
+			if tool.get('superClass').count('.gnu.%s.linker.' % language):
+				return tool
+		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC %s Linker' % language.upper().replace('P', '+'), 'superClass':''})
+
+	def toolchain_linker_update(self, toolchain, language):
+		linker = self.toolchain_linker_get(toolchain, language)
+		linker.set('superClass', self.cdt['%s_linker' % language])
+		linker.set('id', '%s.%s' % (linker.get('superClass'), self.get_uuid()))
+		if self.cross:
+			linker.set('command', self.cdt[language])
+		# TODO: add linker options
+		# TODO: add inputs
+
 
 ECLIPSE_PROJECT = \
 '''<?xml version="1.0" encoding="UTF-8"?>
