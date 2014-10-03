@@ -357,8 +357,12 @@ class CDTProject(EclipseProject):
 					*.project* file.
 	:param project: Project
 	'''
-	def __init__(self, bld, tgen):
+	def __init__(self, bld, tgen):		
 		super(CDTProject, self).__init__(bld, tgen, '.cproject', ECLIPSE_CDT_PROJECT)
+		
+		d = tgen.env.DEST_OS
+		c = tgen.env.DEST_CPU
+		
 		self.comments = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>','<?fileVersion 4.0.0?>']
 		self.language = 'cpp' if 'cxx' in tgen.features else 'c'
 		self.cdt = {}
@@ -366,12 +370,14 @@ class CDTProject(EclipseProject):
 			self.cdt['ext'] = 'exe'
 			self.cdt['kind'] = 'Executable'
 			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.exe'
-			
+			if d!='win32':
+				self.cdt['artifactExtension'] = ''
+
 		if set(('cshlib', 'cxxshlib')) & set(tgen.features):
 			self.cdt['ext'] = 'so'
 			self.cdt['kind'] = 'Shared Library'
 			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.sharedLib'
-			self.cdt['artifactExtension'] = 'dll' if tgen.env.DEST_OS=='win32' else 'so'
+			self.cdt['artifactExtension'] = 'dll' if d=='win32' else 'so'
 			
 		if set(('cstlib', 'cxxstlib')) & set(tgen.features):
 			self.cdt['ext'] = 'lib'
@@ -396,9 +402,6 @@ class CDTProject(EclipseProject):
 		s += '%s.%s' % (self.cdt['ext'], 'debug' if '-g' in tgen.env.CFLAGS else 'release')
 		self.cdt['compiler'] = '%s.%s' % (s, self.get_uuid())	
 		self.cdt['input'] = 'cdt.managedbuild.tool.gnu.%s.compiler.input.%s' % (self.language, self.get_uuid())
-
-		d = tgen.env.DEST_OS
-		c = tgen.env.DEST_CPU
 		self.cdt['archiver'] = 'cdt.managedbuild.tool.gnu.archiver%s.base' % ('.mingw' if d=='win32' else '')
 		
 		# TODO: assuming host is i386 only!!!		
@@ -653,6 +656,11 @@ class CDTProject(EclipseProject):
 		option.set('superClass', '%s.%s.%s.option.debugging.level' % (t, self.cdt['ext'], self.cdt['build']))		
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 		option.set('value', 'gnu.%s.debugging.level.%s' % (language, debug_level))
+
+		if self.tgen.env.DEST_CPU == 'powerpc':
+			option = ElementTree.SubElement(compiler, 'option', {'value':'-c','valueType':'string'})
+			option.set('superClass', 'gnu.c.compiler.option.misc.other')
+			option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 
 		if self.cdt['ext'] == 'so' and self.language == language:
 			option = ElementTree.SubElement(compiler, 'option', {'value':'true','valueType':'boolean'})
