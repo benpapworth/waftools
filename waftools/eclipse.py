@@ -391,6 +391,23 @@ class CDTProject(EclipseProject):
 		self.cdt['compiler'] = '%s.%s' % (c, self.get_uuid())	
 		self.cdt['input'] = 'cdt.managedbuild.tool.gnu.%s.compiler.input.%s' % (self.language, self.get_uuid())
 
+		d = tgen.env.DEST_OS
+		c = tgen.env.DEST_CPU
+		# TODO: assuming host is i386 only!!!		
+		if sys.platform.startswith(d) and c in ('x86_64', 'x86', 'ia'):
+			self.cross = False
+			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.%s.%s.%s' % (self.cdt['cc'], self.cdt['build'], self.cdt['ext'])
+			self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platform%s.%s.%s' % ('.mingw' if d=='win32' else '', '', '')
+		else:
+			self.cross = True
+			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.base'
+			self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platforms.base'
+			self.cdt['archList'] = 'all'
+			self.cdt['osList'] = 'linux,hpux,aix,qnx'
+
+		self.cdt['archiver'] = 'cdt.managedbuild.tool.gnu.archiver%s.base' % ('.mingw' if d=='win32' else '')
+
+
 	def get_uuid(self):
 		uuid = codecs.encode(os.urandom(4), 'hex_codec')
 		return int(uuid, 16)
@@ -492,7 +509,6 @@ class CDTProject(EclipseProject):
 					entry.set('name', '%s' % name)
 
 	def	cconfig_buildsystem_update(self, storage):
-		'''TODO: to be implemented...'''
 		config = storage.find('configuration')
 		config.set('name', self.cdt['name'])
 		config.set('buildArtefactType', self.cdt['buildArtefactType'])
@@ -500,14 +516,53 @@ class CDTProject(EclipseProject):
 			config.set('artifactExtension', self.cdt['artifactExtension'])
 		config.set('parent', self.cdt['parent'])
 		config.set('id', self.cdt['instance'])
-		prop = '{0}={0}.{1}'.format('org.eclipse.cdt.build.core.buildType', self.cdt['ext'])
-		prop += ',org.eclipse.cdt.build.core.buildArtefactType=%s' % config.get('buildArtefactType')
+				
+		prop = '{0}.{1}={0}.{1}.{3},{0}.{2}={0}.{2}.{3}'.format( \
+			'org.eclipse.cdt.build.core', 'buildType', 'buildArtefactType', self.cdt['ext'])
 		config.set('buildProperties', prop)
 		folder = config.find('folderInfo')
 		folder.set('id','%s.' % (self.cdt['instance']))
-		# TODO: toolchain
+		self.cconfig_toolchain_update(folder)
 
+	def	cconfig_toolchain_update(self, folder):
+		d = self.tgen.env.DEST_OS
+		toolchain = folder.find('toolChain')
+		toolchain.set('superClass', self.cdt['toolchain'])
+		toolchain.set('id', '%s.%s' % (self.cdt['toolchain'], self.get_uuid()))
+		toolchain.set('name', '%s' % ('MinGW GCC' if d=='win32' else 'Linux GCC'))
+		
+		target = toolchain.find('targetPlatform')
+		target.set('name', self.cdt['name'])
+		target.set('superClass', self.cdt['platform'])
+		target.set('id', '%s.%s' % (self.cdt['platform'], self.get_uuid()))
+		if self.cross:
+			target.set('archList', self.cdt['archList'])
+			target.set('osList', self.cdt['osList'])
 
+		builder = toolchain.find('builder')
+		builder.set('buildPath', '${workspace_loc:/%s}/%s' % (self.tgen.get_name(), self.cdt['name']))
+		builder.set('superClass', 'cdt.managedbuild.target.gnu.builder.base')
+		builder.set('id', '%s.%s' % (builder.get('superClass'), self.get_uuid()))
+		builder.set('name', 'Gnu Make Builder%s' % ('.%s' % self.cdt['name'] if self.cross else ''))
+
+		archiver = self.toolchain_archiver_get(toolchain)
+		archiver.set('name', 'GCC Archiver')
+		archiver.set('superClass', self.cdt['archiver'])
+		archiver.set('id', '%s.%s' % (self.cdt['archiver'], self.get_uuid()))
+
+		''' TODO:
+		add remaining:
+		- compiler
+		- linker
+		- assembler
+		- input
+		'''
+
+	def toolchain_archiver_get(self, toolchain):
+		for tool in toolchain.findall('tool'):
+			if tool.get('superClass').count('.gnu.archiver.'):
+				return tool
+		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'', 'superClass':''})
 
 ECLIPSE_PROJECT = \
 '''<?xml version="1.0" encoding="UTF-8"?>
@@ -557,6 +612,7 @@ ECLIPSE_CDT_PROJECT = \
 </cproject>
 '''
 
+
 ECLIPSE_CDT_CCONFIGURATION = '''
 <cconfiguration>
 	<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="" moduleId="org.eclipse.cdt.core.settings" name="">
@@ -580,7 +636,7 @@ ECLIPSE_CDT_CCONFIGURATION = '''
 			<folderInfo id="" name="/" resourcePath="">
 				<toolChain id="" name="" superClass="">
 					<targetPlatform id="" name="" superClass=""/>
-					<builder buildPath="" id="" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass=""/>
+					<builder buildPath="" id="" name="" superClass=""/>
 				</toolChain>
 			</folderInfo>
 		</configuration>
@@ -588,3 +644,4 @@ ECLIPSE_CDT_CCONFIGURATION = '''
 	<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>	
 </cconfiguration>
 '''
+
