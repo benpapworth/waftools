@@ -387,7 +387,7 @@ class CDTProject(EclipseProject):
 
 		self.cdt['gnu'] = 'gnu%s' % ('.mingw' if sys.platform == 'win32' else '')
 		self.cdt['build'] = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
-		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s' % (self.cdt['gnu'], self.cdt['build'])
+		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s.%s' % (self.cdt['gnu'], self.cdt['ext'], self.cdt['build'])
 		self.cdt['instance'] = '%s.%s' % (self.cdt['parent'], self.get_uuid())
 		self.cdt['name'] = '%s_%s' % (tgen.env.DEST_OS, tgen.env.DEST_CPU)
 		self.cdt['parser'] = 'org.eclipse.cdt.core.PE' if tgen.env.DEST_OS=='win32' else 'org.eclipse.cdt.core.ELF' 		
@@ -404,7 +404,7 @@ class CDTProject(EclipseProject):
 		# TODO: assuming host is i386 only!!!		
 		if sys.platform.startswith(d) and c in ('x86_64', 'x86', 'ia'):
 			self.cross = False
-			t = '%s.%s' % (self.cdt['build'], self.cdt['ext'])
+			t = '%s.%s' % (self.cdt['ext'], self.cdt['build'])
 			tt = '%s.%s' % ('.mingw' if d=='win32' else '', t)
 			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.%s.%s' % (self.cdt['gnu'], t)
 			self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platform%s' % (tt)
@@ -414,7 +414,6 @@ class CDTProject(EclipseProject):
 			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker%s' % (tt)
 			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker%s' % (tt)			
 			self.cdt['compiler_option'] = 'gnu.{0}.compiler%s.%s.%s.option.{1}.level' % ('.mingw' if d=='win32' else '', self.cdt['ext'], self.cdt['build'])
-
 		else:
 			self.cross = True
 			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.base'
@@ -503,17 +502,20 @@ class CDTProject(EclipseProject):
 			if storage.get('moduleId') == 'cdtBuildSystem':
 				self.cconfig_buildsystem_update(storage)
 
-	def	cconfig_settings_update(self, storage):
-		storage.set('name', self.cdt['name'])
-		storage.set('id', self.cdt['instance'])
+	def	cconfig_settings_get_binparser(self, storage):
 		extensions = storage.find('extensions')				
 		for extension in extensions:
 			if extension.get('point') == 'org.eclipse.cdt.core.BinaryParser':
-				extension.set('id', self.cdt['parser'])
-				return
-		extension = ElementTree.SubElement(extensions, 'extension')
-		extension.set('point', 'org.eclipse.cdt.core.BinaryParser')
-		extension.set('id', self.cdt['parser'])
+				return extension
+		extension = ElementTree.Element('extension', {'point':'org.eclipse.cdt.core.BinaryParser'})
+		extensions.insert(0, extension)
+		return extension
+
+	def	cconfig_settings_update(self, storage):
+		storage.set('name', self.cdt['name'])
+		storage.set('id', self.cdt['instance'])
+		binparser = self.cconfig_settings_get_binparser(storage)		
+		binparser.set('id', self.cdt['parser'])
 
 		settings = storage.find('externalSettings')
 		if self.cdt['ext'] == 'exe':
@@ -536,9 +538,9 @@ class CDTProject(EclipseProject):
 			config.set('artifactExtension', self.cdt['artifactExtension'])
 		config.set('parent', self.cdt['parent'])
 		config.set('id', self.cdt['instance'])
-				
-		prop = '{0}.{1}={0}.{1}.{3},{0}.{2}={0}.{2}.{3}'.format( \
-			'org.eclipse.cdt.build.core', 'buildType', 'buildArtefactType', self.cdt['ext'])
+
+		prop = '{0}.{1}={0}.{1}.{3},{0}.{2}={0}.{2}.{4}'.format( \
+			'org.eclipse.cdt.build.core', 'buildType', 'buildArtefactType', self.cdt['build'], self.cdt['ext'])
 		config.set('buildProperties', prop)
 		folder = config.find('folderInfo')
 		folder.set('id','%s.' % (self.cdt['instance']))
@@ -553,11 +555,12 @@ class CDTProject(EclipseProject):
 
 		self.toolchain_target_update(toolchain)
 		self.toolchain_builder_update(toolchain)
-		self.toolchain_archiver_update(toolchain)
 		self.toolchain_assembler_update(toolchain)
-		self.toolchain_compiler_update(toolchain, 'c')
+		self.toolchain_archiver_update(toolchain)
 		self.toolchain_compiler_update(toolchain, 'cpp')
-		self.toolchain_linker_update(toolchain, self.language)
+		self.toolchain_compiler_update(toolchain, 'c')
+		self.toolchain_linker_update(toolchain, 'cpp')
+		self.toolchain_linker_update(toolchain, 'c')
 
 	def toolchain_target_update(self, toolchain):		
 		target = toolchain.find('targetPlatform')
@@ -573,6 +576,7 @@ class CDTProject(EclipseProject):
 		builder.set('buildPath', '${workspace_loc:/%s}/%s' % (self.tgen.get_name(), self.cdt['name']))
 		builder.set('superClass', 'cdt.managedbuild.target.gnu.builder.base')
 		builder.set('id', '%s.%s' % (builder.get('superClass'), self.get_uuid()))
+		builder.set('keepEnvironmentInBuildfile', 'false')
 		builder.set('name', 'Gnu Make Builder%s' % ('.%s' % self.cdt['name'] if self.cross else ''))
 
 	def toolchain_archiver_get(self, toolchain):
@@ -580,12 +584,13 @@ class CDTProject(EclipseProject):
 			if tool.get('superClass').count('.gnu.archiver.'):
 				tool.clear()
 				return tool
-		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC Archiver', 'superClass':''})
+		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'', 'superClass':''})
 
 	def toolchain_archiver_update(self, toolchain):
 		archiver = self.toolchain_archiver_get(toolchain)
 		archiver.set('superClass', self.cdt['archiver'])
 		archiver.set('id', '%s.%s' % (self.cdt['archiver'], self.get_uuid()))
+		archiver.set('name', 'GCC Archiver')
 		if self.cross:
 			archiver.set('command', self.cdt['ar'])
 
@@ -594,15 +599,16 @@ class CDTProject(EclipseProject):
 			if tool.get('superClass').count('.gnu.assembler.'):
 				tool.clear()
 				return tool
-		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC Assembler', 'superClass':''})
+		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'', 'superClass':''})
 
 	def toolchain_assembler_update(self, toolchain):
 		assembler = self.toolchain_assembler_get(toolchain)
 		assembler.set('superClass', self.cdt['assembler'])
-		assembler.set('id', '%s.%s' % (self.cdt['assembler'], self.get_uuid()))
+		assembler.set('id', '%s.%s' % (self.cdt['assembler'], self.get_uuid()))		
+		assembler.set('name', 'GCC Assembler')
 		if self.cross:
 			assembler.set('command', self.cdt['as'])
-		
+
 		inputtype = assembler.find('inputType')
 		if inputtype is None:
 			inputtype = ElementTree.SubElement(assembler, 'inputType')
@@ -614,12 +620,13 @@ class CDTProject(EclipseProject):
 			if tool.get('superClass').count('.gnu.%s.compiler.' % language):
 				tool.clear()
 				return tool
-		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC %s Compiler' % language.upper().replace('P', '+'), 'superClass':''})
+		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'', 'superClass':''})
 
 	def toolchain_compiler_update(self, toolchain, language):
 		compiler = self.toolchain_compiler_get(toolchain, language)
 		compiler.set('superClass', self.cdt['%s_compiler' % language])
 		compiler.set('id', '%s.%s' % (compiler.get('superClass'), self.get_uuid()))
+		compiler.set('name', 'GCC %s Compiler' % language.upper().replace('P', '+'))
 		if self.cross:
 			compiler.set('command', self.cdt[language])
 		self.compiler_add_options(compiler, language)
@@ -640,12 +647,12 @@ class CDTProject(EclipseProject):
 		option = ElementTree.SubElement(compiler, 'option', {'name':'Optimization Level', 'valueType':'enumerated'})
 		option.set('superClass', '%s.%s.%s.option.optimization.level' % (t, self.cdt['ext'], self.cdt['build']))
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
-		option.set('value', 'gnu.%s.compiler.optimization.level.%s' % (language, optimization_level))
+		option.set('defaultValue', 'gnu.%s.optimization.level.%s' % (language, optimization_level))
 
 		option = ElementTree.SubElement(compiler, 'option', {'name':'Debug Level', 'valueType':'enumerated'})
 		option.set('superClass', '%s.%s.%s.option.debugging.level' % (t, self.cdt['ext'], self.cdt['build']))		
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
-		option.set('value', 'gnu.%s.compiler.debugging.level.%s' % (language, debug_level))
+		option.set('value', 'gnu.%s.debugging.level.%s' % (language, debug_level))
 
 		if self.cdt['ext'] == 'so' and self.language == language:
 			option = ElementTree.SubElement(compiler, 'option', {'value':'true','valueType':'boolean'})
@@ -702,7 +709,7 @@ class CDTProject(EclipseProject):
 			listoption.set('value', '\'%s\'' % define)
 
 	def compiler_add_input(self, compiler, language):
-		if not compiler.get('id').count('.%s.' % language):
+		if self.language != language:
 			return
 
 		ci = self.cdt['input']
@@ -719,12 +726,13 @@ class CDTProject(EclipseProject):
 			if tool.get('superClass').count('.gnu.%s.linker.' % language):
 				tool.clear()
 				return tool
-		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC %s Linker' % language.upper().replace('P', '+'), 'superClass':''})
+		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'', 'superClass':''})
 
 	def toolchain_linker_update(self, toolchain, language):
 		linker = self.toolchain_linker_get(toolchain, language)
 		linker.set('superClass', self.cdt['%s_linker' % language])
 		linker.set('id', '%s.%s' % (linker.get('superClass'), self.get_uuid()))
+		linker.set('name', 'GCC %s Linker' % language.upper().replace('P', '+'))
 		if self.cross:
 			linker.set('command', self.cdt[language])
 			
