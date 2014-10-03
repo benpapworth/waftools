@@ -365,12 +365,20 @@ class CDTProject(EclipseProject):
 		if set(('cprogram', 'cxxprogram')) & set(tgen.features):
 			self.cdt['ext'] = 'exe'
 			self.cdt['kind'] = 'Executable'
+			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.exe'
+			
 		if set(('cshlib', 'cxxshlib')) & set(tgen.features):
 			self.cdt['ext'] = 'so'
-			self.cdt['kind'] = 'Shared Library'			
+			self.cdt['kind'] = 'Shared Library'
+			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.sharedLib'
+			self.cdt['artifactExtension'] = 'dll' if tgen.env.DEST_OS=='win32' else 'so'
+			
 		if set(('cstlib', 'cxxstlib')) & set(tgen.features):
 			self.cdt['ext'] = 'lib'
 			self.cdt['kind'] = 'Static Library'
+			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.staticLib'
+			self.cdt['artifactExtension'] = 'a'
+			
 		self.cdt['cc'] = 'gnu%s' % ('.mingw' if sys.platform == 'win32' else '')
 		self.cdt['build'] = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
 		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s' % (self.cdt['cc'], self.cdt['build'])
@@ -404,7 +412,6 @@ class CDTProject(EclipseProject):
 		return ElementTree.tostring(root)
 
 	def update_cdt_core_settings(self, module):
-		'''TODO: contains bulk of project '''
 		cconfig = self.cconfig_get(module)
 		if not cconfig:
 			cconfig = ElementTree.fromstring(ECLIPSE_CDT_CCONFIGURATION)
@@ -456,6 +463,8 @@ class CDTProject(EclipseProject):
 		for storage in cconfig.findall('storageModule'):
 			if storage.get('moduleId') == 'org.eclipse.cdt.core.settings':
 				self.cconfig_settings_update(storage)
+			if storage.get('moduleId') == 'cdtBuildSystem':
+				self.cconfig_buildsystem_update(storage)
 
 	def	cconfig_settings_update(self, storage):
 		storage.set('name', self.cdt['name'])
@@ -481,6 +490,23 @@ class CDTProject(EclipseProject):
 					entry.set('name', '/%s/%s' % (name, self.cdt['name']))
 				if entry.get('kind') == 'libraryFile':
 					entry.set('name', '%s' % name)
+
+	def	cconfig_buildsystem_update(self, storage):
+		'''TODO: to be implemented...'''
+		config = storage.find('configuration')
+		config.set('name', self.cdt['name'])
+		config.set('buildArtefactType', self.cdt['buildArtefactType'])
+		if 'artifactExtension' in self.cdt:
+			config.set('artifactExtension', self.cdt['artifactExtension'])
+		config.set('parent', self.cdt['parent'])
+		config.set('id', self.cdt['instance'])
+		prop = '{0}={0}.{1}'.format('org.eclipse.cdt.build.core.buildType', self.cdt['ext'])
+		prop += ',org.eclipse.cdt.build.core.buildArtefactType=%s' % config.get('buildArtefactType')
+		config.set('buildProperties', prop)
+		folder = config.find('folderInfo')
+		folder.set('id','%s.' % (self.cdt['instance']))
+		# TODO: toolchain
+
 
 
 ECLIPSE_PROJECT = \
