@@ -360,6 +360,7 @@ class CDTProject(EclipseProject):
 	def __init__(self, bld, tgen):
 		super(CDTProject, self).__init__(bld, tgen, '.cproject', ECLIPSE_CDT_PROJECT)
 		self.comments = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>','<?fileVersion 4.0.0?>']
+		self.language = 'cpp' if 'cxx' in tgen.features else 'c'
 		self.cdt = {}
 		if set(('cprogram', 'cxxprogram')) & set(tgen.features):
 			self.cdt['ext'] = 'exe'
@@ -374,7 +375,13 @@ class CDTProject(EclipseProject):
 		self.cdt['build'] = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
 		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s' % (self.cdt['cc'], self.cdt['build'])
 		self.cdt['instance'] = '%s.%s' % (self.cdt['parent'], self.get_uuid())
-		self.cdt['name'] = '%s_%s' % (tgen.env.DEST_OS.lower(), tgen.env.DEST_CPU.lower())
+		self.cdt['name'] = '%s_%s' % (tgen.env.DEST_OS, tgen.env.DEST_CPU)
+		self.cdt['parser'] = 'org.eclipse.cdt.core.PE' if tgen.env.DEST_OS=='win32' else 'org.eclipse.cdt.core.ELF' 		
+
+		c = 'cdt.managedbuild.tool.gnu.%s.compiler.%s' % (self.language, 'mingw.' if sys.platform=='win32' else '')
+		c += '%s.%s' % (self.cdt['ext'], 'debug' if '-g' in tgen.env.CFLAGS else 'release')
+		self.cdt['compiler'] = '%s.%s' % (c, self.get_uuid())	
+		self.cdt['input'] = 'cdt.managedbuild.tool.gnu.%s.compiler.input.%s' % (self.language, self.get_uuid())
 
 	def get_uuid(self):
 		uuid = codecs.encode(os.urandom(4), 'hex_codec')
@@ -393,26 +400,26 @@ class CDTProject(EclipseProject):
 
 		for module in root.findall('storageModule'):
 			if module.get('moduleId') == 'scannerConfiguration':
-				self.update_scannerconfiguration(module)
+				self.update_scanner_configuration(module)
 		return ElementTree.tostring(root)
 
 	def update_cdt_core_settings(self, module):
 		'''TODO: contains bulk of project '''
-		pass
+		cconfig = self.cconfig_get(module)
+		if not cconfig:
+			cconfig = ElementTree.fromstring(ECLIPSE_CDT_CCONFIGURATION)
+			module.append(cconfig)
+		self.cconfig_update(cconfig)
 
 	def update_buildsystem(self, module):
 		project = module.find('project')
-		if not project:
+		if project == None:
 			project = ElementTree.SubElement(module, 'project')
-
-		pid = '%s.cdt.managedbuild.target.%s.%s' % (self.tgen.get_name(), self.cdt['cc'], self.cdt['ext'])		
-		for element in module.findall('project'):
-			if element.get('id').startswith(pid):
-				return
-		project.set('id', '%s.%s' % (pid, self.get_uuid()))
+		ptype = 'cdt.managedbuild.target.%s.%s' % (self.cdt['cc'], self.cdt['ext'])
+		
+		project.set('id', '%s.%s.%s' % (self.tgen.get_name(), ptype, self.get_uuid()))
 		project.set('name', self.cdt['kind'])
-		project.set('projectType', 'cdt.managedbuild.target.%s.%s' % (self.cdt['cc'], self.cdt['ext']))
-
+		project.set('projectType', ptype)
 
 	def update_refreshscope(self, module):
 		name = self.cdt['name']
@@ -426,8 +433,54 @@ class CDTProject(EclipseProject):
 		resource.set('workspacePath', '/%s' % self.tgen.get_name())
 
 	def update_scanner_configuration(self, module):
-		'''TODO: depends on CDT core settings '''
-		pass
+		i = self.cdt['instance']
+		c = self.cdt['compiler']
+		f = self.cdt['input']
+		scanner = ElementTree.SubElement(module, 'scannerConfigBuildInfo')
+		scanner.set('instanceId', '%s;%s.;%s;%s' % (i, i, c, f))
+		ElementTree.SubElement(scanner, 'autodiscovery', {'enabled': 'true', 'problemReportingEnabled' : 'true', 'selectedProfileId' : ''})
+
+	def	cconfig_get(self, module):
+		'''Returns configuration module'''
+		for cconfig in module.findall('cconfiguration'):
+			if cconfig.get('id') and cconfig.get('id').startswith(self.cdt['parent']):
+				for storage in cconfig.findall('storageModule'):
+					if storage.get('moduleId') == 'org.eclipse.cdt.core.settings':
+						if storage.get('name') == self.cdt['name']:
+							return cconfig
+		return None
+
+	def	cconfig_update(self, cconfig):
+		'''Update configuration module.'''
+		cconfig.set('id', self.cdt['instance'])
+		for storage in cconfig.findall('storageModule'):
+			if storage.get('moduleId') == 'org.eclipse.cdt.core.settings':
+				self.cconfig_settings_update(storage)
+
+	def	cconfig_settings_update(self, storage):
+		storage.set('name', self.cdt['name'])
+		storage.set('id', self.cdt['instance'])
+		extensions = storage.find('extensions')				
+		for extension in extensions:
+			if extension.get('point') == 'org.eclipse.cdt.core.BinaryParser':
+				extension.set('id', self.cdt['parser'])
+				return
+		extension = ElementTree.SubElement(extensions, 'extension')
+		extension.set('point', 'org.eclipse.cdt.core.BinaryParser')
+		extension.set('id', self.cdt['parser'])
+
+		settings = storage.find('externalSettings')
+		if self.cdt['ext'] == 'exe':
+			settings.clear()
+		else:
+			name = self.tgen.get_name()
+			for entry in settings.iter('entry'):
+				if entry.get('kind') == 'includePath':
+					entry.set('name', '/%s' % name)
+				if entry.get('kind') == 'libraryPath':
+					entry.set('name', '/%s/%s' % (name, self.cdt['name']))
+				if entry.get('kind') == 'libraryFile':
+					entry.set('name', '%s' % name)
 
 
 ECLIPSE_PROJECT = \
@@ -466,6 +519,7 @@ ECLIPSE_CDT_PROJECT = \
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="" name="" projectType=""/>	
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
@@ -477,4 +531,34 @@ ECLIPSE_CDT_PROJECT = \
 </cproject>
 '''
 
-
+ECLIPSE_CDT_CCONFIGURATION = '''
+<cconfiguration>
+	<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="" moduleId="org.eclipse.cdt.core.settings" name="">
+		<externalSettings>
+			<externalSetting>
+				<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name=""/>
+				<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name=""/>
+				<entry flags="RESOLVED" kind="libraryFile" name="" srcPrefixMapping="" srcRootPath=""/>
+			</externalSetting>
+		</externalSettings>
+		<extensions>
+			<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+			<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+			<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+			<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+			<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+		</extensions>
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<configuration artifactName="${ProjName}" buildArtefactType="" buildProperties="" cleanCommand="rm -rf" description="" id="" name="" parent="">
+			<folderInfo id="" name="/" resourcePath="">
+				<toolChain id="" name="" superClass="">
+					<targetPlatform id="" name="" superClass=""/>
+					<builder buildPath="" id="" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass=""/>
+				</toolChain>
+			</folderInfo>
+		</configuration>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>	
+</cconfiguration>
+'''
