@@ -412,7 +412,9 @@ class CDTProject(EclipseProject):
 			self.cdt['c_compiler'] = 'cdt.managedbuild.tool.gnu.c.compiler%s' % (tt)
 			self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler%s' % (tt)
 			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker%s' % (tt)
-			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker%s' % (tt)
+			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker%s' % (tt)			
+			self.cdt['compiler_option'] = 'gnu.{0}.compiler%s.%s.%s.option.{1}.level' % ('.mingw' if d=='win32' else '', self.cdt['ext'], self.cdt['build'])
+
 		else:
 			self.cross = True
 			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.base'
@@ -424,6 +426,7 @@ class CDTProject(EclipseProject):
 			self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler.base'
 			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker.base'
 			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker.base'
+
 
 	def get_uuid(self):
 		uuid = codecs.encode(os.urandom(4), 'hex_codec')
@@ -575,6 +578,7 @@ class CDTProject(EclipseProject):
 	def toolchain_archiver_get(self, toolchain):
 		for tool in toolchain.findall('tool'):
 			if tool.get('superClass').count('.gnu.archiver.'):
+				tool.clear()
 				return tool
 		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC Archiver', 'superClass':''})
 
@@ -588,6 +592,7 @@ class CDTProject(EclipseProject):
 	def toolchain_assembler_get(self, toolchain):
 		for tool in toolchain.findall('tool'):
 			if tool.get('superClass').count('.gnu.assembler.'):
+				tool.clear()
 				return tool
 		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC Assembler', 'superClass':''})
 
@@ -607,6 +612,7 @@ class CDTProject(EclipseProject):
 	def toolchain_compiler_get(self, toolchain, language):
 		for tool in toolchain.findall('tool'):
 			if tool.get('superClass').count('.gnu.%s.compiler.' % language):
+				tool.clear()
 				return tool
 		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC %s Compiler' % language.upper().replace('P', '+'), 'superClass':''})
 
@@ -616,14 +622,102 @@ class CDTProject(EclipseProject):
 		compiler.set('id', '%s.%s' % (compiler.get('superClass'), self.get_uuid()))
 		if self.cross:
 			compiler.set('command', self.cdt[language])
-		# TODO: add compile options
-		# TODO: add includes
-		# TODO: add preprocessor
-		# TODO: add inputs
+		self.compiler_add_options(compiler, language)
+		self.compiler_add_includes(compiler, language)
+		self.compiler_add_defines(compiler, language)
+		self.compiler_add_input(compiler, language)
+
+	def compiler_add_options(self, compiler, language):		
+		if self.cdt['build'] == 'debug':
+			optimization_level = 'none'
+			debug_level = 'max'
+		else:
+			optimization_level = 'most'
+			debug_level = 'none'
+
+		d = self.tgen.env.DEST_OS
+		t = 'gnu.%s.compiler%s' % (language, '.mingw' if d=='win32' else '')
+		option = ElementTree.SubElement(compiler, 'option', {'name':'Optimization Level', 'valueType':'enumerated'})
+		option.set('superClass', '%s.%s.%s.option.optimization.level' % (t, self.cdt['ext'], self.cdt['build']))
+		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+		option.set('value', 'gnu.%s.compiler.optimization.level.%s' % (language, optimization_level))
+
+		option = ElementTree.SubElement(compiler, 'option', {'name':'Debug Level', 'valueType':'enumerated'})
+		option.set('superClass', '%s.%s.%s.option.debugging.level' % (t, self.cdt['ext'], self.cdt['build']))		
+		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+		option.set('value', 'gnu.%s.compiler.debugging.level.%s' % (language, debug_level))
+
+		if self.cdt['ext'] == 'so' and self.language == language:
+			option = ElementTree.SubElement(compiler, 'option', {'value':'true','valueType':'boolean'})
+			option.set('superClass', 'gnu.%s.compiler.option.misc.pic' % language)
+			option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+
+	def compiler_add_includes(self, compiler, language):
+		if self.language != language:
+			return
+		uses = Utils.to_list(getattr(self.tgen, 'use', []))
+		includes = Utils.to_list(getattr(self.tgen, 'includes', []))
+		
+		if not len(uses) and not len(includes):
+			return
+
+		option = ElementTree.SubElement(compiler, 'option', {'name':'Include paths (-I)', 'valueType':'includePath'})
+		option.set('superClass', 'gnu.%s.compiler.option.include.paths' % (language))
+		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+
+		for include in [str(i).lstrip('./') for i in includes]:
+			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+			listoption.set('value', '"${workspace_loc:/${ProjName}/%s}"' % (include))
+
+		for use in uses:
+			try:
+				tgen = self.bld.get_tgen_by_name(use)
+			except Errors.WafError:
+				pass
+			else:
+				includes = Utils.to_list(getattr(tgen, 'export_includes', []))
+				for include in [i.lstrip('./') for i in includes]:
+					listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+					listoption.set('value', '"${workspace_loc:/%s/%s}"' % (use, include))
+
+	def compiler_add_defines(self, compiler, language):
+		if self.language != language:
+			return
+		
+		defines = list(self.tgen.env.DEFINES)
+		if not len(defines):
+			return
+
+		if language == 'cpp':
+			superclass = 'gnu.cpp.compiler.option.preprocessor.def'
+		else:
+			superclass = 'gnu.c.compiler.option.preprocessor.def.symbols'
+
+		option = ElementTree.SubElement(compiler, 'option', {'name':'Defined symbols (-D)', 'valueType':'definedSymbols'})
+		option.set('superClass', superclass)
+		option.set('id', '%s.%s' % (superclass, self.get_uuid()))
+
+		for define in defines:
+			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+			listoption.set('value', '\'%s\'' % define)
+
+	def compiler_add_input(self, compiler, language):
+		if not compiler.get('id').count('.%s.' % language):
+			return
+
+		ci = self.cdt['input']
+		inputtype = ElementTree.SubElement(compiler, 'inputType')
+		inputtype.set('superClass', '.'.join(ci.split('.')[:-1]))
+		inputtype.set('id', ci)
+		
+		if self.cdt['ext'] == 'so':
+			ElementTree.SubElement(inputtype, 'additionalInput', {'kind':'additionalinputdependency', 'paths':'$(USER_OBJS)'})
+			ElementTree.SubElement(inputtype, 'additionalInput', {'kind':'additionalinput', 'paths':'$(LIBS)'})
 
 	def toolchain_linker_get(self, toolchain, language):
 		for tool in toolchain.findall('tool'):
 			if tool.get('superClass').count('.gnu.%s.linker.' % language):
+				tool.clear()
 				return tool
 		return ElementTree.SubElement(toolchain, 'tool', {'id':'', 'name':'GCC %s Linker' % language.upper().replace('P', '+'), 'superClass':''})
 
@@ -633,8 +727,60 @@ class CDTProject(EclipseProject):
 		linker.set('id', '%s.%s' % (linker.get('superClass'), self.get_uuid()))
 		if self.cross:
 			linker.set('command', self.cdt[language])
-		# TODO: add linker options
-		# TODO: add inputs
+			
+		if self.cdt['ext'] == 'so':
+			option = ElementTree.SubElement(linker, 'option', {'name':'Shared (-shared)', 'defaultValue':'true', 'valueType':'boolean'})
+			option.set('superClass', 'gnu.%s.link.so.%s.option.shared' % (language, self.cdt['build']))
+			option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+
+		self.toolchain_linker_add_libs(linker, language)
+		self.toolchain_linker_add_libpaths(linker, language)
+		self.toolchain_linker_add_input(linker, language)
+
+	def toolchain_linker_get_libs(self, language):
+		if self.language != language:
+			return None
+		libs = []
+		for use in getattr(self.tgen, 'use', []):
+			try:
+				tgen = self.bld.get_tgen_by_name(use)
+			except Errors.WafError:
+				pass
+			else:
+				if set(('cstlib', 'cshlib','cxxstlib', 'cxxshlib')) & set(tgen.features):
+					libs.append(tgen.get_name())
+		return libs if len(libs) else None
+
+	def toolchain_linker_add_libs(self, linker, language):
+		libs = self.toolchain_linker_get_libs(language)
+		if not libs:
+			return
+		option = ElementTree.SubElement(linker, 'option', {'name':'Libraries (-l)', 'valueType':'libs'})
+		option.set('superClass', 'gnu.%s.link.option.libs' % (language))
+		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+		for lib in libs:
+			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+			listoption.set('value', lib)
+
+	def toolchain_linker_add_libpaths(self, linker, language):
+		libs = self.toolchain_linker_get_libs(language)
+		if not libs:
+			return
+		option = ElementTree.SubElement(linker, 'option', {'name':'Library search path (-L)', 'valueType':'libPaths'})
+		option.set('superClass', 'gnu.%s.link.option.paths' % (language))
+		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+		for lib in libs:
+			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+			listoption.set('value', '"${workspace_loc:/%s/%s}"' % (lib, self.cdt['name']))
+
+	def toolchain_linker_add_input(self, linker, language):
+		if self.language != language or self.cdt['ext'] == 'lib':
+			return
+		inputtype = ElementTree.SubElement(linker, 'inputType')
+		inputtype.set('superClass', 'cdt.managedbuild.tool.gnu.%s.linker.input' % (language))
+		inputtype.set('id', '%s.%s' % (inputtype.get('superClass'), self.get_uuid()))
+		ElementTree.SubElement(inputtype, 'additionalInput', {'kind':'additionalinputdependency', 'paths':'$(USER_OBJS)'})
+		ElementTree.SubElement(inputtype, 'additionalInput', {'kind':'additionalinput', 'paths':'$(LIBS)'})
 
 
 ECLIPSE_PROJECT = \
