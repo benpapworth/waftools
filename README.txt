@@ -59,8 +59,8 @@ for one or more target platforms using a C/C++ cross compiler::
 	prefix = 'output'
 	ccrossini = os.path.abspath('ccross.ini').replace('\\', '/')
 
-	VERSION = waftools.version
-	APPNAME = 'waftools-test'
+	VERSION = '0.0.1'
+	APPNAME = 'cross-test'
 
 	def options(opt):
 		opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
