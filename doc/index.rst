@@ -6,7 +6,7 @@
 
 Waftools 0.1.7 documentation
 ============================
-Welcome! This is the documentation for the *waftools* package, last updated Oct 1\ :sup:`st`\  2014.
+Welcome! This is the documentation for the *waftools* package, last updated Oct 4\ :sup:`th`\  2014.
 
 
 Overview
