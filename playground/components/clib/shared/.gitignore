@@ -1,3 +1,6 @@
 Debug/*
 Release/*
 
+/win32_x86/
+/linux_arm/
+/linux_powerpc/
