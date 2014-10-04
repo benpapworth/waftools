@@ -106,6 +106,13 @@ environment. Any wscript files below those top level script files will have to b
 included using the *bld.recurse('../somepath')* command from the top level script 
 of that tree.
 
+
+Support
+-------
+Defects and/or feature requests can be reported at::
+	https://bitbucket.org/Moo7/waftools/issues
+	
+
 .. note::
 	the complete package documentation can be found at: 
 	http://pythonhosted.org/waftools/
