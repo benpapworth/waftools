@@ -132,7 +132,6 @@ def export(bld):
 	if not bld.options.eclipse and not hasattr(bld, 'eclipse'):
 		return
 
-	bld.workspace_loc = get_workspace_loc(bld)
 	detect_project_duplicates(bld)
 	targets = get_targets(bld)
 
@@ -161,19 +160,6 @@ def cleanup(bld):
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			Project(bld, tgen).clean()
 			CDTProject(bld, tgen).clean()
-
-
-def get_workspace_loc(bld):
-	'''Detect and save the top level directory containing Eclipse workspace
-	settings.
-	'''
-	path = bld.path.abspath()
-	while not os.path.exists(os.sep.join((path, '.metadata'))):
-		if os.path.dirname(path) == path:
-			Logs.warn('WARNING ECLIPSE EXPORT: FAILED TO DETECT WORKSPACE_LOC.')
-			return None
-		path = os.path.dirname(path)
-	return path.replace('\\', '/')
 
 
 def detect_project_duplicates(bld):
@@ -212,15 +198,6 @@ def detect_project_duplicates(bld):
 		Logs.info('- use one task per directory/wscript.')
 		Logs.info('- don\'t place tasks in the top level directory/wscript.')
 		Logs.info('')
-
-
-def is_subdir(child, parent, follow_symlinks=True):
-	'''Returns True when child is a sub directory of parent.
-	'''
-	if follow_symlinks:
-		parent = os.path.realpath(parent)
-		child = os.path.realpath(child)
-	return child.startswith(parent)
 
 
 class EclipseProject(object):
@@ -314,7 +291,7 @@ class Project(EclipseProject):
 
 	def add_projects(self, root):
 		projects = root.find('projects')
-		uses = getattr(self.tgen, 'use', [])
+		uses = list(Utils.to_list(getattr(self.tgen, 'use', [])))		
 		for project in projects.findall('project'):
 			if project.text in uses: uses.remove(project.text)
 		for use in uses:
@@ -670,18 +647,22 @@ class CDTProject(EclipseProject):
 		option.set('superClass', 'gnu.%s.compiler.option.include.paths' % (language))
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 
-		for include in [str(i).lstrip('./') for i in includes]:
-			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
-			listoption.set('value', '"${workspace_loc:/${ProjName}/%s}"' % (include))
+		includes = list(set([str(i).lstrip('./') for i in includes]))
+		for include in includes:
+			pth = os.path.join(self.tgen.path.abspath(), include)			
+			if os.path.exists(pth):
+				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+				listoption.set('value', '"${workspace_loc:/${ProjName}/%s}"' % (include))
 
 		for use in uses:
 			try:
-				tgen = self.bld.get_tgen_by_name(use)
+				tg = self.bld.get_tgen_by_name(use)
 			except Errors.WafError:
 				pass
 			else:
-				includes = Utils.to_list(getattr(tgen, 'export_includes', []))
-				for include in [i.lstrip('./') for i in includes]:
+				includes = Utils.to_list(getattr(tg, 'export_includes', []))
+				includes = list(set([str(i).lstrip('./') for i in includes]))
+				for include in includes:
 					listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 					listoption.set('value', '"${workspace_loc:/%s/%s}"' % (use, include))
 
