@@ -6,7 +6,8 @@
 
 Waftools 0.1.7 documentation
 ============================
-Welcome! This is the documentation for the *waftools* package, last updated Oct 4\ :sup:`th`\  2014.
+Welcome! This is the documentation for the *waftools* package, last updated 
+Oct 5\ :sup:`th`\  2014.
 
 
 Overview
@@ -32,6 +33,71 @@ Following provides a non-exhausting list of functions provided by this package:
 - Create installers using **NSIS**
 - C/C++ export to makefiles (e.g. **make**, **cmake**)
 - List dependencies between build tasks
+
+
+Cross-compile build environments
+--------------------------------
+The code snippet below provides an example of how a complete build environment
+can be created allowing you to build, not only for the host system, but also 
+for one or more target platforms using a C/C++ cross compiler::
+
+	#!/usr/bin/env python
+	# -*- encoding: utf-8 -*-
+
+	import os, waftools
+	from waftools import ccross
+
+	top = '.'
+	out = 'build'
+	prefix = 'output'
+	ccrossini = os.path.abspath('ccross.ini').replace('\\', '/')
+
+	VERSION = '0.0.1'
+	APPNAME = 'cross-test'
+
+	def options(opt):
+		opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
+		opt.load('ccross', tooldir=waftools.location)
+
+	def configure(conf):
+		conf.load('ccross')
+
+	def build(bld):
+		ccross.build(bld, trees=['components'])
+
+	for var in ccross.variants(ccrossini):
+		for ctx in ccross.contexts():
+			name = ctx.__name__.replace('Context','').lower()
+			class _t(ctx):
+				__doc__ = "%ss '%s'" % (name, var)
+				cmd = name + '_' + var
+				variant = var
+
+When loading and configuring the *ccross* tool, as shown in the example above, all 
+required C/C++ tools for each build environment variant (i.e. native or cross-
+compile) will be loaded and configured as well; e.g. compilers, makefile-, cmake-, 
+eclipse-, codeblocks- and msdev exporters, cppcheck source code checking, doxygen 
+documentation creation will be available for each build variant. Cross compile 
+build environments can be specified in a seperate .INI file (named ccross.ini 
+in the example above) using following syntax::
+
+	[arm]
+	prefix = arm-linux-gnueabihf
+
+The section name, *arm* in the example above, specifies the name of the cross-compile
+build environment variant. The prefix will be in used to create the concrete names of
+the cross compile toolchain binaries::
+
+	AR	= arm-linux-gnueabihf-ar
+	CC	= arm-linux-gnueabihf-gcc
+	CXX	= arm-linux-gnueabihf-g++
+
+Concrete build scripts (i.e. wscript files) for components can be placed somewhere 
+within the *components* sub-directory. Any top level wscript file of a tree (being 
+*components* in this example) will be detected and incorporated within the build 
+environment. Any wscript files below those top level script files will have to be 
+included using the *bld.recurse('../somepath')* command from the top level script 
+of that tree.
 
 
 Source code checking
@@ -238,72 +304,6 @@ or dependency to the waf build system.
 
 For more information please refer to the detailed description of the 
 :ref:`cmake <mod_cmake>` and :ref:`makefile <mod_makefile>` modules.
-
-
-Setting compile build environments
-----------------------------------
-The code snippet below provides an example of how a complete build environment
-can be created allowing you to build, not only for the host system, but also 
-for one or more target platforms using a C/C++ cross compiler::
-
-	#!/usr/bin/env python
-	# -*- encoding: utf-8 -*-
-
-	import os, waftools
-	from waftools import ccross
-
-	top = '.'
-	out = 'build'
-	prefix = 'output'
-	ccrossini = os.path.abspath('ccross.ini').replace('\\', '/')
-
-	VERSION = '0.0.1'
-	APPNAME = 'cross-test'
-
-	def options(opt):
-		opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
-		opt.load('ccross', tooldir=waftools.location)
-
-	def configure(conf):
-		conf.load('ccross')
-
-	def build(bld):
-		ccross.build(bld, trees=['components'])
-
-	for var in ccross.variants(ccrossini):
-		for ctx in ccross.contexts():
-			name = ctx.__name__.replace('Context','').lower()
-			class _t(ctx):
-				__doc__ = "%ss '%s'" % (name, var)
-				cmd = name + '_' + var
-				variant = var
-
-When loading and configuring the *ccross* tool, as shown in the example above, all 
-required C/C++ tools for each build environment variant (i.e. native or cross-
-compile) will be loaded and configured as well; e.g. compilers, makefile-, cmake-, 
-eclipse-, codeblocks- and msdev exporters, cppcheck source code checking, doxygen 
-documentation creation will be available for each build variant. Cross compile 
-build environments can be specified in a seperate .INI file (named ccross.ini 
-in the example above) using following syntax::
-
-	[arm]
-	prefix = arm-linux-gnueabihf
-
-The section name, *arm* in the example above, specifies the name of the cross-compile
-build environment variant. The prefix will be in used to create the concrete names of
-the cross compile toolchain binaries::
-
-	AR	= arm-linux-gnueabihf-ar
-	CC	= arm-linux-gnueabihf-gcc
-	CXX	= arm-linux-gnueabihf-g++
-
-Concrete build scripts (i.e. wscript files) for components can be placed somewhere 
-within the *components* sub-directory. Any top level wscript file of a tree (being 
-*components* in this example) will be detected and incorporated within the build 
-environment. Any wscript files below those top level script files will have to be 
-included using the *bld.recurse('../somepath')* command from the top level script 
-of that tree.
-
 
 
 Detailed description
