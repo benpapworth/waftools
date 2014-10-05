@@ -26,6 +26,8 @@ def configure(conf):
 
 
 def build(bld):
+	bld.recurse('doc')
+
 	if bld.cmd == 'install':
 		cmd = 'python setup.py install'
 		if bld.options.user:
