@@ -3,19 +3,17 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 import sys
+from waflib import Scripting
+
 
 def build(bld):
 	cwd = bld.path.path_from(bld.bldnode).replace('\\', '/')
 
 	if sys.platform == 'win32':
-		cmd = 'set BUILDDIR=%CD%/_build & make --directory=%s html > ${TGT}' % cwd
-	else
-		cmd = 'export BUILDDIR=`pwd`/_build;make --directory=%s html > ${TGT}' % cwd
-
-	bld(name='doc', rule=cmd, target='doc.log')
-
-	
-
+		cmd = 'set BUILDDIR=%CD%/doc & make --directory=%s html > ${TGT}' % cwd
+	else:
+		cmd = 'export BUILDDIR=`pwd`/doc;make --directory=%s html > ${TGT}' % cwd
+	bld(name='doc', rule=cmd, target='doc.log', always=True)
 
 
 

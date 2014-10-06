@@ -4,6 +4,7 @@
 
 
 import waftools
+from waflib import Scripting
 
 
 top = '.'
@@ -15,29 +16,34 @@ APPNAME = 'waftools'
 
 
 def options(opt):
-	opt.add_option('--pypi', dest='pypi', default=False, action='store_true', help='publish package on PyPi')
-	opt.add_option('--user', dest='user', default=False, action='store_true', help='install waftools in user directory')	
-	opt.load('eclipse', tooldir=waftools.location)
+	opt.add_option('--upload', dest='upload', default=False, action='store_true', help='publish package on PyPi')
 
 
 def configure(conf):
 	conf.check_waf_version(mini='1.7.0')
-	conf.load('eclipse')
 
 
 def build(bld):
+	cmd = 'python setup.py sdist --formats=gztar'
+	bld.cmd_and_log(cmd, cwd=bld.path.abspath())
 	bld.recurse('doc')
+	bld.add_post_fun(post)
 
-	if bld.cmd == 'install':
-		cmd = 'python setup.py install'
-		if bld.options.user:
-			cmd += ' --user'
-		bld.cmd_and_log(cmd, cwd=bld.path.abspath())
+
+def post(ctx):
+	# create archive containing HTML documentation
+	tg = ctx.get_tgen_by_name('doc')
+	ctx = Scripting.Dist()
+	ctx.algo = 'zip'
+	ctx.arch_name = 'waftools-doc-html.zip'
+	html = tg.path.get_bld().find_node('html')
+	ctx.files = html.ant_glob('**')
+	ctx.base_name = ''
+	ctx.base_path = html
+	ctx.archive()
 
 
 def dist(dst):
-	if dst.options.pypi:
-		dst.cmd_and_log('python setup.py sdist --formats=gztar upload', cwd=dst.path.abspath())
 	dst.algo = 'tar.gz'
 	dst.excl = '**/*~ **/*.pyc **/__pycache__/** \
 		**/.lock-waf_* build/** **/*.tar.gz \
@@ -50,4 +56,5 @@ def dist(dst):
 		test/**/CMakeLists.txt \
 		test/**/*.cbp test/**/*.layout test/**/*.workspace test/**/*.workspace.layout \
 		test/**/*.vcproj test/**/*.sln test/**/*.user test/**/*.ncb test/**/*.suo'
+
 

@@ -1,6 +1,7 @@
 *.pyc
 *~
 *.tar.gz
+*.zip
 .lock-waf*
 MANIFEST
 dist/*
