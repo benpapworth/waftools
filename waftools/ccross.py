@@ -43,6 +43,7 @@ def options(opt):
 	opt.load('msdev', tooldir=waftools.location)
 	opt.load('package', tooldir=waftools.location)
 	opt.load('tree', tooldir=waftools.location)
+	opt.load('indent', tooldir=waftools.location)	
 
 
 def configure(conf):	
@@ -82,6 +83,7 @@ def configure(conf):
 	conf.load('msdev')
 	conf.load('package')
 	conf.load('tree')
+	conf.load('indent')
 
 
 def build(bld, trees=[]):
