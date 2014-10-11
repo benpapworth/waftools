@@ -114,6 +114,8 @@ Once exported simple open the *codeblocks.workspace* using **Code::Blocks**.
 This will automatically open all exported projects as well.
 '''
 
+# TODO: contains errors for cross-compilers (WIN32 specific?)
+
 import os
 import sys
 import copy

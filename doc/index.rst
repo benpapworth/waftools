@@ -4,10 +4,10 @@
    contain the root `toctree` directive.
 
 
-Waftools 0.1.7 documentation
+Waftools 0.1.8 documentation
 ============================
 Welcome! This is the documentation for the *waftools* package, last updated 
-Oct 5\ :sup:`th`\  2014.
+Oct 11\ :sup:`th`\  2014.
 
 
 Overview
@@ -29,7 +29,8 @@ Following provides a non-exhausting list of functions provided by this package:
 
 - C/C++ source code checking using **CppCheck** (including *HTML* reports)
 - Create C/C++ documentation using **DoxyGen**
-- C/C++ export to IDE's (e.g. **Code::Blocks**, **Eclipse**, **Visual Studio**)
+- C/C++ export to IDE's (e.g. **CodeBlocks**, **Eclipse**, **VisualStudio**)
+- Clean and format C/C++ source code using **GNU** indent
 - Create installers using **NSIS**
 - C/C++ export to makefiles (e.g. **make**, **cmake**)
 - List dependencies between build tasks

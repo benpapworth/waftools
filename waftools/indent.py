@@ -3,8 +3,33 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 
+'''
+Summary
+-------
+Clean up and format C/C++ source code using GNU indent.
+
+Usage
+-----
+Source code from C/C++ tasks can cleaned and formatted according to the
+specified rules (default is *GNU* style) using the following command::
+
+        $ waf indent --targets=<task>
+
+When cleaning only those task specified using the '--targets=' option
+will be cleaned. The default is to clean all task within the entire build 
+environment. Specific C/C++ task can be permanently excluded from cleaning
+using the 'indent_skipme' as attribute for those tasks.
+
+formatting rules can be specified the using a 'indent.pro' file using the
+options as described for GNU indent. These global rules can used by this
+module when using the '--indent-pro=<path-to-indent-pro' option at 
+configuration time.
+
+''' 
+
+
 import os
-from waflib import Scripting, Utils, Logs, Options
+from waflib import Scripting, Logs
 from waflib.Build import BuildContext
 
 
@@ -27,7 +52,7 @@ class GnuIndentContext(BuildContext):
 	'''format C/C++ source code using GNU indent.'''
 	cmd = 'indent'
 	fun = Scripting.default_cmd
-            
+
 	def execute(self):
 		self.restore()
 		if not self.all_envs:
@@ -113,5 +138,4 @@ class GnuIndentContext(BuildContext):
 		self.indent(tgen, sources, env, cleanup)
 		self.indent(tgen, headers, env, cleanup)
 		Logs.info("indent(%s): finished" % tgen.name)
-
 

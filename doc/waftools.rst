@@ -69,6 +69,9 @@ Module :mod:`eclipse`
     :undoc-members:
     :show-inheritance:
 
+
+.. _mod_export:
+
 Module :mod:`export`
 --------------------
 
@@ -76,6 +79,18 @@ Module :mod:`export`
     :members:
     :undoc-members:
     :show-inheritance:
+
+
+.. _mod_indent:
+
+Module :mod:`indent`
+----------------------
+
+.. automodule:: waftools.indent
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 .. _mod_makefile:
 

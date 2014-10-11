@@ -3,6 +3,16 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 
+'''
+Description
+-----------
+Prepares a package release, performs following steps:
+- build source distribution (i.e. runs 'python setup.py sdist ...')
+- build HTML version of package documentation (using Sphinx)
+- create zip containing documentation
+'''
+
+
 import waftools
 from waflib import Scripting
 
@@ -16,7 +26,7 @@ APPNAME = 'waftools'
 
 
 def options(opt):
-	opt.add_option('--upload', dest='upload', default=False, action='store_true', help='publish package on PyPi')
+	pass
 
 
 def configure(conf):
@@ -31,7 +41,6 @@ def build(bld):
 
 
 def post(ctx):
-	# create archive containing HTML documentation
 	tg = ctx.get_tgen_by_name('doc')
 	ctx = Scripting.Dist()
 	ctx.algo = 'zip'

@@ -2,20 +2,23 @@
 # -*- encoding: utf-8 -*-
 # Michel Mooij, michel.mooij7@gmail.com
 
-'''Setup and configure multiple C/C++ build environments and configure
+'''
+Summary
+-------
+Setup and configure multiple C/C++ build environments and configure
 common C/C++ tools used when cross-compiling.
 
 Following tools are (not yet) supported for cross-compile 
 environments:
 	- cmake
 	- doxygen
-	- eclipse (TODO: to be supported)
+	- eclipse
 	- makefile
 	- msdev
 	- package (already includes build results from cross-compiles) 
 
 TODO: create complete module documentation
-''' 
+'''
 
 import os
 try:
@@ -63,7 +66,7 @@ def configure(conf):
 		conf.load('compiler_c')
 		conf.load('compiler_cxx')
 		conf.load('cppcheck')
-		conf.load('codeblocks') # TODO: contains errors for cross-compilers (WIN32 specific?)
+		conf.load('codeblocks')
 		conf.load('eclipse')
 		conf.load('gnucc')
 		conf.load('makefile')

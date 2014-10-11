@@ -34,12 +34,14 @@ v0.1.6, 2014-09-03 -- Makefiles export:
                       CppCheck reports:
                       - fixed broken hyperlinks when using FireFox (use 'file:///' as prefix in 'href').
 
-v0.1.7, 2014-10-xx -- Added support for multiple build environments for Makefile, Codeblocks modules.
+v0.1.7, 2014-10-06 -- Added support for multiple build environments for Makefile, Codeblocks modules.
                       Added new module 'ccross'; to be used for multiple build environments; e.g. one native
                       build environment and one or more cross compile environments.
 					  Improved Eclipse export; now support mulitple build variants (e.g. build debug GCC, MinGW, ARM and PPC 
 					  at the same time, from one project). Only export settings defined within the environment; don't
 					  assume and auto-create Debug and Release for each build variant. 
 
-                      
+v0.1.8, 2014-10-11 -- Updated package trove classifiers
+                      Added 'indent' module; use GNU indent to clean up and format C/C++ source code.
+
                       
