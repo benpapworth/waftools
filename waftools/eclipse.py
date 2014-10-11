@@ -6,16 +6,80 @@
 Summary
 -------
 Exports and converts *waf* project data, for C/C++ programs, static- and shared
-libraries, into **Eclipse** *CDT* project files (.cbp) and workspaces 
-(codeblock.workspace).
+libraries, into **Eclipse** *CDT* project files (.projects, .cproject).
 **Eclipse** is an open source integrated development environment, which can be, 
 amongst others, used for development of C/C++ programs. 
 
 See https://www.eclipse.org and https://www.eclipse.org/cdt for a more detailed 
 description on how to install and use it for your particular Desktop environment.
 
-REMARKS:
-Supports export of C/C++ projects using GCC / MinGW only. CygWin is NOT supported!
+.. note:: Export of C/C++ projects are supported for GCC/MinGW compilers only, 
+other compilers and/or environments (e.g. MSDEV, CygWin) are NOT supported!
+
+Description
+-----------
+For each single C/C++ task generator (*waflib.TaskGenerator*), for instance a 
+*bld.program(...)* which has been defined within a *wscript* file somewhere in
+the build environment, a single **Eclipse** *CDT* project file will be generated
+in the same directory as where the task generator has been defined. Once generated
+these projects can be imported into **Eclipse** using 'Import -> General ->
+Existing Projects Into Workspace'.
+
+Example below presents an overview of an environment in which **Eclipse** 
+projects already have been exported::
+
+        .
+        ├── components
+        │   └── clib
+        │       ├── program
+        │       │   ├── .project
+        │       │   ├── .cproject
+        │       │   └── wscript
+        │       ├── shared
+        │       │   ├── cshlib.cbp
+		│       │   ├── .project
+        │       │   ├── .cproject
+        │       │   └── wscript
+        │       └── static
+        │           ├── cstlib.cbp
+        │           ├── .project
+        │           ├── .cproject
+        │           └── wscript
+        │
+        ├── waf.cbp
+        ├── codeblocks.workspace
+        └── wscript
+
+
+.. warning:: Export of multiple C/C++ build tasks (program, stlib and/or shlib) 
+which have been defined within the same directory is not supported.
+
+Projects will be exported such that they will use the same settings and 
+structure as has been defined for that build task within the *waf* build 
+environment. Projects will contain exactly **one** build target per build 
+variant that has been defined in the *waf* build environment, as explained in
+the example below;
+
+	**input**:
+	In a *waf* build environment three variants have been defined, one 
+	default (without name) build used for normal compiling and linking for the 
+	current host, and two variants used for cross compiling and linking for
+	embedded systems; one is named *arm5* the other *arm7*.
+	Also the *complete* environment has been configured to be build with
+	debugging information (i.e. the CFLAGS and CXXFLAGS both contain the 
+	compiler option`-g`).
+	
+	**output**:
+	Each exported project will contain the following build targets:
+	- The first named **host-debug**, for the current host platform,
+	- The second named **arm5-debug**, for the ARM5 target, and
+	- The third named **arm7-debug**, for the ARM7 target. 
+	
+Please note that in contrast to a *normal* IDE setup the exported projects 
+will contain either a *debug* **or** a *release* build target but not both at
+the same time. By doing so exported projects will always use the same settings
+(e.g. compiler options, installation paths) as when building the same task in
+the *waf* build environment from command line.
 
 Usage
 -----
@@ -30,8 +94,8 @@ removed using the *clean* command, as shown in the example below::
         $ waf eclipse --clean
 '''
 
-# TODO: add detailed description for 'eclipse' module
-# TODO: add support for multiple variant (e.g. cross-compile)
+# TODO: finish module doc
+# TODO: use command line options --debug and --release when exporting
 
 
 import sys
