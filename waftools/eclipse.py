@@ -103,7 +103,6 @@ import os
 import codecs
 import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
-import waflib
 from waflib import Utils, Logs, Errors, Context
 from waflib.Build import BuildContext
 
