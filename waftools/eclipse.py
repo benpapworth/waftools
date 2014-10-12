@@ -448,18 +448,27 @@ class CDTProject(EclipseProject):
 		s = 'cdt.managedbuild.tool.gnu.%s.compiler.%s%s.%s' % (l, '%s.' % gnut if gnut else '', e, b)
 		self.cdt['compiler'] = '%s.%s' % (s, self.get_uuid())
 		self.cdt['input'] = 'cdt.managedbuild.tool.gnu.%s.compiler.input.%s' % (l, self.get_uuid())
-		self.cdt['archiver'] = 'cdt.managedbuild.tool.gnu.archiver%s.base' % ('.%s' % gnut if gnut else '')
 
 		t = '%s.%s' % (e, b)
 		tt = '%s.%s' % ('.%s' % gnut if gnut else '', t)
 		self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.%s.%s' % (gnu, t)
 		self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platform%s' % (tt)
-		self.cdt['assembler'] = 'cdt.managedbuild.tool.gnu.assembler%s' % (tt)
-		self.cdt['c_compiler'] = 'cdt.managedbuild.tool.gnu.c.compiler%s' % (tt)
-		self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler%s' % (tt)
-		self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker%s' % (tt)
-		self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker%s' % (tt)
 		self.cdt['compiler_option'] = 'gnu.{0}.compiler.option.{1}.level'
+
+		if self.cross:
+			self.cdt['c_compiler'] = 'cdt.managedbuild.tool.gnu.cross.c.compiler'
+			self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cross.cpp.compiler'
+			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.cross.c.linker'
+			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cross.cpp.linker'
+			self.cdt['archiver'] = 'cdt.managedbuild.tool.gnu.cross.archiver'
+			self.cdt['assembler'] = 'cdt.managedbuild.tool.gnu.cross.assembler'
+		else:
+			self.cdt['c_compiler'] = 'cdt.managedbuild.tool.gnu.c.compiler.%s.%s' % (e, b)
+			self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler.%s.%s' % (e, b)
+			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker.%s.%s' % (e, b)
+			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker.%s.%s' % (e, b)
+			self.cdt['archiver'] = 'cdt.managedbuild.tool.gnu.archiver.%s.%s' % (e, b)
+			self.cdt['assembler'] = 'cdt.managedbuild.tool.gnu.assembler.%s.%s' % (e, b)
 
 	def get_uuid(self):
 		uuid = codecs.encode(os.urandom(4), 'hex_codec')
@@ -581,12 +590,12 @@ class CDTProject(EclipseProject):
 		self.toolchain_cross_update(toolchain)
 		self.toolchain_target_update(toolchain)
 		self.toolchain_builder_update(toolchain)
-		self.toolchain_assembler_update(toolchain)
-		self.toolchain_archiver_update(toolchain)
-		self.toolchain_compiler_update(toolchain, 'cpp')
 		self.toolchain_compiler_update(toolchain, 'c')
-		self.toolchain_linker_update(toolchain, 'cpp')
+		self.toolchain_compiler_update(toolchain, 'cpp')
 		self.toolchain_linker_update(toolchain, 'c')
+		self.toolchain_linker_update(toolchain, 'cpp')
+		self.toolchain_archiver_update(toolchain)
+		self.toolchain_assembler_update(toolchain)
 
 	def toolchain_cross_update(self, toolchain):
 		options = toolchain.findall('option')
@@ -595,15 +604,17 @@ class CDTProject(EclipseProject):
 		if not self.cross:
 			return
 
-		option = ElementTree.SubElement(toolchain, 'option', {'valueType':'string'})
-		option.set('superClass', 'cdt.managedbuild.option.gnu.cross.prefix')
-		option.set('id', 'cdt.managedbuild.option.gnu.cross.prefix.%s' % self.get_uuid())
-		option.set('value', str(self.cdt['c']).rstrip('gcc'))
-
-		option = ElementTree.SubElement(toolchain, 'option', {'valueType':'string'})
+		option = ElementTree.Element('option', {'valueType':'string', 'name':'Path'})
 		option.set('superClass', 'cdt.managedbuild.option.gnu.cross.path')
 		option.set('id', 'cdt.managedbuild.option.gnu.cross.path.%s' % self.get_uuid())
 		option.set('value', self.cdt['cc_path'])
+		toolchain.insert(0, option)
+
+		option = ElementTree.Element('option', {'valueType':'string', 'name':'Prefix'})
+		option.set('superClass', 'cdt.managedbuild.option.gnu.cross.prefix')
+		option.set('id', 'cdt.managedbuild.option.gnu.cross.prefix.%s' % self.get_uuid())
+		option.set('value', str(self.cdt['c']).rstrip('gcc'))
+		toolchain.insert(0, option)
 
 	def toolchain_target_update(self, toolchain):
 		target = toolchain.find('targetPlatform')
@@ -621,7 +632,7 @@ class CDTProject(EclipseProject):
 		builder.set('superClass', 'cdt.managedbuild.target.gnu.builder.base')
 		builder.set('id', '%s.%s' % (builder.get('superClass'), self.get_uuid()))
 		builder.set('keepEnvironmentInBuildfile', 'false')
-		builder.set('name', 'Gnu Make Builder%s' % ('.%s' % self.cdt['name'] if self.cross else ''))
+		builder.set('name', 'Gnu Make Builder')
 
 	def toolchain_archiver_get(self, toolchain):
 		for tool in toolchain.findall('tool'):
@@ -634,9 +645,10 @@ class CDTProject(EclipseProject):
 		archiver = self.toolchain_archiver_get(toolchain)
 		archiver.set('superClass', self.cdt['archiver'])
 		archiver.set('id', '%s.%s' % (self.cdt['archiver'], self.get_uuid()))
-		archiver.set('name', 'GCC Archiver')
+		name = 'MinGW Archiver' if sys.platform=='win32' else 'GCC Archiver'
 		if self.cross:
-			archiver.set('command', self.cdt['ar'])
+			name = 'Cross GCC Archiver'
+		archiver.set('name', name)
 
 	def toolchain_assembler_get(self, toolchain):
 		for tool in toolchain.findall('tool'):
@@ -649,9 +661,10 @@ class CDTProject(EclipseProject):
 		assembler = self.toolchain_assembler_get(toolchain)
 		assembler.set('superClass', self.cdt['assembler'])
 		assembler.set('id', '%s.%s' % (self.cdt['assembler'], self.get_uuid()))
-		assembler.set('name', 'GCC Assembler')
+		name = 'MinGW Assembler' if sys.platform=='win32' else 'GCC Assembler'
 		if self.cross:
-			assembler.set('command', self.cdt['as'])
+			name = 'Cross GCC Assembler'
+		assembler.set('name', name)
 
 		inputtype = assembler.find('inputType')
 		if inputtype is None:
@@ -670,12 +683,13 @@ class CDTProject(EclipseProject):
 		compiler = self.toolchain_compiler_get(toolchain, language)
 		compiler.set('superClass', self.cdt['%s_compiler' % language])
 		compiler.set('id', '%s.%s' % (compiler.get('superClass'), self.get_uuid()))
-		compiler.set('name', 'GCC %s Compiler' % language.upper().replace('P', '+'))
+		name = 'G++ Compiler' if language=='cpp' else 'GCC Compiler'
 		if self.cross:
-			compiler.set('command', self.cdt[language])
-		self.compiler_add_options(compiler, language)
+			name = 'Cross ' + name
+		compiler.set('name', name)
 		self.compiler_add_includes(compiler, language)
 		self.compiler_add_defines(compiler, language)
+		self.compiler_add_options(compiler, language)
 		self.compiler_add_input(compiler, language)
 
 	def compiler_add_options(self, compiler, language):
@@ -786,10 +800,10 @@ class CDTProject(EclipseProject):
 		linker = self.toolchain_linker_get(toolchain, language)
 		linker.set('superClass', self.cdt['%s_linker' % language])
 		linker.set('id', '%s.%s' % (linker.get('superClass'), self.get_uuid()))
-		linker.set('name', 'GCC %s Linker' % language.upper().replace('P', '+'))
+		name = 'G++ Linker' if language=='cpp' else 'GCC Linker'
 		if self.cross:
-			linker.set('command', self.cdt[language])
-			
+			name = 'Cross ' + name
+		linker.set('name', name)
 		if self.cdt['ext'] == 'so':
 			option = ElementTree.SubElement(linker, 'option', {'defaultValue':'true', 'valueType':'boolean'})
 			option.set('name', 'Shared (-shared)')
