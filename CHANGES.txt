@@ -43,5 +43,6 @@ v0.1.7, 2014-10-06 -- Added support for multiple build environments for Makefile
 
 v0.1.8, 2014-10-11 -- Updated package trove classifiers
                       Added 'indent' module; use GNU indent to clean up and format C/C++ source code.
+                      Updated module documentation.
 
                       

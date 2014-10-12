@@ -4,6 +4,17 @@ Package waftools
     :members:
 
 
+.. _mod_ccross:
+
+Module :mod:`ccross`
+-------------------
+
+.. automodule:: waftools.ccross
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 .. _mod_cmake:
 
 Module :mod:`cmake`
@@ -37,17 +48,6 @@ Module :mod:`cppcheck`
     :show-inheritance:
 
 
-.. _mod_ccross:
-
-Module :mod:`ccross`
-----------------------
-
-.. automodule:: waftools.ccross
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 .. _mod_doxygen:
 
 Module :mod:`doxygen`
@@ -76,6 +76,17 @@ Module :mod:`export`
 --------------------
 
 .. automodule:: waftools.export
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+.. _mod_gnucc:
+
+Module :mod:`gnucc`
+----------------------
+
+.. automodule:: waftools.gnucc
     :members:
     :undoc-members:
     :show-inheritance:
@@ -134,5 +145,4 @@ Module :mod:`tree`
     :members:
     :undoc-members:
     :show-inheritance:
-
 

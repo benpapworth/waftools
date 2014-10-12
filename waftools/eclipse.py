@@ -7,8 +7,8 @@ Summary
 -------
 Exports and converts *waf* project data, for C/C++ programs, static- and shared
 libraries, into **Eclipse** *CDT* project files (.projects, .cproject).
-**Eclipse** is an open source integrated development environment, which can be, 
-amongst others, used for development of C/C++ programs. 
+**Eclipse** is an open source integrated development environment, which can be 
+used, amongst others, for development of C/C++ programs. 
 
 See https://www.eclipse.org and https://www.eclipse.org/cdt for a more detailed 
 description on how to install and use it for your particular Desktop environment.
@@ -36,18 +36,14 @@ projects already have been exported::
         │       │   ├── .cproject
         │       │   └── wscript
         │       ├── shared
-        │       │   ├── cshlib.cbp
 		│       │   ├── .project
         │       │   ├── .cproject
         │       │   └── wscript
         │       └── static
-        │           ├── cstlib.cbp
         │           ├── .project
         │           ├── .cproject
         │           └── wscript
         │
-        ├── waf.cbp
-        ├── codeblocks.workspace
         └── wscript
 
 
@@ -71,7 +67,7 @@ the example below;
 	
 	**output**:
 	Each exported project will contain the following build targets:
-	- The first named **host-debug**, for the current host platform,
+	- The first named **debug**, for the current host platform,
 	- The second named **arm5-debug**, for the ARM5 target, and
 	- The third named **arm7-debug**, for the ARM7 target. 
 	
@@ -93,9 +89,6 @@ removed using the *clean* command, as shown in the example below::
 
         $ waf eclipse --clean
 '''
-
-# TODO: finish module doc
-# TODO: use command line options --debug and --release when exporting
 
 
 import sys
@@ -435,7 +428,11 @@ class CDTProject(EclipseProject):
 		self.cdt['build'] = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
 		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s.%s' % (self.cdt['gnu'], self.cdt['ext'], self.cdt['build'])
 		self.cdt['instance'] = '%s.%s' % (self.cdt['parent'], self.get_uuid())
-		self.cdt['name'] = '%s_%s' % (tgen.env.DEST_OS, tgen.env.DEST_CPU)
+		
+		name = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
+		if self.variant:
+			name += '%s-%s' % (self.variant, name)
+		self.cdt['name'] = name
 		self.cdt['parser'] = 'org.eclipse.cdt.core.PE' if tgen.env.DEST_OS=='win32' else 'org.eclipse.cdt.core.ELF' 		
 
 		s = 'cdt.managedbuild.tool.gnu.%s.compiler.%s' % (self.language, 'mingw.' if sys.platform=='win32' else '')

@@ -3,7 +3,6 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 import sys
-from waflib import Scripting
 
 
 def build(bld):
