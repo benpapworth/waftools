@@ -36,7 +36,7 @@ projects already have been exported::
         │       │   ├── .cproject
         │       │   └── wscript
         │       ├── shared
-		│       │   ├── .project
+        │       │   ├── .project
         │       │   ├── .cproject
         │       │   └── wscript
         │       └── static
@@ -56,21 +56,21 @@ environment. Projects will contain exactly **one** build target per build
 variant that has been defined in the *waf* build environment, as explained in
 the example below;
 
-	**input**:
-	In a *waf* build environment three variants have been defined, one 
-	default (without name) build used for normal compiling and linking for the 
-	current host, and two variants used for cross compiling and linking for
-	embedded systems; one is named *arm5* the other *arm7*.
-	Also the *complete* environment has been configured to be build with
-	debugging information (i.e. the CFLAGS and CXXFLAGS both contain the 
-	compiler option`-g`).
-	
-	**output**:
-	Each exported project will contain the following build targets:
-	- The first named **debug**, for the current host platform,
-	- The second named **arm5-debug**, for the ARM5 target, and
-	- The third named **arm7-debug**, for the ARM7 target. 
-	
+    **input**:
+    In a *waf* build environment three variants have been defined, one 
+    default (without name) build used for normal compiling and linking for the 
+    current host, and two variants used for cross compiling and linking for
+    embedded systems; one is named *arm5* the other *arm7*.
+    Also the *complete* environment has been configured to be build with
+    debugging information (i.e. the CFLAGS and CXXFLAGS both contain the 
+    compiler option`-g`).
+
+    **output**:
+    Each exported project will contain the following build targets:
+    - The first named **debug**, for the current host platform,
+    - The second named **arm5-debug**, for the ARM5 target, and
+    - The third named **arm7-debug**, for the ARM7 target. 
+
 Please note that in contrast to a *normal* IDE setup the exported projects 
 will contain either a *debug* **or** a *release* build target but not both at
 the same time. By doing so exported projects will always use the same settings
@@ -221,7 +221,7 @@ def cleanup(bld):
 def detect_project_duplicates(bld):
 	'''Warns when multiple TaskGen's have been defined in the same directory.
 
-	Since Eclipse works with static project filenames, only one project	per
+	Since Eclipse works with static project filenames, only one project per
 	directory can be created. If multiple task generators have been defined
 	in the same directory (i.e. same wscript) one will overwrite the other(s).
 	This problem can only e circumvented by changing the structure of the 
@@ -263,8 +263,8 @@ class EclipseProject(object):
 	:type bld: waflib.Build.BuildContext
 
 	:param tgen: Task generator that contains all information of the task to be
-				converted and exported to the *Eclipse* project.
-	:type tgen:	waflib.Task.TaskGen
+	             converted and exported to the *Eclipse* project.
+	:type tgen: waflib.Task.TaskGen
 	'''
 	def __init__(self, bld, tgen, fname, template):
 		self.bld = bld
@@ -331,8 +331,8 @@ class Project(EclipseProject):
 	:type bld: waflib.Build.BuildContext
 
 	:param tgen: Task generator that contains all information of the task to be
-				converted and exported to the *Eclipse* project.
-	:type tgen:	waflib.Task.TaskGen
+	             converted and exported to the *Eclipse* project.
+	:type tgen: waflib.Task.TaskGen
 	'''
 	def __init__(self, bld, tgen):
 		super(Project, self).__init__(bld, tgen, '.project', ECLIPSE_PROJECT)
@@ -347,7 +347,7 @@ class Project(EclipseProject):
 
 	def add_projects(self, root):
 		projects = root.find('projects')
-		uses = list(Utils.to_list(getattr(self.tgen, 'use', [])))		
+		uses = list(Utils.to_list(getattr(self.tgen, 'use', [])))
 		for project in projects.findall('project'):
 			if project.text in uses: uses.remove(project.text)
 		for use in uses:
@@ -383,88 +383,83 @@ class CDTProject(EclipseProject):
 	:type bld: waflib.Build.BuildContext
 
 	:param tgen: Task generator that contains all information of the task to be
-				converted and exported to the *Eclipse* project.
-	:type tgen:	waflib.Task.TaskGen
-		
+	             converted and exported to the *Eclipse* project.
+	:type tgen: waflib.Task.TaskGen
+	
 	:param project: Reference to *Eclipse* project (which will export the 
-					*.project* file.
+	                *.project* file.
 	:param project: Project
 	'''
-	def __init__(self, bld, tgen):		
+	def __init__(self, bld, tgen):
 		super(CDTProject, self).__init__(bld, tgen, '.cproject', ECLIPSE_CDT_PROJECT)
-		
 		d = tgen.env.DEST_OS
 		c = tgen.env.DEST_CPU
-		
+		l = 'cpp' if 'cxx' in tgen.features else 'c'
+		b = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
+
+		self.cross = not sys.platform.startswith(d) or c not in ('x86_64', 'x86', 'ia') # TODO: assuming host is intel based only!!!
 		self.comments = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>','<?fileVersion 4.0.0?>']
-		self.language = 'cpp' if 'cxx' in tgen.features else 'c'
+		self.language = l
 		self.cdt = {}
 		if set(('cprogram', 'cxxprogram')) & set(tgen.features):
 			self.cdt['ext'] = 'exe'
 			self.cdt['kind'] = 'Executable'
 			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.exe'
-			if d!='win32':
-				self.cdt['artifactExtension'] = ''
+			self.cdt['artifactExtension'] = 'exe' if d=='win32' else ''
 
 		if set(('cshlib', 'cxxshlib')) & set(tgen.features):
 			self.cdt['ext'] = 'so'
 			self.cdt['kind'] = 'Shared Library'
 			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.sharedLib'
 			self.cdt['artifactExtension'] = 'dll' if d=='win32' else 'so'
-			
+
 		if set(('cstlib', 'cxxstlib')) & set(tgen.features):
 			self.cdt['ext'] = 'lib'
 			self.cdt['kind'] = 'Static Library'
 			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.staticLib'
 			self.cdt['artifactExtension'] = 'a'
 
-		ar = os.path.splitext(os.path.basename(tgen.env.AR))[0]	
-		self.cdt['c'] = os.path.splitext(os.path.basename(tgen.env.CC[0]))[0]
+		e = self.cdt['ext']
+		ar = os.path.splitext(os.path.basename(tgen.env.AR))[0]
+		cc = tgen.env.CC[0]
+		self.cdt['c'] = os.path.splitext(os.path.basename(cc))[0]
 		self.cdt['cpp'] = os.path.splitext(os.path.basename(tgen.env.CXX[0]))[0]
 		self.cdt['ar'] = ar
 		self.cdt['as'] = ar.replace('ar', 'as')
+		self.cdt['cc_path'] = os.path.dirname(cc).replace('\\', '/')
 
-		self.cdt['gnu'] = 'gnu%s' % ('.mingw' if d=='win32' else '')
-		self.cdt['build'] = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
-		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s.%s' % (self.cdt['gnu'], self.cdt['ext'], self.cdt['build'])
-		self.cdt['instance'] = '%s.%s' % (self.cdt['parent'], self.get_uuid())
-		
-		name = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
-		if bld.variant:
-			name = '%s-%s' % (bld.variant, name)
-		self.cdt['name'] = name
-		self.cdt['parser'] = 'org.eclipse.cdt.core.PE' if d=='win32' else 'org.eclipse.cdt.core.ELF'
-
-		s = 'cdt.managedbuild.tool.gnu.%s.compiler.%s' % (self.language, 'mingw.' if d=='win32' else '')
-		s += '%s.%s' % (self.cdt['ext'], 'debug' if '-g' in tgen.env.CFLAGS else 'release')
-		self.cdt['compiler'] = '%s.%s' % (s, self.get_uuid())	
-		self.cdt['input'] = 'cdt.managedbuild.tool.gnu.%s.compiler.input.%s' % (self.language, self.get_uuid())
-		self.cdt['archiver'] = 'cdt.managedbuild.tool.gnu.archiver%s.base' % ('.mingw' if d=='win32' else '')
-		
-		# TODO: assuming host is i386 only!!!		
-		if sys.platform.startswith(d) and c in ('x86_64', 'x86', 'ia'):
-			self.cross = False
-			t = '%s.%s' % (self.cdt['ext'], self.cdt['build'])
-			tt = '%s.%s' % ('.mingw' if d=='win32' else '', t)
-			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.%s.%s' % (self.cdt['gnu'], t)
-			self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platform%s' % (tt)
-			self.cdt['assembler'] = 'cdt.managedbuild.tool.gnu.assembler%s' % (tt)
-			self.cdt['c_compiler'] = 'cdt.managedbuild.tool.gnu.c.compiler%s' % (tt)
-			self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler%s' % (tt)
-			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker%s' % (tt)
-			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker%s' % (tt)			
-			self.cdt['compiler_option'] = 'gnu.{0}.compiler%s.%s.%s.option.{1}.level' % ('.mingw' if d=='win32' else '', self.cdt['ext'], self.cdt['build'])
+		if self.cross:
+			gnu = 'gnu.cross'
+			gnut = 'cross'
+		elif sys.platform=='win32':
+			gnu = 'gnu.mingw'
+			gnut = 'mingw'
 		else:
-			self.cross = True
-			self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.base'
-			self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platforms.base'
-			self.cdt['archList'] = 'all'
-			self.cdt['osList'] = 'linux,hpux,aix,qnx'
-			self.cdt['assembler'] = 'cdt.managedbuild.tool.gnu.assembler.base'
-			self.cdt['c_compiler'] = 'cdt.managedbuild.tool.gnu.c.compiler.base'
-			self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler.base'
-			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker.base'
-			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker.base'
+			gnu = 'gnu'
+			gnut = None
+
+		self.cdt['gnut'] = gnut
+		self.cdt['gnu'] = gnu
+		self.cdt['build'] = b
+		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s.%s' % (gnu, self.cdt['ext'], b)
+		self.cdt['instance'] = '%s.%s' % (self.cdt['parent'], self.get_uuid())
+		self.cdt['name'] = '%s%s' % (b, '-%s' % bld.variant if bld.variant else '')
+
+		s = 'cdt.managedbuild.tool.gnu.%s.compiler.%s%s.%s' % (l, '%s.' % gnut if gnut else '', e, b)
+		self.cdt['compiler'] = '%s.%s' % (s, self.get_uuid())
+		self.cdt['input'] = 'cdt.managedbuild.tool.gnu.%s.compiler.input.%s' % (l, self.get_uuid())
+		self.cdt['archiver'] = 'cdt.managedbuild.tool.gnu.archiver%s.base' % ('.%s' % gnut if gnut else '')
+
+		t = '%s.%s' % (e, b)
+		tt = '%s.%s' % ('.%s' % gnut if gnut else '', t)
+		self.cdt['toolchain'] = 'cdt.managedbuild.toolchain.%s.%s' % (gnu, t)
+		self.cdt['platform'] = 'cdt.managedbuild.target.gnu.platform%s' % (tt)
+		self.cdt['assembler'] = 'cdt.managedbuild.tool.gnu.assembler%s' % (tt)
+		self.cdt['c_compiler'] = 'cdt.managedbuild.tool.gnu.c.compiler%s' % (tt)
+		self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler%s' % (tt)
+		self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker%s' % (tt)
+		self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker%s' % (tt)
+		self.cdt['compiler_option'] = 'gnu.{0}.compiler.option.{1}.level'
 
 	def get_uuid(self):
 		uuid = codecs.encode(os.urandom(4), 'hex_codec')
@@ -488,7 +483,7 @@ class CDTProject(EclipseProject):
 
 	def update_cdt_core_settings(self, module):
 		cconfig = self.cconfig_get(module)
-		if not cconfig:
+		if cconfig is None:
 			cconfig = ElementTree.fromstring(ECLIPSE_CDT_CCONFIGURATION)
 			module.append(cconfig)
 		self.cconfig_update(cconfig)
@@ -575,12 +570,15 @@ class CDTProject(EclipseProject):
 		self.cconfig_toolchain_update(folder)
 
 	def	cconfig_toolchain_update(self, folder):
-		d = self.tgen.env.DEST_OS
 		toolchain = folder.find('toolChain')
 		toolchain.set('superClass', self.cdt['toolchain'])
 		toolchain.set('id', '%s.%s' % (self.cdt['toolchain'], self.get_uuid()))
-		toolchain.set('name', '%s' % ('MinGW GCC' if d=='win32' else 'Linux GCC'))
+		name = 'MinGW GCC' if sys.platform=='win32' else 'Linux GCC'
+		if self.cross:
+			name = 'Cross GCC'
+		toolchain.set('name', name)
 
+		self.toolchain_cross_update(toolchain)
 		self.toolchain_target_update(toolchain)
 		self.toolchain_builder_update(toolchain)
 		self.toolchain_assembler_update(toolchain)
@@ -590,15 +588,32 @@ class CDTProject(EclipseProject):
 		self.toolchain_linker_update(toolchain, 'cpp')
 		self.toolchain_linker_update(toolchain, 'c')
 
-	def toolchain_target_update(self, toolchain):		
+	def toolchain_cross_update(self, toolchain):
+		options = toolchain.findall('option')
+		for option in options:
+			toolchain.remove(option)
+		if not self.cross:
+			return
+
+		option = ElementTree.SubElement(toolchain, 'option', {'valueType':'string'})
+		option.set('superClass', 'cdt.managedbuild.option.gnu.cross.prefix')
+		option.set('id', 'cdt.managedbuild.option.gnu.cross.prefix.%s' % self.get_uuid())
+		option.set('value', str(self.cdt['c']).rstrip('gcc'))
+
+		option = ElementTree.SubElement(toolchain, 'option', {'valueType':'string'})
+		option.set('superClass', 'cdt.managedbuild.option.gnu.cross.path')
+		option.set('id', 'cdt.managedbuild.option.gnu.cross.path.%s' % self.get_uuid())
+		option.set('value', self.cdt['cc_path'])
+
+	def toolchain_target_update(self, toolchain):
 		target = toolchain.find('targetPlatform')
 		target.set('name', self.cdt['name'])
 		target.set('superClass', self.cdt['platform'])
 		target.set('id', '%s.%s' % (self.cdt['platform'], self.get_uuid()))
 		if self.cross:
-			target.set('archList', self.cdt['archList'])
-			target.set('osList', self.cdt['osList'])
-		target.set('binaryParser', 'org.eclipse.cdt.core.PE;org.eclipse.cdt.core.ELF;org.eclipse.cdt.core.GNU_ELF')
+			target.set('archList', 'all')
+			target.set('osList', 'all')
+		target.set('binaryParser', 'org.eclipse.cdt.core.PE;org.eclipse.cdt.core.ELF')
 
 	def toolchain_builder_update(self, toolchain):
 		builder = toolchain.find('builder')
@@ -633,7 +648,7 @@ class CDTProject(EclipseProject):
 	def toolchain_assembler_update(self, toolchain):
 		assembler = self.toolchain_assembler_get(toolchain)
 		assembler.set('superClass', self.cdt['assembler'])
-		assembler.set('id', '%s.%s' % (self.cdt['assembler'], self.get_uuid()))		
+		assembler.set('id', '%s.%s' % (self.cdt['assembler'], self.get_uuid()))
 		assembler.set('name', 'GCC Assembler')
 		if self.cross:
 			assembler.set('command', self.cdt['as'])
@@ -663,7 +678,7 @@ class CDTProject(EclipseProject):
 		self.compiler_add_defines(compiler, language)
 		self.compiler_add_input(compiler, language)
 
-	def compiler_add_options(self, compiler, language):		
+	def compiler_add_options(self, compiler, language):
 		if self.cdt['build'] == 'debug':
 			optimization_level = 'none'
 			debug_level = 'max'
@@ -671,19 +686,20 @@ class CDTProject(EclipseProject):
 			optimization_level = 'most'
 			debug_level = 'none'
 
-		d = self.tgen.env.DEST_OS
-		t = 'gnu.%s.compiler%s' % (language, '.mingw' if d=='win32' else '')
+		gnut = self.cdt['gnut']
+		t = 'gnu.%s.compiler%s' % (language, '.%s' % gnut if gnut else '')
+
 		option = ElementTree.SubElement(compiler, 'option', {'name':'Optimization Level', 'valueType':'enumerated'})
 		option.set('superClass', '%s.%s.%s.option.optimization.level' % (t, self.cdt['ext'], self.cdt['build']))
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 		option.set('defaultValue', 'gnu.%s.optimization.level.%s' % (language, optimization_level))
 
 		option = ElementTree.SubElement(compiler, 'option', {'name':'Debug Level', 'valueType':'enumerated'})
-		option.set('superClass', '%s.%s.%s.option.debugging.level' % (t, self.cdt['ext'], self.cdt['build']))		
+		option.set('superClass', '%s.%s.%s.option.debugging.level' % (t, self.cdt['ext'], self.cdt['build']))
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 		option.set('value', 'gnu.%s.debugging.level.%s' % (language, debug_level))
 
-		if self.tgen.env.DEST_CPU == 'powerpc':
+		if self.tgen.env.DEST_CPU == 'powerpc': # TODO: only when using ancient 2.95 compiler!
 			option = ElementTree.SubElement(compiler, 'option', {'value':'-c','valueType':'string'})
 			option.set('superClass', 'gnu.c.compiler.option.misc.other')
 			option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
@@ -708,7 +724,7 @@ class CDTProject(EclipseProject):
 
 		includes = list(set([str(i).lstrip('./') for i in includes]))
 		for include in includes:
-			pth = os.path.join(self.tgen.path.abspath(), include)			
+			pth = os.path.join(self.tgen.path.abspath(), include)
 			if os.path.exists(pth):
 				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 				listoption.set('value', '"${workspace_loc:/${ProjName}/%s}"' % (include))
@@ -775,7 +791,8 @@ class CDTProject(EclipseProject):
 			linker.set('command', self.cdt[language])
 			
 		if self.cdt['ext'] == 'so':
-			option = ElementTree.SubElement(linker, 'option', {'name':'Shared (-shared)', 'defaultValue':'true', 'valueType':'boolean'})
+			option = ElementTree.SubElement(linker, 'option', {'defaultValue':'true', 'valueType':'boolean'})
+			option.set('name', 'Shared (-shared)')
 			option.set('superClass', 'gnu.%s.link.so.%s.option.shared' % (language, self.cdt['build']))
 			option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 
@@ -865,7 +882,7 @@ ECLIPSE_CDT_PROJECT = \
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-		<project id="" name="" projectType=""/>	
+		<project id="" name="" projectType=""/>
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
@@ -909,7 +926,7 @@ ECLIPSE_CDT_CCONFIGURATION = '''
 			</folderInfo>
 		</configuration>
 	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>	
+	<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 </cconfiguration>
 '''
 

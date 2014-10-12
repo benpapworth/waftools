@@ -80,7 +80,7 @@ def configure(conf):
 	
 	:param conf: Configuration context from the *waf* build environment.
 	:type conf: waflib.Configure.ConfigurationContext
-	'''	
+	'''
 	conf.find_program('cmake', var='CMAKE', mandatory=False)
 
 
@@ -155,7 +155,7 @@ def cleanup(bld):
 	
 	loc = bld.path.relpath().replace('\\', '/')
 	CMake(bld, loc).cleanup()
-		
+	
 	for gen in bld.task_gen_cache_names.values():
 		loc = gen.path.relpath().replace('\\', '/')
 		CMake(bld, loc).cleanup()
@@ -219,7 +219,7 @@ class CMake(object):
 			content += 'project (%s)\n' % (getattr(Context.g_module, Context.APPNAME))
 			content += '\n'
 
-			env = self.bld.env			
+			env = self.bld.env
 			defines = env.DEFINES
 			if len(defines):
 				content += 'add_definitions(-D%s)\n' % (' -D'.join(defines))
@@ -290,4 +290,4 @@ class CMake(object):
 		lst = Utils.to_list(getattr(tgen, name, []))
 		lst = [str(l.path_from(tgen.path)) if hasattr(l, 'path_from') else l for l in lst]
 		return [l.replace('\\', '/') for l in lst]
-		
+

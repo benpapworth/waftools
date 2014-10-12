@@ -109,23 +109,25 @@ def options(opt):
 	opt.load('msdev', tooldir=waftools.location)
 	opt.load('package', tooldir=waftools.location)
 	opt.load('tree', tooldir=waftools.location)
-	opt.load('indent', tooldir=waftools.location)	
+	opt.load('indent', tooldir=waftools.location)
 
 
-def configure(conf):	
+def configure(conf):
 	conf.check_waf_version(mini='1.7.6')
 	prefix = str(conf.env.PREFIX).replace('\\', '/')
 	cross = get_config(conf.env.CCROSSINI)
 
-	for name, cc in cross.items(): # setup cross compile environment(s)
+	for name, ini in cross.items(): # setup cross compile environment(s)
 		conf.setenv(name)
 		conf.env.CCROSS = cross
 		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
 		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
 		conf.env.LIBDIR = '%s/opt/%s/lib' % (prefix, name)
-		conf.env.CC = '%s-gcc' % (cc['prefix'])
-		conf.env.CXX = '%s-g++' % (cc['prefix'])
-		conf.env.AR = '%s-ar' % (cc['prefix'])
+		cc = '%s-gcc' % (ini['prefix'])
+		conf.find_program(cc)
+		conf.env.CC = cc
+		conf.env.CXX = '%s-g++' % (ini['prefix'])
+		conf.env.AR = '%s-ar' % (ini['prefix'])
 		conf.load('compiler_c')
 		conf.load('compiler_cxx')
 		conf.load('cppcheck')
@@ -173,10 +175,10 @@ def get_config(name):
 	depict the environment name (i.e. variant name).
 	
 	:param name: Complete path to the config.ini file
-	:type name: str	
+	:type name: str
 	'''
 	if not os.path.exists(name):
-		return {}	
+		return {}
 	cross = {}
 	c = configparser.ConfigParser()
 	c.read(name)
@@ -192,7 +194,7 @@ def variants(name):
 	that have been defined in the 'ccross.ini' configuration file.
 	
 	:param name: Complete path to the config.ini file
-	:type name: str	
+	:type name: str
 	'''
 	cross = get_config(name)
 	return list(cross.keys())
@@ -202,7 +204,7 @@ def contexts():
 	'''Returns a list of cross-compile build contexts.
 	
 	:param name: Complete path to the config.ini file
-	:type name: list of waflib.Build.BuildContext	
+	:type name: list of waflib.Build.BuildContext
 	'''
 	return [ BuildContext, CleanContext, InstallContext, UninstallContext, CodeblocksContext, MakeFileContext, EclipseContext ]
 
