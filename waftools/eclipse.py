@@ -214,8 +214,8 @@ def cleanup(bld):
 		if targets and tgen.get_name() not in targets:
 			continue
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
-			Project(bld, tgen).clean()
-			CDTProject(bld, tgen).clean()
+			Project(bld, tgen).cleanup()
+			CDTProject(bld, tgen).cleanup()
 
 
 def detect_project_duplicates(bld):
@@ -430,8 +430,8 @@ class CDTProject(EclipseProject):
 		self.cdt['instance'] = '%s.%s' % (self.cdt['parent'], self.get_uuid())
 		
 		name = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
-		if self.variant:
-			name += '%s-%s' % (self.variant, name)
+		if bld.variant:
+			name = '%s-%s' % (bld.variant, name)
 		self.cdt['name'] = name
 		self.cdt['parser'] = 'org.eclipse.cdt.core.PE' if tgen.env.DEST_OS=='win32' else 'org.eclipse.cdt.core.ELF' 		
 
