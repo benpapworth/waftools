@@ -9,7 +9,7 @@ Description
 Create a new release, performs following steps: 
 - build package and documentation using waf (distclean, configure, build, distclean)
 - tags and publishes the release using git
-- creates and upoloads the package to PyPi
+- creates and uploads the package to PyPi
 '''
 
 

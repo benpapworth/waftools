@@ -17,7 +17,69 @@ environments:
 	- msdev
 	- package (already includes build results from cross-compiles) 
 
-TODO: create complete module documentation
+Usage
+-----
+The code snippet below provides an example of how a complete build environment
+can be created allowing you to build, not only for the host system, but also 
+for one or more target platforms using a C/C++ cross compiler::
+
+	#!/usr/bin/env python
+	# -*- encoding: utf-8 -*-
+
+	import os, waftools
+	from waftools import ccross
+
+	top = '.'
+	out = 'build'
+	prefix = 'output'
+	ccrossini = os.path.abspath('ccross.ini').replace('\\', '/')
+
+	VERSION = '0.0.1'
+	APPNAME = 'cross-test'
+
+	def options(opt):
+		opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
+		opt.load('ccross', tooldir=waftools.location)
+
+	def configure(conf):
+		conf.load('ccross')
+
+	def build(bld):
+		ccross.build(bld, trees=['components'])
+
+	for var in ccross.variants(ccrossini):
+		for ctx in ccross.contexts():
+			name = ctx.__name__.replace('Context','').lower()
+			class _t(ctx):
+				__doc__ = "%ss '%s'" % (name, var)
+				cmd = name + '_' + var
+				variant = var
+
+When loading and configuring the *ccross* tool, as shown in the example above, all 
+required C/C++ tools for each build environment variant (i.e. native or cross-
+compile) will be loaded and configured as well; e.g. compilers, makefile-, cmake-, 
+eclipse-, codeblocks- and msdev exporters, cppcheck source code checking, doxygen 
+documentation creation will be available for each build variant. Cross compile 
+build environments can be specified in a seperate .INI file (named ccross.ini 
+in the example above) using following syntax::
+
+	[arm]
+	prefix = arm-linux-gnueabihf
+
+The section name, *arm* in the example above, specifies the name of the cross-compile
+build environment variant. The prefix will be in used to create the concrete names of
+the cross compile toolchain binaries::
+
+	AR	= arm-linux-gnueabihf-ar
+	CC	= arm-linux-gnueabihf-gcc
+	CXX	= arm-linux-gnueabihf-g++
+
+Concrete build scripts (i.e. wscript files) for components can be placed somewhere 
+within the *components* sub-directory. Any top level wscript file of a tree (being 
+*components* in this example) will be detected and incorporated within the build 
+environment. Any wscript files below those top level script files will have to be 
+included using the *bld.recurse('../somepath')* command from the top level script 
+of that tree.
 '''
 
 import os
@@ -32,6 +94,7 @@ import waftools
 from waftools.codeblocks import CodeblocksContext
 from waftools.makefile import MakeFileContext
 from waftools.eclipse import EclipseContext
+
 
 def options(opt):
 	opt.add_option('--all', dest='all', default=False, action='store_true', 
@@ -106,6 +169,12 @@ def build(bld, trees=[]):
 
 
 def get_config(name):
+	'''Returns dictionary of cross-compile build environments. Dictionary key name
+	depict the environment name (i.e. variant name).
+	
+	:param name: Complete path to the config.ini file
+	:type name: str	
+	'''
 	if not os.path.exists(name):
 		return {}	
 	cross = {}
@@ -119,10 +188,21 @@ def get_config(name):
 
 
 def variants(name):
+	'''Returns a list of variant names; i.e. a list of names for build environments 
+	that have been defined in the 'ccross.ini' configuration file.
+	
+	:param name: Complete path to the config.ini file
+	:type name: str	
+	'''
 	cross = get_config(name)
 	return list(cross.keys())
 
 
 def contexts():
+	'''Returns a list of cross-compile build contexts.
+	
+	:param name: Complete path to the config.ini file
+	:type name: list of waflib.Build.BuildContext	
+	'''
 	return [ BuildContext, CleanContext, InstallContext, UninstallContext, CodeblocksContext, MakeFileContext, EclipseContext ]
 
