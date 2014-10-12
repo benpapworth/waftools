@@ -424,7 +424,7 @@ class CDTProject(EclipseProject):
 		self.cdt['ar'] = ar
 		self.cdt['as'] = ar.replace('ar', 'as')
 
-		self.cdt['gnu'] = 'gnu%s' % ('.mingw' if sys.platform == 'win32' else '')
+		self.cdt['gnu'] = 'gnu%s' % ('.mingw' if d=='win32' else '')
 		self.cdt['build'] = 'debug' if '-g' in tgen.env.CFLAGS else 'release'
 		self.cdt['parent'] = 'cdt.managedbuild.config.%s.%s.%s' % (self.cdt['gnu'], self.cdt['ext'], self.cdt['build'])
 		self.cdt['instance'] = '%s.%s' % (self.cdt['parent'], self.get_uuid())
@@ -433,9 +433,9 @@ class CDTProject(EclipseProject):
 		if bld.variant:
 			name = '%s-%s' % (bld.variant, name)
 		self.cdt['name'] = name
-		self.cdt['parser'] = 'org.eclipse.cdt.core.PE' if tgen.env.DEST_OS=='win32' else 'org.eclipse.cdt.core.ELF' 		
+		self.cdt['parser'] = 'org.eclipse.cdt.core.PE' if d=='win32' else 'org.eclipse.cdt.core.ELF'
 
-		s = 'cdt.managedbuild.tool.gnu.%s.compiler.%s' % (self.language, 'mingw.' if sys.platform=='win32' else '')
+		s = 'cdt.managedbuild.tool.gnu.%s.compiler.%s' % (self.language, 'mingw.' if d=='win32' else '')
 		s += '%s.%s' % (self.cdt['ext'], 'debug' if '-g' in tgen.env.CFLAGS else 'release')
 		self.cdt['compiler'] = '%s.%s' % (s, self.get_uuid())	
 		self.cdt['input'] = 'cdt.managedbuild.tool.gnu.%s.compiler.input.%s' % (self.language, self.get_uuid())
@@ -465,7 +465,6 @@ class CDTProject(EclipseProject):
 			self.cdt['cpp_compiler'] = 'cdt.managedbuild.tool.gnu.cpp.compiler.base'
 			self.cdt['c_linker'] = 'cdt.managedbuild.tool.gnu.c.linker.base'
 			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker.base'
-
 
 	def get_uuid(self):
 		uuid = codecs.encode(os.urandom(4), 'hex_codec')
