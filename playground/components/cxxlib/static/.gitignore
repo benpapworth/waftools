@@ -1,3 +1,7 @@
 Debug/*
 Release/*
 
+/linux_arm/
+/debug/
+/debug-ppc/
+/debug-arm/

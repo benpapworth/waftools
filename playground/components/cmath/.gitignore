@@ -2,3 +2,5 @@ Debug/*
 Release/*
 
 *.launch
+/linux_arm/
+/debug/

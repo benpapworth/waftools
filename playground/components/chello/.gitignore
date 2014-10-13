@@ -2,3 +2,6 @@
 /linux_arm/
 /linux_powerpc/
 /win32_x86/
+/debug-arm/
+/debug-ppc/
+/debug/
