@@ -7,7 +7,7 @@ Package waftools
 .. _mod_ccross:
 
 Module :mod:`ccross`
--------------------
+--------------------
 
 .. automodule:: waftools.ccross
     :members:
