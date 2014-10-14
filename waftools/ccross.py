@@ -6,16 +6,21 @@
 Summary
 -------
 Setup and configure multiple C/C++ build environments and configure
-common C/C++ tools used when cross-compiling.
+common C/C++ tools used when cross-compiling. When using this module
+the following tools will be loaded and configured autmatically as well:
 
-Following tools are (not yet) supported for cross-compile 
-environments:
 - cmake
+- codeblocks
+- cppcheck
 - doxygen
 - eclipse
+- gnucc
+- indent
 - makefile
 - msdev
-- package (already includes build results from cross-compiles) 
+- package
+- tree
+
 
 Usage
 -----
