@@ -13,8 +13,9 @@ used, amongst others, for development of C/C++ programs.
 See https://www.eclipse.org and https://www.eclipse.org/cdt for a more detailed 
 description on how to install and use it for your particular Desktop environment.
 
-.. note:: Export of C/C++ projects are supported for GCC/MinGW compilers only, 
-other compilers and/or environments (e.g. MSDEV, CygWin) are NOT supported!
+.. note::
+	Export of C/C++ projects are supported for GCC/MinGW compilers only, 
+	other compilers and/or environments (e.g. MSVC, CygWin) are NOT supported!
 
 Description
 -----------
@@ -47,8 +48,9 @@ projects already have been exported::
         └── wscript
 
 
-.. warning:: Export of multiple C/C++ build tasks (program, stlib and/or shlib) 
-which have been defined within the same directory is not supported.
+.. warning:: 
+	Export of multiple C/C++ build tasks (program, stlib and/or shlib) 
+	which have been defined within the same directory is not supported.
 
 Projects will be exported such that they will use the same settings and 
 structure as has been defined for that build task within the *waf* build 

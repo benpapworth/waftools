@@ -10,12 +10,12 @@ common C/C++ tools used when cross-compiling.
 
 Following tools are (not yet) supported for cross-compile 
 environments:
-	- cmake
-	- doxygen
-	- eclipse
-	- makefile
-	- msdev
-	- package (already includes build results from cross-compiles) 
+- cmake
+- doxygen
+- eclipse
+- makefile
+- msdev
+- package (already includes build results from cross-compiles) 
 
 Usage
 -----

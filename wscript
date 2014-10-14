@@ -13,6 +13,7 @@ Prepares a package release, performs following steps:
 '''
 
 
+import shutil
 import waftools
 from waflib import Scripting
 
@@ -34,8 +35,13 @@ def configure(conf):
 
 
 def build(bld):
-	cmd = 'python setup.py sdist --formats=gztar'
-	bld.cmd_and_log(cmd, cwd=bld.path.abspath())
+	if bld.cmd == 'build':
+		bld.cmd_and_log('python setup.py sdist --formats=gztar --dist-dir=.', cwd=bld.path.abspath())
+	if bld.cmd == 'clean':
+		node = bld.path.find_node('dist')
+		if node:
+			shutil.rmtree(node.abspath())
+
 	bld.recurse('doc')
 	bld.add_post_fun(post)
 

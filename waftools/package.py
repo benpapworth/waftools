@@ -5,7 +5,7 @@
 '''
 Summary
 -------
-Creates archives (*.tar.gz) and/or installers (e.g. NSIS) for end users 
+Creates archives (.tar.gz) and/or installers (e.g. NSIS) for end users 
 containing all build results (i.e. artifacts).
 
 Description
