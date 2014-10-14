@@ -1,6 +1,7 @@
-Debug/*
-Release/*
-
 *.launch
-/linux_arm/
+/debug-*/
 /debug/
+/release/
+/release-*/
+.settings/
+

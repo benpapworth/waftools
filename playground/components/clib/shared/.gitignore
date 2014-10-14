@@ -1,9 +1,7 @@
-Debug/*
-Release/*
-
-/win32_x86/
-/linux_arm/
-/linux_powerpc/
-/debug-ppc/
+*.launch
+/debug-*/
 /debug/
-/debug-arm/
+/release/
+/release-*/
+.settings/
+
