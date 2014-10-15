@@ -29,7 +29,7 @@ configuration time.
 
 
 import os
-from waflib import Scripting, Logs
+from waflib import Scripting, Logs, Utils
 from waflib.Build import BuildContext
 
 
@@ -94,7 +94,7 @@ class GnuIndentContext(BuildContext):
 		return (list(set(sources)), list(set(headers)))
 
 	def indent(self, tgen, files, env, cleanup=False):
-		command = '%s' % self.env.INDENT
+		command = '%s' % Utils.to_list(self.env.INDENT)[0]
 		for f in files:
 			cmd = '%s %s' % (command, os.path.basename(f))
 			cwd = os.path.dirname(f)
