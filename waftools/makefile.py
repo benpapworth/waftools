@@ -764,7 +764,7 @@ class MakeChild(Make):
 		s = re.sub('INCLUDES\+=', 'INCLUDES+= \\\n\t%s' % ' \\\n\t'.join(includes),s)
 		s = re.sub('DEFINES\+=', 'DEFINES+=%s' % ' '.join(defines),s)
 		s = re.sub('CFLAGS\+=', 'CFLAGS+=%s' % self._get_cflags(gen),s)
-		s = re.sub('ARFLAGS=', 'ARFLAGS=%s' % bld.env.ARFLAGS, s)
+		s = re.sub('ARFLAGS=', 'ARFLAGS=%s' % self._get_arflags(gen), s)
 		return s
 
 	def _get_cshlib_content(self):
@@ -806,7 +806,7 @@ class MakeChild(Make):
 		s = re.sub('INCLUDES\+=', 'INCLUDES+= \\\n\t%s' % ' \\\n\t'.join(includes),s)
 		s = re.sub('DEFINES\+=', 'DEFINES+=%s' % ' '.join(defines),s)
 		s = re.sub('CXXFLAGS\+=', 'CXXFLAGS+=%s' % self._get_cxxflags(gen),s)
-		s = re.sub('ARFLAGS=', 'ARFLAGS=%s' % bld.env.ARFLAGS, s)
+		s = re.sub('ARFLAGS=', 'ARFLAGS=%s' % self._get_arflags(gen), s)
 		return s
 
 	def _get_cxxshlib_content(self):
@@ -867,6 +867,10 @@ class MakeChild(Make):
 		if 'cxxshlib' in gen.features:
 			linkflags.extend(self.bld.env.LINKFLAGS_cxxshlib)
 		return ' '.join(linkflags)
+
+	def _get_arflags(self, gen):
+		flags = Utils.to_list(self.bld.env.ARFLAGS)
+		return ' '.join(flags)
 
 	def _get_libpath(self, kind):
 		libpath = self.lib[kind]['path']
