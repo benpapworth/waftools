@@ -422,7 +422,8 @@ class CDTProject(EclipseProject):
 			self.cdt['artifactExtension'] = 'a'
 
 		e = self.cdt['ext']
-		ar = os.path.splitext(os.path.basename(tgen.env.AR))[0]
+		ar = Utils.to_list(tgen.env.AR)[0]
+		ar = os.path.splitext(os.path.basename(ar))[0]
 		cc = tgen.env.CC[0]
 		self.cdt['c'] = os.path.splitext(os.path.basename(cc))[0]
 		self.cdt['cpp'] = os.path.splitext(os.path.basename(tgen.env.CXX[0]))[0]
