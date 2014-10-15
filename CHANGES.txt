@@ -44,5 +44,10 @@ v0.1.7, 2014-10-06 -- Added support for multiple build environments for Makefile
 v0.1.8, 2014-10-11 -- Updated package trove classifiers
                       Added 'indent' module; use GNU indent to clean up and format C/C++ source code.
                       Updated module documentation.
+                      
+v0.2.0, 2014-10-15 -- Added support for waf-1.8.x; several fixes for environment variables being changed to type(list).
+                      Use new 'unity' and 'batched_cc' tools from waf-1.8.x when available.
+
+
 
                       

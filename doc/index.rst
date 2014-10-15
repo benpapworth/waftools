@@ -4,10 +4,10 @@
    contain the root `toctree` directive.
 
 
-Waftools 0.1.8 documentation
+Waftools 0.2.0 documentation
 ============================
 Welcome! This is the documentation for the *waftools* package, last updated 
-Oct 14\ :sup:`th`\  2014.
+Oct 15\ :sup:`th`\  2014.
 
 
 Overview
@@ -34,6 +34,7 @@ Following provides a non-exhausting list of functions provided by this package:
 - Create installers using **NSIS**
 - C/C++ export to makefiles (e.g. **make**, **cmake**)
 - List dependencies between build tasks
+- Use 'unity' and 'batched_cc' tools when available (waf-1.8.x)
 
 
 Cross-compile build environments

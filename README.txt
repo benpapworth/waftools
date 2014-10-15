@@ -28,6 +28,7 @@ package:
 - Create installers using NSIS
 - Create C/C++ documentation using DoxyGen
 - List dependencies between build tasks
+- Use 'unity' and 'batched_cc' tools when available (waf-1.8.x)
 
 
 Installation
@@ -64,7 +65,8 @@ for one or more target platforms using a C/C++ cross compiler::
 	APPNAME = 'cross-test'
 
 	def options(opt):
-		opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
+		opt.add_option('--prefix', dest='prefix', default=prefix, 
+			help='installation prefix [default: %r]' % prefix)
 		opt.load('ccross', tooldir=waftools.location)
 
 	def configure(conf):
