@@ -160,7 +160,7 @@ import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
 import pygments
 from pygments import formatters, lexers
-from waflib import TaskGen, Context, Logs
+from waflib import TaskGen, Context, Logs, Utils
 
 
 def options(opt):
@@ -438,6 +438,7 @@ class CppcheckGen(Cppcheck):
 		'''
 		bld = self.taskgen.bld
 		cmd = self._get_command()
+		
 		stderr = bld.cmd_and_log(cmd, quiet=Context.BOTH, output=Context.STDERR)
 		
 		# save the result from command line to a XML report
@@ -514,7 +515,7 @@ class CppcheckGen(Cppcheck):
 		bin_enable = env.CPPCHECK_BIN_ENABLE
 		lib_enable = env.CPPCHECK_LIB_ENABLE
 
-		cmd  = ['%s' % env.CPPCHECK, '-v', '--xml', '--xml-version=2']
+		cmd  = ['%s' % Utils.to_list(env.CPPCHECK)[0], '-v', '--xml', '--xml-version=2']
 		cmd.append('--inconclusive')
 		cmd.append('--report-progress')
 		cmd.append('--max-configs=%s' % max_configs)
