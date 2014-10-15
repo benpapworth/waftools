@@ -43,7 +43,8 @@ for one or more target platforms using a C/C++ cross compiler::
 	APPNAME = 'cross-test'
 
 	def options(opt):
-		opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
+		opt.add_option('--prefix', dest='prefix', default=prefix, 
+						help='installation prefix [default: %r]' % prefix)
 		opt.load('ccross', tooldir=waftools.location)
 
 	def configure(conf):
@@ -93,7 +94,7 @@ try:
 except:
 	import configparser
 
-from waflib import Scripting
+from waflib import Scripting, Errors, Context, Logs
 from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallContext
 import waftools
 from waftools.codeblocks import CodeblocksContext
@@ -117,8 +118,29 @@ def options(opt):
 	opt.load('indent', tooldir=waftools.location)
 
 
+def config_base(conf):
+	v = Context.WAFVERSION
+	try:
+		conf.load('compiler_c unity')
+		conf.load('compiler_cxx unity')
+		conf.load('batched_cc')
+	except Errors.ConfigurationError:
+		Logs.warn("INFO: waf(%s), building without tools(unity,batched_cc)" % v)
+		conf.load('compiler_c')
+		conf.load('compiler_cxx')
+	else:
+		Logs.info("INFO: waf(%s), building with tools(unity,batched_cc)" % v)
+	conf.load('cppcheck')
+	conf.load('codeblocks')
+	conf.load('eclipse')
+	conf.load('gnucc')
+	conf.load('makefile')
+	conf.load('msdev')
+	conf.load('tree')
+
+
 def configure(conf):
-	conf.check_waf_version(mini='1.7.6')
+	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')
 	prefix = str(conf.env.PREFIX).replace('\\', '/')
 	cross = get_config(conf.env.CCROSSINI)
 
@@ -133,29 +155,14 @@ def configure(conf):
 		conf.env.CC = cc
 		conf.env.CXX = '%s-g++' % (ini['prefix'])
 		conf.env.AR = '%s-ar' % (ini['prefix'])
-		conf.load('compiler_c')
-		conf.load('compiler_cxx')
-		conf.load('cppcheck')
-		conf.load('codeblocks')
-		conf.load('eclipse')
-		conf.load('gnucc')
-		conf.load('makefile')
-		conf.load('tree')
+		config_base(conf)
 
 	conf.setenv('')
 	conf.env.CCROSS = cross
-	conf.load('compiler_c')
-	conf.load('compiler_cxx')
+	config_base(conf)
 	conf.load('cmake')
-	conf.load('codeblocks')
-	conf.load('cppcheck')
 	conf.load('doxygen')
-	conf.load('eclipse')
-	conf.load('gnucc')
-	conf.load('makefile')
-	conf.load('msdev')
 	conf.load('package')
-	conf.load('tree')
 	conf.load('indent')
 
 
