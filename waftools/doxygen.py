@@ -193,6 +193,6 @@ class DoxygenContext(BuildContext):
 		f = open(config, 'w+')
 		f.write(s)
 		f.close()
-		cmd = '%s %s' % (self.env.DOXYGEN, config)
+		cmd = '%s %s' % (Utils.to_list(self.env.DOXYGEN)[0], config)
 		self.cmd_and_log(cmd)
 
