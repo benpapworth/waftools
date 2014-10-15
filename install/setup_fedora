@@ -1,0 +1,105 @@
+#!/usr/bin/sh
+
+WAFVERSION=1.8.2
+TEMP=/tmp/waftools-$RANDOM
+BIN=~/.local/bin
+
+
+while getopts ":ua" opt; do
+	case $opt in
+		a)
+			echo "--> installing additional programs" >&2
+			ALL=1
+			;;
+		y)
+			echo "--> autoinstall  programs" >&2
+			YES=-y
+			;;
+		u)
+			echo "--> replacing existing waf version in '$BIN'" >&2
+			UPDATE=1
+			;;
+		\?)
+			echo "invalid option command line option '-$OPTARG'." >&2
+			echo "  option  description"
+			echo "  -a      install additional programs (e.g. cppcheck)."
+			echo "  -u      replace existing waf installation in '$BIN'."
+			echo "  -y      autoinstall additional programs."
+			exit 1
+			;;
+	esac
+done
+
+
+if [ ! -d $BIN ]
+then
+	mkdir -p $BIN
+else
+	if [ -e $BIN/waf ]
+	then
+		if [ ! $UPDATE ]
+		then
+			echo "ERROR: waf already installed in '$BIN'"
+			echo "       use '`basename $0` -u' to replace the existing version."
+			exit 1
+		fi
+	fi
+fi
+
+
+echo "--> updating yum packages.."
+sudo yum -y install python-pip python-pygments wget
+sudo yum -y groupinstall "C Development Tools and Libraries"
+
+if [ $ALL ]
+then
+	for i in indent cppcheck doxygen eclipse-cdt codeblocks meld;
+	do
+		sudo $YES yum install $i
+	done
+fi
+
+
+echo "--> updating wafools to latest.."
+pip install -I --user waftools
+
+
+mkdir $TEMP
+cd $TEMP
+echo `pwd`
+
+
+echo "--> downloading waf $WAFVERSION.."
+wget http://ftp.waf.io/pub/release/waf-$WAFVERSION.tar.bz2
+
+
+echo "--> extracting waf $WAFVERSION.."
+tar -xjvf waf-$WAFVERSION.tar.bz2
+
+
+echo "--> building waf $WAFVERSION.."
+cd waf-$WAFVERSION
+./waf-light --make-waf --tools=unity,batched_cc
+
+
+echo "--> installing waf $WAFVERSION.."
+if [ -e $BIN/waf ]
+then
+	rm -rf $BIN/.waf-*
+fi
+cp waf $BIN
+chmod 777 $BIN/waf
+
+
+echo "--> deleting temp files.."
+cd ~
+rm -rf $TEMP
+
+
+if ! hash waf 2>/dev/null
+then
+	echo 'export PATH=~/.local/bin:$PATH' >> ~/.bashrc
+fi
+echo "--> done."
+exit
+
