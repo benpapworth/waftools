@@ -13,7 +13,8 @@ except ImportError:
 
 WAF_REL = "waf-1.8.2"
 WAF_PKG = "%s.tar.bz2" % WAF_REL
-DST_BASE = "C:/programs/" if sys.platform=="win32" else ""
+PREFIX = "C:/programs/" if sys.platform=="win32" else "~/.local/bin"
+
 
 def download(url, saveto):
 	u = f = None
@@ -44,12 +45,13 @@ def untar(name, path='.'):
 	
 
 if __name__ == "__main__":
-	dst = DST_BASE
+	dst = PREFIX
 	rel = WAF_REL
 	pkg = WAF_PKG
 	url = "http://ftp.waf.io/pub/release/%s" % pkg
 	tools = "batched_cc,unity"
-
+	# TODO: add command line options
+	
 	download(url, pkg)
 	untar(pkg)
 	
@@ -64,11 +66,14 @@ if __name__ == "__main__":
 	os.mkdirs(dst)		
 	if sys.platform == "win32":
 		shutil.move("./%s" % rel, dst)
-		# add environment path
+		# TODO: add environment path
+		# new winreg module in python 3.x OR
+		# use pywin32 OR 
+		# add manually
 	else:
 		shutil.copy("./%s/waf" % rel, "%s/waf" % dst)
 		os.chmod("%s/waf" % dst, stat.S_IRWXU)
-		# add environment path
+		# TODO: add environment path (~/.bashrc)
 		
 	
 
