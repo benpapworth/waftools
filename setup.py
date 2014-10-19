@@ -23,10 +23,12 @@ else:
 setup(
 	name = "waftools",
 	packages = ["waftools"],
+	install_requires = ["pygments"],
 	version = waftools.version,
 	description = "Handy tools for the WAF meta build environment",
 	author = "Michel Mooij",
 	author_email = "michel.mooij7@gmail.com",
+	license = 'MIT',
 	url = url,
 	download_url = "%s/downloads/waftools-%s.tar.gz" % (url, waftools.version),
 	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++", "msdev", "doxygen"],

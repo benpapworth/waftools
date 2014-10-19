@@ -170,7 +170,7 @@ LangString DESC_Section2 ${LANG_ENGLISH} "Installs required build tools and scri
 Section /o "MinGW" Section3
 	SetOutPath "$INSTDIR"
 	NSISdl::download http://heanet.dl.sourceforge.net/project/mingw/Installer/${MINGW_PKG} "${MINGW_PKG}"
-	ExecWait "${MINGW_PKG}"
+	ExecWait "$INSTDIR\${MINGW_PKG}"
 
 	${If} ${RunningX64}
 		SetRegView 64
@@ -217,9 +217,9 @@ LangString DESC_Section5 ${LANG_ENGLISH} "Installs CppCheck ${CPPCHECK_VER}"
 
 
 Section /o "Doxygen" Section6
-    SetOutPath "$INSTDIR"
-	NSISdl::download http://ftp.stack.nl/pub/users/dimitri/${DOXYGEN_PKG} "${DOXYGEN_PKG}"
-    ExecWait '"msiexec" /i "${DOXYGEN_PKG}"'	
+    SetOutPath $INSTDIR
+	NSISdl::download http://ftp.stack.nl/pub/users/dimitri/${DOXYGEN_PKG} ${DOXYGEN_PKG}
+    ExecWait ${DOXYGEN_PKG}
 
 	${If} ${RunningX64}
 		SetRegView 64
@@ -240,7 +240,7 @@ LangString DESC_Section6 ${LANG_ENGLISH} "Installs Doxygen ${DOXYGEN_VER}"
 Section /o "NSIS" Section7
     SetOutPath "$INSTDIR"
 	NSISdl::download http://prdownloads.sourceforge.net/nsis/${NSIS_PKG}?download "${NSIS_PKG}"
-	ExecWait "${NSIS_PKG}"
+	ExecWait "$INSTDIR\${NSIS_PKG}"
 
 	${If} ${RunningX64}
 		SetRegView 32
@@ -259,7 +259,18 @@ LangString DESC_Section7 ${LANG_ENGLISH} "Install NSIS ${NSIS_VER}"
 Section /o "GNU indent" Section8
     SetOutPath "$INSTDIR"
 	NSISdl::download http://freefr.dl.sourceforge.net/project/gnuwin32/indent/${INDENT_VER}/${INDENT_PKG} "${INDENT_PKG}"
-	ExecWait "${INDENT_PKG}"
+	ExecWait "$INSTDIR\${INDENT_PKG}"
+	
+	${If} ${RunningX64}
+		SetRegView 32
+	${EndIf}
+	ReadRegStr $R0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Indent-${INDENT_VER}_is1" "InstallLocation"
+	StrCpy $InstallPath $R0
+	${If} ${RunningX64}
+		SetRegView 64
+	${EndIf}
+	${EnvVarUpdate} $0 "PATH" "R" "HKLM" "$InstallPath"
+	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$InstallPath"		
 SectionEnd
 LangString DESC_Section8 ${LANG_ENGLISH} "Install NSIS ${NSIS_VER}"
 
@@ -283,7 +294,7 @@ Section "-Post install" Section9
         CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
     !insertmacro MUI_STARTMENU_WRITE_END
 	
-	SetRebootFlag true	
+	;SetRebootFlag true	
 SectionEnd
 
 
@@ -315,18 +326,18 @@ Section /o "Un.Python"
 	StrCpy $InstallPath $0
     ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$InstallPath\Scripts"
 
-    ExecWait '"msiexec" /uninstall "$INSTDIR\packages\${PYTHON_PKG}"'
+    ExecWait '"msiexec" /uninstall "$INSTDIR\${PYTHON_PKG}"'
 	RMDir /r $InstallPath
 SectionEnd
 
 
 Section /o "Un.Build Tools"
-	RMDir /r "$INSTDIR\waf"
+	RMDir /r "$INSTDIR\waf-${WAF_VER}"
 	
 	${If} ${RunningX64}
 		SetRegView 64
 	${EndIf}
-	${Un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\waf"
+	${Un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\waf-${WAF_VER}"
 SectionEnd
 
 
@@ -355,20 +366,21 @@ Section /o "Un.CppCheck"
 	ReadRegStr $R0 HKCU "SOFTWARE\CppCheck" "InstallationPath"
 	StrCpy $InstallPath $R0
     ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$InstallPath"
-    ExecWait '"msiexec" /uninstall "$INSTDIR\packages\${CPPCHECK_PKG}"'	
+    ExecWait '"msiexec" /uninstall "$INSTDIR\${CPPCHECK_PKG}"'	
 SectionEnd
 
 
 Section /o "Un.Doxygen"
 	${If} ${RunningX64}
 		SetRegView 64
-	${EndIf}	
+	${EndIf}
 	ReadRegStr $R0 HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\doxygen_is1" "InstallLocation"
 	StrCpy $InstallPath $R0
     ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$InstallPath"
 	
 	ReadRegStr $R0 HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\doxygen_is1" "UninstallString"
-    ExecWait $R0
+	StrCpy $UninstallString $R0
+	ExecWait $UninstallString
 SectionEnd
 
 
@@ -379,6 +391,23 @@ Section /o "Un.NSIS"
 	ReadRegStr $R0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NSIS" "InstallLocation"
 	StrCpy $InstallPath $R0
 	ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\NSIS" "UninstallString"
+	StrCpy $UninstallString $R0
+
+	${If} ${RunningX64}
+		SetRegView 64
+	${EndIf}
+	${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$InstallPath"	
+	ExecWait "$UninstallString"
+SectionEnd
+
+
+Section /o "Un.GNU Indent"
+	${If} ${RunningX64}
+		SetRegView 32
+	${EndIf}
+	ReadRegStr $R0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Indent-${INDENT_VER}_is1" "InstallLocation"
+	StrCpy $InstallPath $R0
+	ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Indent-${INDENT_VER}_is1" "UninstallString"
 	StrCpy $UninstallString $R0
 
 	${If} ${RunningX64}
