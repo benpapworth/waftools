@@ -3,6 +3,10 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 
+# TODO:
+# 	copy setup.py/script tricks from Pygments
+#	https://bitbucket.org/birkenfeld/pygments-main
+
 import sys
 import site
 from setuptools import setup
