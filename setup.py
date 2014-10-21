@@ -33,6 +33,7 @@ setup(
 	download_url = "%s/downloads/waftools-%s.tar.gz" % (url, waftools.version),
 	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++", "msdev", "doxygen"],
 	data_files = [(data_dir, ['waftools/msdev.sln', 'waftools/doxy.config'])],
+	scripts = ['scripts/wafinstall'],
 	classifiers = [
 		"Development Status :: 4 - Beta",		
 		"Environment :: Console",
