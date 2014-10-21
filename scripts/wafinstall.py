@@ -37,6 +37,7 @@ import subprocess
 import shutil
 import tarfile
 import getopt
+import tempfile
 try:
 	from urllib.request import urlopen
 except ImportError:
@@ -73,7 +74,7 @@ def untar(name, path='.'):
 		compression = 'gz'
 	else:
 		compression = 'bz2'
-	
+
 	t = tarfile.open(name, 'r:%s' % compression)
 	for member in t.getmembers():
 		print(member.name)
@@ -81,10 +82,10 @@ def untar(name, path='.'):
 	print("done")
 	
 
-def create_waf(release, tools):
+def create(release, tools):
 	print("creating: %s" % release)
 	top = os.getcwd()
-	try:	
+	try:
 		cmd = "python waf-light --make-waf --tools=%s" % tools
 		cwd = "./%s" % release
 		subprocess.check_call(cmd.split(), cwd=cwd)
@@ -93,11 +94,11 @@ def create_waf(release, tools):
 		print("done")
 
 
-def install_waf(release, prefix):
+def install(release, prefix):
 	print("installing: %s" % release)
 	if not os.path.exists(prefix):
 		os.makedirs(prefix)
-	
+
 	if sys.platform == "win32":
 		dest = os.path.join(prefix, release)
 		if os.path.exists(dest):
@@ -110,7 +111,7 @@ def install_waf(release, prefix):
 		# TODO: add environment path (~/.bashrc)
 	print("done")
 
-	
+
 def win32_set_path(path):
 	print("updating registry")
 	path = path.replace('/','\\').rstrip('\\')
@@ -119,22 +120,22 @@ def win32_set_path(path):
 	except ImportError:
 		print("setting path(%s) failed, please add it manually." % path)
 		return
-		
+
 	reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
 	key = winreg.OpenKey(reg, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", 0, winreg.KEY_ALL_ACCESS)
 	try:
 		(paths, type) = winreg.QueryValueEx(key, "Path")
 		if path in [p.replace('/','\\').rstrip('\\') for p in paths.split(';')]:
 			print("path '%s' already exists." % (path))
-			return		
+			return
 		winreg.SetValueEx(key, "Path", 0, type, paths + ';' + path)
-		print("path '%s' added to registry." % path)		
+		print("path '%s' added to registry." % path)
 	finally:
 		winreg.CloseKey(key)
 		print("path will be available after system reboot or next login.")
 
 
-if __name__ == "__main__":
+def main():
 	prefix = PREFIX
 	version = WAF_VERSION
 	tools = "batched_cc,unity"
@@ -160,9 +161,24 @@ if __name__ == "__main__":
 	release = "waf-%s" % version
 	package = "%s.tar.bz2" % release
 	url = "http://ftp.waf.io/pub/release/%s" % package
-	
-	download(url, package)
-	untar(package)
-	create_waf(release, tools)
-	install_waf(release, prefix)
+
+	top = os.getcwd()
+	tmp = tempfile.mkdtemp()
+	try:
+		os.chdir(tmp)
+		print('chdir(%s)' % os.getcwd())
+		download(url, package)
+		untar(package)
+		create(release, tools)
+		install(release, prefix)
+	finally:
+		os.chdir(top)
+		print('chdir(%s)' % os.getcwd())
+		print('rmtree(%s)' % tmp)
+		shutil.rmtree(tmp)
+
+
+if __name__ == "__main__":
+	main()
+
 
