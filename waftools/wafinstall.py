@@ -135,17 +135,17 @@ def win32_set_path(path):
 		print("path will be available after system reboot or next login.")
 
 
-def main():
+def main(argv=sys.argv):
 	prefix = PREFIX
 	version = WAF_VERSION
 	tools = "batched_cc,unity"
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'hv:p:t:', ['help', 'version=', 'prefix=', 'tools='])
+		opts, args = getopt.getopt(argv[1:], 'hv:p:t:', ['help', 'version=', 'prefix=', 'tools='])
 	except getopt.GetoptError as err:
-		print(str(err))
+		print(str(err), file=sys.stderr)
 		usage()
-		sys.exit(2)
+		return 2
 
 	for o, a in opts:
 		if o in ('-h', '--help'):

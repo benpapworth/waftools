@@ -5,7 +5,7 @@
 
 import sys
 import site
-from distutils.core import setup
+from setuptools import setup
 import distutils.sysconfig
 import waftools
 
@@ -32,10 +32,11 @@ setup(
 	url = url,
 	download_url = "%s/downloads/waftools-%s.tar.gz" % (url, waftools.version),
 	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++", "msdev", "doxygen"],
+	platforms = 'any',
 	data_files = [(data_dir, ['waftools/msdev.sln', 'waftools/doxy.config'])],
 	entry_points = {
 		'console_scripts': [
-			'wafinstall = scripts.wafinstall:main',
+			'wafinstall = waftools.wafinstall:main',
 		],
 	},
 	classifiers = [
