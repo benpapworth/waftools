@@ -1,3 +1,0 @@
-[console_scripts]
-wafinstall = waftools.wafinstall:main
-
