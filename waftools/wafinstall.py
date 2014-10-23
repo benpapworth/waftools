@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 # Michel Mooij, michel.mooij7@gmail.com
 
+
 '''
 Summary
 -------
@@ -27,8 +28,8 @@ OPTIONS:
 
 	-p location | --path=location
 					specify the extraction location.
-
 '''
+
 
 import os
 import sys
@@ -38,6 +39,7 @@ import shutil
 import tarfile
 import getopt
 import tempfile
+import logging
 try:
 	from urllib.request import urlopen
 except ImportError:
@@ -45,6 +47,9 @@ except ImportError:
 
 
 WAF_VERSION = "1.8.2"
+WAF_TOOLS = "unity,batched_cc"
+
+HOME = os.path.expanduser('~')
 PREFIX = "D:\\programs" if sys.platform=="win32" else "~/.local/bin"
 
 
@@ -53,37 +58,29 @@ def usage():
 
 
 def download(url, saveto):
-	u = f = None
+	'''downloads the waf package.'''
+	logging.info("downloading: %s" % url)
 	try:
-		print("downloading: %s" % url)
 		u = urlopen(url)
-		f = open(saveto, 'wb')
-		f.write(u.read())
-		print("done")
+		with open(saveto, 'wb') as f: f.write(u.read())
 	finally:
-		if u:
-			u.close()
-		if f:
-			f.close()
+		if u: u.close()
 	return os.path.realpath(saveto)
 
 
-def untar(name, path='.'):
-	print("deflating: %s" % name)
-	if name.endswith('.gz') or name.endswith('.tgz'):
-		compression = 'gz'
-	else:
-		compression = 'bz2'
+def deflate(name, path='.'):
+	'''deflates the waf archive.'''
+	logging.info("deflating: %s" % name)
+	c = 'gz' if os.path.splitext(name)[1] in ('gz', 'tgz') else 'bz2'
+	with tarfile.open(name, 'r:%s' % c) as t:
+		for member in t.getmembers():
+			logging.debug(member.name)
+			t.extract(member, path=path)
 
-	t = tarfile.open(name, 'r:%s' % compression)
-	for member in t.getmembers():
-		print(member.name)
-		t.extract(member, path=path)
-	print("done")
-	
 
 def create(release, tools):
-	print("creating: %s" % release)
+	'''creates the waf binary.'''
+	logging.info("creating: %s" % release)
 	top = os.getcwd()
 	try:
 		cmd = "python waf-light --make-waf --tools=%s" % tools
@@ -91,11 +88,11 @@ def create(release, tools):
 		subprocess.check_call(cmd.split(), cwd=cwd)
 	finally:
 		os.chdir(top)
-		print("done")
 
 
 def install(release, prefix):
-	print("installing: %s" % release)
+	'''installs waf at the given location.'''
+	logging.info("installing: %s" % release)
 	if not os.path.exists(prefix):
 		os.makedirs(prefix)
 
@@ -104,21 +101,28 @@ def install(release, prefix):
 		if os.path.exists(dest):
 			shutil.rmtree(dest)
 		shutil.move(release, prefix)
-		win32_set_path(os.path.join(prefix, release))
 	else:
-		shutil.copy("./%s/waf" % release, "%s/waf" % prefix)
-		os.chmod("%s/waf" % prefix, stat.S_IRWXU)
-		# TODO: add environment path (~/.bashrc)
-	print("done")
+		waf = str("%s/waf" % prefix).replace('~', HOME)
+		shutil.copy("./%s/waf" % release, waf)
+		os.chmod(waf, stat.S_IRWXU)
 
 
-def win32_set_path(path):
-	print("updating registry")
+def set_path(release, prefix):
+	'''adds the waf install location to the PATH system environment variable.'''
+	if sys.platform == "win32":
+		win32_env_path(os.path.join(prefix, release))
+	else:
+		linux_env_path(prefix)
+
+
+def win32_env_path(path):
+	'''adds the waf install location to the PATH system environment variable.'''
+	logging.info("updating registry")
 	path = path.replace('/','\\').rstrip('\\')
 	try:
 		import winreg
 	except ImportError:
-		print("setting path(%s) failed, please add it manually." % path)
+		logging.error("setting path(%s) failed, please add it manually." % path)
 		return
 
 	reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
@@ -126,26 +130,49 @@ def win32_set_path(path):
 	try:
 		(paths, type) = winreg.QueryValueEx(key, "Path")
 		if path in [p.replace('/','\\').rstrip('\\') for p in paths.split(';')]:
-			print("path '%s' already exists." % (path))
+			logging.info("path '%s' already exists." % (path))
 			return
 		winreg.SetValueEx(key, "Path", 0, type, paths + ';' + path)
-		print("path '%s' added to registry." % path)
+		logging.info("path '%s' added to registry." % path)
 	finally:
 		winreg.CloseKey(key)
-		print("path will be available after system reboot or next login.")
+	logging.warning("path will be available after system reboot or next login.")
 
 
-def main(argv=sys.argv):
+def linux_env_path(path):
+	'''adds the waf install location to '~/.bashrc'.'''
+	name = os.path.join(HOME, '.bashrc')
+
+	with open(name, 'r') as f:
+		for line in list(f):
+			if line.startswith('export PATH=') and line.count(path):
+				logging.warning("path '%s' already exists in '%s'" % (path, name))
+				return
+
+	logging.info("updating '%s'" % name)
+	with open(name, 'r+') as f:
+		f.seek(-2, 2)
+		s = f.read(2) 
+		if s == '\n\n': 
+			f.seek(-1, 1) # remove double newline
+		e = 'export PATH=$PATH:%s\n' % path
+		if s[1] != '\n':
+			e = '\n' + e
+		f.write(e)
+
+
+def get_options(argv):
+	'''returns a tuple of command line options (prefix,version,tools).'''
 	prefix = PREFIX
 	version = WAF_VERSION
-	tools = "batched_cc,unity"
+	tools = WAF_TOOLS
 
 	try:
 		opts, args = getopt.getopt(argv[1:], 'hv:p:t:', ['help', 'version=', 'prefix=', 'tools='])
 	except getopt.GetoptError as err:
-		print(str(err), file=sys.stderr)
+		print(str(err))
 		usage()
-		return 2
+		raise err
 
 	for o, a in opts:
 		if o in ('-h', '--help'):
@@ -158,24 +185,39 @@ def main(argv=sys.argv):
 		elif o in ('-t', '--tools'):
 			tools = a
 
+	return (prefix,version,tools)
+
+
+def main(argv=sys.argv, level=logging.INFO):
+	logging.basicConfig(level=level)
+
+	try:
+		(prefix, version, tools) = get_options(argv)
+	except getopt.GetoptError as err:
+		return 2
+
 	release = "waf-%s" % version
 	package = "%s.tar.bz2" % release
 	url = "http://ftp.waf.io/pub/release/%s" % package
+	logging.info("WAF version=%s, prefix=%s, tools=%s, url=%s" % (version, prefix, tools, url))
 
 	top = os.getcwd()
 	tmp = tempfile.mkdtemp()
 	try:
 		os.chdir(tmp)
-		print('chdir(%s)' % os.getcwd())
+		logging.debug('chdir(%s)' % os.getcwd())
 		download(url, package)
-		untar(package)
+		deflate(package)
 		create(release, tools)
 		install(release, prefix)
+		set_path(release, prefix)
 	finally:
 		os.chdir(top)
-		print('chdir(%s)' % os.getcwd())
-		print('rmtree(%s)' % tmp)
+		logging.debug('chdir(%s)' % os.getcwd())
+		logging.debug('rmtree(%s)' % tmp)
 		shutil.rmtree(tmp)
+	logging.info("COMPLETE")
+	return 0
 
 
 if __name__ == "__main__":
