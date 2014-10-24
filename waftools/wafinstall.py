@@ -107,36 +107,64 @@ def install(release, prefix):
 		os.chmod(waf, stat.S_IRWXU)
 
 
-def set_path(release, prefix):
+def set_env(release, prefix):
 	'''adds the waf install location to the PATH system environment variable.'''
 	if sys.platform == "win32":
-		win32_env_path(os.path.join(prefix, release))
+		path = os.path.join(prefix, release)
+		win32_env_path(path)
+		win32_env_wafdir(path)
 	else:
 		linux_env_path(prefix)
 
 
 def win32_env_path(path):
 	'''adds the waf install location to the PATH system environment variable.'''
-	logging.info("updating registry")
+	logging.info("updating environment variable 'PATH'")
 	path = path.replace('/','\\').rstrip('\\')
 	try:
-		import winreg
-	except ImportError:
-		logging.error("setting path(%s) failed, please add it manually." % path)
-		return
-
-	reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
-	key = winreg.OpenKey(reg, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", 0, winreg.KEY_ALL_ACCESS)
-	try:
-		(paths, type) = winreg.QueryValueEx(key, "Path")
+		paths = win32_env_get("Path")
 		if path in [p.replace('/','\\').rstrip('\\') for p in paths.split(';')]:
 			logging.info("path '%s' already exists." % (path))
 			return
-		winreg.SetValueEx(key, "Path", 0, type, paths + ';' + path)
-		logging.info("path '%s' added to registry." % path)
+		win32_set_env('Path', paths + ';' + path)
+		logging.info("path '%s' added to 'PATH'." % path)
+	except ImportError:
+		logging.error("setting PATH(%s) failed, please add it manually." % path)
+		return
+
+
+def win32_env_wafdir(path):
+	'''adds the waf install location to the WAFDIR system environment variable.'''
+	logging.info("setting environment variable 'WAFDIR'")
+	try:
+		win32_env_set('WAFDIR', path)
+		logging.info("variable 'WAFDIR' set to '%s'." % path)
+	except ImportError:
+		logging.error("setting WAFDIR(%s) failed, please add it manually." % path)
+		return
+	
+
+def win32_env_get(variable):
+	'''returns the value of an environment variable.'''
+	import winreg
+	reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
+	key = winreg.OpenKey(reg, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", 0, winreg.KEY_ALL_ACCESS)
+	try:
+		(value, type) = winreg.QueryValueEx(key, variable)
 	finally:
 		winreg.CloseKey(key)
-	logging.warning("path will be available after system reboot or next login.")
+	return value
+
+
+def win32_env_set(variable, value):
+	'''sets the value of an environment variable.'''
+	import winreg
+	reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
+	key = winreg.OpenKey(reg, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", 0, winreg.KEY_ALL_ACCESS)
+	try:
+		winreg.SetValueEx(key, variable, 0, winreg.REG_SZ, value)
+	finally:
+		winreg.CloseKey(key)
 
 
 def linux_env_path(path):
@@ -210,7 +238,7 @@ def main(argv=sys.argv, level=logging.INFO):
 		deflate(package)
 		create(release, tools)
 		install(release, prefix)
-		set_path(release, prefix)
+		set_env(release, prefix)
 	finally:
 		os.chdir(top)
 		logging.debug('chdir(%s)' % os.getcwd())
