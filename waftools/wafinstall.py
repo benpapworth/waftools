@@ -20,14 +20,14 @@ Usage
 In order to install waf call:
 	python wafinstall.py [options]
 
-OPTIONS:
+Available options:
 	-h | --help		prints this help message.
-	
-	-n archive | --name=archive
-					specify the name of the archive to extact.
 
-	-p location | --path=location
-					specify the extraction location.
+	-v | --version	waf package version to install, e.g.
+					-v1.8.2
+
+	-t | --tools	comma seperated list of waf tools to be used
+					default=unity,batched_cc
 '''
 
 
@@ -40,6 +40,7 @@ import tarfile
 import getopt
 import tempfile
 import logging
+import site
 try:
 	from urllib.request import urlopen
 except ImportError:
@@ -50,7 +51,8 @@ WAF_VERSION = "1.8.2"
 WAF_TOOLS = "unity,batched_cc"
 
 HOME = os.path.expanduser('~')
-PREFIX = "D:\\programs" if sys.platform=="win32" else "~/.local/bin"
+BINDIR = os.path.join(sys.prefix, 'Scripts') if sys.platform=="win32" else "~/.local/bin"
+LIBDIR = site.getusersitepackages()
 
 
 def usage():
@@ -90,117 +92,114 @@ def create(release, tools):
 		os.chdir(top)
 
 
-def install(release, prefix):
+def install(release, bindir, libdir):
 	'''installs waf at the given location.'''
 	logging.info("installing: %s" % release)
-	if not os.path.exists(prefix):
-		os.makedirs(prefix)
 
-	if sys.platform == "win32":
-		dest = os.path.join(prefix, release)
-		if os.path.exists(dest):
-			shutil.rmtree(dest)
-		shutil.move(release, prefix)
-	else:
-		waf = str("%s/waf" % prefix).replace('~', HOME)
-		shutil.copy("./%s/waf" % release, waf)
-		os.chmod(waf, stat.S_IRWXU)
+	if not os.path.exists(bindir):
+		os.makedirs(bindir)
 
+	waf = str(bindir + "/waf").replace('~', HOME)
+	shutil.copy("./%s/waf" % release, waf)
+	os.chmod(waf, stat.S_IRWXU)
 
-def set_env(release, prefix):
-	'''adds the waf install location to the PATH system environment variable.'''
-	if sys.platform == "win32":
-		path = os.path.join(prefix, release)
-		win32_env_path(path)
-		win32_env_wafdir(path)
-	else:
-		linux_env_path(prefix)
-
-
-def win32_env_path(path):
-	'''adds the waf install location to the PATH system environment variable.'''
-	logging.info("updating environment variable 'PATH'")
-	path = path.replace('/','\\').rstrip('\\')
-	try:
-		paths = win32_env_get("Path")
-		if path in [p.replace('/','\\').rstrip('\\') for p in paths.split(';')]:
-			logging.info("path '%s' already exists." % (path))
-			return
-		win32_set_env('Path', paths + ';' + path)
-		logging.info("path '%s' added to 'PATH'." % path)
-	except ImportError:
-		logging.error("setting PATH(%s) failed, please add it manually." % path)
-		return
-
-
-def win32_env_wafdir(path):
-	'''adds the waf install location to the WAFDIR system environment variable.'''
-	logging.info("setting environment variable 'WAFDIR'")
-	try:
-		win32_env_set('WAFDIR', path)
-		logging.info("variable 'WAFDIR' set to '%s'." % path)
-	except ImportError:
-		logging.error("setting WAFDIR(%s) failed, please add it manually." % path)
-		return
+	if not os.path.exists(libdir):
+		os.makedirs(libdir)
 	
+	waflib = os.path.join(libdir, 'waflib')
+	if os.path.exists(waflib):
+		shutil.rmtree(waflib)
+			
+	shutil.move(os.path.join(release, 'waflib'), libdir)
 
-def win32_env_get(variable):
-	'''returns the value of an environment variable.'''
-	import winreg
-	reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
-	key = winreg.OpenKey(reg, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", 0, winreg.KEY_ALL_ACCESS)
+	if sys.platform == "win32":
+		shutil.copy("./%s/waf.bat" % release, waf + '.bat')
+	
+	env_set('PATH', bindir, extend=True)	
+	env_set('WAFDIR', libdir)
+
+
+def env_set(variable, value, extend=False):
+	'''sets an environment variable.'''
+	variable = variable.upper()
+	if variable in os.environ:
+		val = os.environ[variable]
+		if extend:
+			values = val.split(';' if sys.platform=='win32' else ':')
+			if value in values:
+				return
+		elif val == value:
+			return
+
+	if sys.platform == "win32":
+		win32_env_set(variable, value, extend)
+	else:
+		linux_env_set(variable, value, extend)
+
+
+def win32_env_set(variable, value, extend=False):
+	'''sets environment variable.'''
 	try:
-		(value, type) = winreg.QueryValueEx(key, variable)
-	finally:
-		winreg.CloseKey(key)
-	return value
+		import winreg
+	except ImportError:
+		logging.error("failed to set environment variable '%s'. please add it manually" % variable)
+		return
 
-
-def win32_env_set(variable, value):
-	'''sets the value of an environment variable.'''
-	import winreg
 	reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
 	key = winreg.OpenKey(reg, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", 0, winreg.KEY_ALL_ACCESS)
+
+	(values, _) = winreg.QueryValueEx(key, variable)
+	if values:
+		if value in values.split(';'):
+			logging.info("environment variable '%s' already set." % variable)
+			return
+		if extend:
+			value = values + ';' + value
+
 	try:
 		winreg.SetValueEx(key, variable, 0, winreg.REG_SZ, value)
 	finally:
 		winreg.CloseKey(key)
+	logging.info("environment variable '%s' set" % variable)
 
 
-def linux_env_path(path):
-	'''adds the waf install location to '~/.bashrc'.'''
+def linux_env_set(variable, value, extend=False):
+	'''sets environment variable.'''
 	name = os.path.join(HOME, '.bashrc')
+	variable = variable.upper()
 
 	with open(name, 'r') as f:
 		for line in list(f):
-			if line.startswith('export PATH=') and line.count(path):
-				logging.warning("path '%s' already exists in '%s'" % (path, name))
+			if line.startswith('export %s=' % variable) and line.count(value):
+				logging.info("'%s' already set for '%s' in '%s'" % (value, variable, name))
 				return
 
-	logging.info("updating '%s'" % name)
+	export = 'export %s={0}%s\n' % (variable, value)
+	export = export.format('$%s:' % variable if extend else '')
+
 	with open(name, 'r+') as f:
 		f.seek(-2, 2)
 		s = f.read(2) 
-		if s == '\n\n': 
-			f.seek(-1, 1) # remove double newline
-		e = 'export PATH=$PATH:%s\n' % path
-		if s[1] != '\n':
-			e = '\n' + e
-		f.write(e)
+		if s == '\n\n': f.seek(-1, 1) # remove double newline
+		if s[1] != '\n': f.write('\n') # add missing newline
+		f.write(export)
+	logging.info("environment variable '%s' set" % variable)
 
 
-def get_options(argv):
-	'''returns a tuple of command line options (prefix,version,tools).'''
-	prefix = PREFIX
+def main(argv=sys.argv, level=logging.INFO):
+	'''downloads, unpacks, creates and installs waf package.'''
+	logging.basicConfig(level=level)
+
 	version = WAF_VERSION
 	tools = WAF_TOOLS
-
+	bindir = BINDIR
+	libdir = LIBDIR
 	try:
-		opts, args = getopt.getopt(argv[1:], 'hv:p:t:', ['help', 'version=', 'prefix=', 'tools='])
+		opts, args = getopt.getopt(argv[1:], 'hv:u:t:', ['help', 'version=', 'tools='])
 	except getopt.GetoptError as err:
 		print(str(err))
 		usage()
-		raise err
+		return 2
 
 	for o, a in opts:
 		if o in ('-h', '--help'):
@@ -208,37 +207,23 @@ def get_options(argv):
 			sys.exit()
 		elif o in ('-v', '--version'):
 			version = a
-		elif o in ('-p', '--prefix'):
-			prefix = a.replace('\\', '/').rstrip('/')
 		elif o in ('-t', '--tools'):
 			tools = a
-
-	return (prefix,version,tools)
-
-
-def main(argv=sys.argv, level=logging.INFO):
-	logging.basicConfig(level=level)
-
-	try:
-		(prefix, version, tools) = get_options(argv)
-	except getopt.GetoptError as err:
-		return 2
 
 	release = "waf-%s" % version
 	package = "%s.tar.bz2" % release
 	url = "http://ftp.waf.io/pub/release/%s" % package
-	logging.info("WAF version=%s, prefix=%s, tools=%s, url=%s" % (version, prefix, tools, url))
+	logging.info("WAF version=%s, tools=%s, url=%s, bin=%s, lib=%s" % (version, tools, url, bindir, libdir))
 
 	top = os.getcwd()
-	tmp = tempfile.mkdtemp()
+	tmp = tempfile.mkdtemp()	
 	try:
 		os.chdir(tmp)
 		logging.debug('chdir(%s)' % os.getcwd())
 		download(url, package)
 		deflate(package)
 		create(release, tools)
-		install(release, prefix)
-		set_env(release, prefix)
+		install(release, bindir, libdir)
 	finally:
 		os.chdir(top)
 		logging.debug('chdir(%s)' % os.getcwd())
@@ -249,6 +234,6 @@ def main(argv=sys.argv, level=logging.INFO):
 
 
 if __name__ == "__main__":
-	main()
-
+	code = main(argv=sys.argv, level=logging.DEBUG)
+	sys.exit(code)
 
