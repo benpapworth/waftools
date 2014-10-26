@@ -134,6 +134,8 @@ def env_set(variable, value, extend=False):
 	if sys.platform == "win32":
 		win32_env_set(variable, value, extend)
 	else:
+		if value.startswith(HOME):
+			value = value.replace(HOME, '~', 1)
 		linux_env_set(variable, value, extend)
 
 
