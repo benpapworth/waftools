@@ -1,6 +1,6 @@
 waftools/wafinstall.py
-- install 'waflib' in ~/.local/lib/pythonX-Y/site-packages
-- add environment variable 'WAFLIB' to '~/.bashrc'
+- test in linux
 
 documentation
-- add description on usage for 'wafinstall'
+- add description on usage for 'wafinstall' (?)
+
