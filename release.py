@@ -13,17 +13,58 @@ Create a new release, performs following steps:
 '''
 
 
+import os
+import sys
 import subprocess
 import waftools
+import zipfile
 
-subprocess.call(['waf', 'distclean'])
-subprocess.call(['waf', 'configure'])
-subprocess.call(['waf', 'build'])
-subprocess.call(['waf', 'distclean'])
 
-v = str(waftools.version)
-subprocess.call(['git', 'tag', '-a', 'v%s' % v, '-m', '"release %s"' % v])
-subprocess.call(['git', 'push', 'origin', '--tags'])
+# PIP: install required packages
+packages = subprocess.check_output('pip list'.split()).decode('utf-8')
+if 'Sphinx' not in packages:
+	subprocess.call('pip install Sphinx'.split())
 
-subprocess.call(['python', 'setup.py', 'sdist', 'upload'])
+
+# WAF: install waflib (required for Sphinx documentation)
+subprocess.call('python waftools/wafinstall.py'.split())
+
+
+# WAFTOOLS: install latest (required for Sphinx documentation)
+cmd = 'python setup.py install%s' % '' if sys.platform=='win32' else ' --user'
+subprocess.call(cmd.split())
+
+
+# DOC: create html documentation using Sphinx
+top = os.getcwd()
+try:
+	os.chdir('doc')
+	subprocess.call('make html'.split())
+finally:
+	os.chdir(top)
+
+
+# ZIP: create zip containing html documentation
+top = os.getcwd()
+try:
+	os.chdir('doc/_build/html')
+	name = os.path.join(top, 'waftools-doc-html.zip')
+	with zipfile.ZipFile(name, 'w') as zip:
+		for (root, dirs, files) in os.walk('.'):
+			for file in files:
+				zip.write('%s/%s' % (root, file))
+finally:
+	os.chdir(top)
+
+
+# BITBUCKET: create upload package
+subprocess.call('python setup.py sdist --formats=gztar --dist-dir=.'.split())
+
+# GIT: tag the new release
+version = str(waftools.version)
+subprocess.call('git tag -a v{0} -m "release {0}"'.format(version).split())
+subprocess.call('git push origin --tags'.split())
+
+# PYPI: publish package
+subprocess.call('python setup.py sdist upload'.split())
 
