@@ -30,7 +30,6 @@ Available options:
 					default=unity,batched_cc
 '''
 
-
 import os
 import sys
 import stat
@@ -41,6 +40,8 @@ import getopt
 import tempfile
 import logging
 import site
+import distutils.sysconfig
+
 try:
 	from urllib.request import urlopen
 except ImportError:
@@ -51,8 +52,12 @@ WAF_VERSION = "1.8.2"
 WAF_TOOLS = "unity,batched_cc"
 
 HOME = os.path.expanduser('~')
-BINDIR = os.path.join(sys.prefix, 'Scripts') if sys.platform=="win32" else "~/.local/bin"
-LIBDIR = site.getusersitepackages()
+if sys.platform == "win32":
+	BINDIR = os.path.join(sys.prefix, 'Scripts')
+	LIBDIR = distutils.sysconfig.get_python_lib()
+else:
+	BINDIR = "~/.local/bin"
+	LIBDIR = site.getusersitepackages()
 
 
 def usage():
@@ -61,7 +66,7 @@ def usage():
 
 def download(url, saveto):
 	'''downloads the waf package.'''
-	logging.info("downloading: %s" % url)
+	logging.info("wget %s" % url)
 	try:
 		u = urlopen(url)
 		with open(saveto, 'wb') as f: f.write(u.read())
@@ -72,49 +77,57 @@ def download(url, saveto):
 
 def deflate(name, path='.'):
 	'''deflates the waf archive.'''
-	logging.info("deflating: %s" % name)
+	logging.info("tar jxf %s" % name)
 	c = 'gz' if os.path.splitext(name)[1] in ('gz', 'tgz') else 'bz2'
-	with tarfile.open(name, 'r:%s' % c) as t:
-		for member in t.getmembers():
-			logging.debug(member.name)
-			t.extract(member, path=path)
+	with tarfile.open(name, 'r:%s' % c) as tar:
+		for member in tar.getmembers():
+			tar.extract(member, path=path)
+			logging.debug('\t%s' % member.name)
 
 
 def create(release, tools):
 	'''creates the waf binary.'''
-	logging.info("creating: %s" % release)
+	cmd = "python waf-light --make-waf --tools=%s" % tools	
 	top = os.getcwd()
 	try:
-		cmd = "python waf-light --make-waf --tools=%s" % tools
-		cwd = "./%s" % release
-		subprocess.check_call(cmd.split(), cwd=cwd)
+		logging.info(cmd)
+		subprocess.call(cmd.split(), cwd="./" + release)
 	finally:
 		os.chdir(top)
 
 
-def install(release, bindir, libdir):
+def install_waflib(waf, extras=[], libdir=LIBDIR):
+	'''installs waflib.'''
+	mkdirs(libdir)
+	rm(os.path.join(libdir, 'waflib'))
+
+	extras = ['%s.py' % e for e in extras]
+	top = os.getcwd()
+	try:
+		os.chdir(waf)
+		for (path, dirs, files) in os.walk('waflib'):
+			if path.count('__pycache__'):
+				continue
+			for file in files:
+				if path.endswith('extras') and file not in extras:
+					continue
+				dst = os.path.join(libdir,path)
+				mkdirs(dst)
+				cp(os.path.join(path,file), dst)
+	finally:
+		os.chdir(top)
+
+	
+def install(release, bindir, libdir, tools):
 	'''installs waf at the given location.'''
-	logging.info("installing: %s" % release)
-
-	if not os.path.exists(bindir):
-		os.makedirs(bindir)
-
-	waf = str(bindir + "/waf").replace('~', HOME)
-	shutil.copy("./%s/waf" % release, waf)
-	os.chmod(waf, stat.S_IRWXU)
-
-	if not os.path.exists(libdir):
-		os.makedirs(libdir)
-	
-	waflib = os.path.join(libdir, 'waflib')
-	if os.path.exists(waflib):
-		shutil.rmtree(waflib)
-			
-	shutil.move(os.path.join(release, 'waflib'), libdir)
-
+	mkdirs(bindir)
+	dst = os.path.join(bindir, 'waf').replace('~', HOME)
+	src = os.path.join('.', release, 'waf')
+	cp(src, dst)
+	os.chmod(dst, stat.S_IRWXU)	
+	install_waflib(release, libdir=libdir, extras=tools.split(','))
 	if sys.platform == "win32":
-		shutil.copy("./%s/waf.bat" % release, waf + '.bat')
-	
+		cp("%s.bat" % src, "%s.bat" % dst)
 	env_set('PATH', bindir, extend=True)	
 	env_set('WAFDIR', libdir)
 
@@ -147,22 +160,24 @@ def win32_env_set(variable, value, extend=False):
 		logging.error("failed to set environment variable '%s'. please add it manually" % variable)
 		return
 
+	loc = r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
 	reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
-	key = winreg.OpenKey(reg, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment", 0, winreg.KEY_ALL_ACCESS)
-
-	(values, _) = winreg.QueryValueEx(key, variable)
+	key = winreg.OpenKey(reg, loc, 0, winreg.KEY_ALL_ACCESS)
+	try:
+		(values, _) = winreg.QueryValueEx(key, variable)
+	except FileNotFoundError:
+		values = None
+	
 	if values:
-		if value in values.split(';'):
-			logging.info("environment variable '%s' already set." % variable)
-			return
-		if extend:
-			value = values + ';' + value
+		if value in values.split(';'): return
+		if extend: value = values + ';' + value
 
 	try:
 		winreg.SetValueEx(key, variable, 0, winreg.REG_SZ, value)
 	finally:
 		winreg.CloseKey(key)
-	logging.info("environment variable '%s' set" % variable)
+	logging.info("WINREG(%s)" % loc)
+	logging.info("\t%s=%s" % (variable,value))
 
 
 def linux_env_set(variable, value, extend=False):
@@ -173,9 +188,7 @@ def linux_env_set(variable, value, extend=False):
 	with open(name, 'r') as f:
 		for line in list(f):
 			if line.startswith('export %s=' % variable) and line.count(value):
-				logging.info("'%s' already set for '%s' in '%s'" % (value, variable, name))
 				return
-
 	export = 'export %s={0}%s\n' % (variable, value)
 	export = export.format('$%s:' % variable if extend else '')
 
@@ -185,32 +198,37 @@ def linux_env_set(variable, value, extend=False):
 		if s == '\n\n': f.seek(-1, 1) # remove double newline
 		if s[1] != '\n': f.write('\n') # add missing newline
 		f.write(export)
-	logging.info("environment variable '%s' set" % variable)
+	logging.info("%s %s" % (name,export))
 
 
-def main(argv=sys.argv, level=logging.INFO):
-	'''downloads, unpacks, creates and installs waf package.'''
-	logging.basicConfig(level=level)
-
+def getopts(argv):
+	'''returns command line options as tuple.'''
 	version = WAF_VERSION
 	tools = WAF_TOOLS
 	bindir = BINDIR
 	libdir = LIBDIR
-	try:
-		opts, args = getopt.getopt(argv[1:], 'hv:u:t:', ['help', 'version=', 'tools='])
-	except getopt.GetoptError as err:
-		print(str(err))
-		usage()
-		return 2
-
-	for o, a in opts:
+	
+	opts, args = getopt.getopt(argv[1:], 'hv:u:t:', ['help', 'version=', 'tools='])
+	for opt, arg in opts:
 		if o in ('-h', '--help'):
 			usage()
 			sys.exit()
 		elif o in ('-v', '--version'):
-			version = a
+			version = arg
 		elif o in ('-t', '--tools'):
-			tools = a
+			tools = arg
+	return (version, tools, bindir, libdir)
+	
+	
+def main(argv=sys.argv, level=logging.INFO):
+	'''downloads, unpacks, creates and installs waf package.'''
+	logging.basicConfig(level=level, format=' %(message)s')
+	try:
+		(version, tools, bindir, libdir) = getopts(argv)
+	except getopt.GetoptError as err:
+		print(str(err))
+		usage()
+		sys.exit(2)
 
 	release = "waf-%s" % version
 	package = "%s.tar.bz2" % release
@@ -220,20 +238,42 @@ def main(argv=sys.argv, level=logging.INFO):
 	top = os.getcwd()
 	tmp = tempfile.mkdtemp()	
 	try:
-		os.chdir(tmp)
-		logging.debug('chdir(%s)' % os.getcwd())
+		cd(tmp)
 		download(url, package)
 		deflate(package)
 		create(release, tools)
-		install(release, bindir, libdir)
+		install(release, bindir, libdir, tools)
 	finally:
-		os.chdir(top)
-		logging.debug('chdir(%s)' % os.getcwd())
-		logging.debug('rmtree(%s)' % tmp)
-		shutil.rmtree(tmp)
+		cd(top)
+		rm(tmp)
 	logging.info("COMPLETE")
-	return 0
 
+
+def cp(src, dst):
+	'''copies files or directories.'''
+	logging.debug('cp %s %s' % (src, dst))
+	shutil.copy(src, dst)
+
+
+def rm(path):
+	'''delete directory, including sub-directories and files it contains.'''
+	if os.path.exists(path):
+		logging.debug("rm -rf %s" % (path))
+		shutil.rmtree(path)
+
+
+def mkdirs(path):
+	'''create directory including missing parent directories.'''
+	if not os.path.exists(path):
+		logging.debug("mkdirs -p %s" % (path))
+		os.makedirs(path)
+
+
+def cd(path):
+	'''changes current working directory.'''
+	logging.debug("cd %s" % path)
+	os.chdir(path)
+	
 
 if __name__ == "__main__":
 	code = main(argv=sys.argv, level=logging.DEBUG)
