@@ -62,7 +62,7 @@ subprocess.call('python setup.py sdist --formats=gztar --dist-dir=.'.split())
 
 # GIT: tag the new release
 version = str(waftools.version)
-subprocess.call('git tag -a v{0} -m "release {0}"'.format(version).split())
+subprocess.call('git tag -a v{0} -m "v{0}"'.format(version).split())
 subprocess.call('git push origin --tags'.split())
 
 # PYPI: publish package
