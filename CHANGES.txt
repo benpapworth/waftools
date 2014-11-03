@@ -53,5 +53,6 @@ v0.3.0, 2014-10-23 -- Added 'wafinstall' script; can be used to install 'waf' bu
 v0.3.1, 2014-10-30 -- Issue #4; added missing package files ('msdev.sln' and 'doxy.config')
                       Improved 'wafinstall' script (beta).
 
+v0.3.2, 2014-11-03 -- Issue #5; fixed detection of (cross)compilers in 'ccross' module when using waf-1.8.x.
 
                       

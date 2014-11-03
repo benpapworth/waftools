@@ -124,8 +124,9 @@ def config_base(conf):
 		conf.load('compiler_c unity')
 		conf.load('compiler_cxx unity')
 		conf.load('batched_cc')
-	except Errors.ConfigurationError:
-		Logs.warn("INFO: waf(%s), building without tools(unity,batched_cc)" % v)
+	except Errors.ConfigurationError as e:
+		Logs.warn("WARNING: %s" % e)
+		Logs.info("INFO: waf(%s), trying build without tools(unity,batched_cc)" % v)
 		conf.load('compiler_c')
 		conf.load('compiler_cxx')
 	else:
@@ -150,11 +151,20 @@ def configure(conf):
 		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
 		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
 		conf.env.LIBDIR = '%s/opt/%s/lib' % (prefix, name)
-		cc = '%s-gcc' % (ini['prefix'])
-		conf.find_program(cc)
-		conf.env.CC = cc
-		conf.env.CXX = '%s-g++' % (ini['prefix'])
-		conf.env.AR = '%s-ar' % (ini['prefix'])
+		
+		pre = ini['prefix']
+		conf.find_program('%s-gcc' % (pre), var='CC')
+		
+		for ext in ('gxx','g++','c++'):
+			cxx = '%s-%s' % (pre, ext)
+			try:
+				conf.find_program(cxx, var='CXX')
+			except Errors.ConfigurationError as e:
+				Logs.debug("program '%s' not found" % (cxx))
+			else:
+				break
+		
+		conf.find_program('%s-ar' % (pre), var='AR')
 		config_base(conf)
 
 	conf.setenv('')
