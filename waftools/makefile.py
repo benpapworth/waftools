@@ -644,10 +644,12 @@ class MakeRoot(Make):
 
 	def _get_moddeps(self):
 		d = []
+		names = [c[0] for c in self.childs]
 		for (name, _, deps) in self.childs:
 			s = '%s;' %(name)
-			if len(deps):
-				s += ','.join(deps)
+			for dep in deps:
+				if dep in names:
+					s += ',%s' % dep
 			d.append(s)
 		s = ' \\\n\t'.join(d)
 		return s
