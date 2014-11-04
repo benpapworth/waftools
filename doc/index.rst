@@ -347,7 +347,7 @@ install the waf build system itself::
 
 	wafinstall [--version=version] [--tools=unity,batched_cc]
 
-	
+
 Credits
 =======
 The report generations part of the *cppcheck* tool is based on a script (of 
