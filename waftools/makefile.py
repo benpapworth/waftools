@@ -599,7 +599,8 @@ class MakeRoot(Make):
 		except IndexError:
 			cxx = 'g++'
 		cxx = cxx.replace('\\', '/')
-
+	
+		var = self.bld.variant
 		s = MAKEFILE_ROOT
 		s = super(MakeRoot, self).populate(s)
 		s = re.sub('APPNAME:=', 'APPNAME:=%s' % getattr(Context.g_module, Context.APPNAME), s)
@@ -617,6 +618,7 @@ class MakeRoot(Make):
 		s = re.sub('==MODULES==', self._get_modules(), s)
 		s = re.sub('==MODPATHS==', self._get_modpaths(), s)
 		s = re.sub('==MODDEPS==', self._get_moddeps(), s)
+		s = re.sub('==VARIANT==', '_%s' % var if var else '', s)
 		s = re.sub(bld.env.PREFIX, '$(PREFIX)', s)
 		s = re.sub('PREFIX:=', 'PREFIX:=%s' % prefix, s)
 		return s
@@ -1008,7 +1010,7 @@ endef
 #------------------------------------------------------------------------------
 define domake
 $1: $(call getdeps, $1)
-	$(MAKE) -r -C $(call getpath,$1) -f $(lastword $(subst $(csep),$(sp),$1)).mk $(firstword $(subst $(csep),$(sp),$1))
+	$(MAKE) -r -C $(call getpath,$1) -f $(lastword $(subst $(csep),$(sp),$1))==VARIANT==.mk $(firstword $(subst $(csep),$(sp),$1))
 endef
 
 #------------------------------------------------------------------------------
