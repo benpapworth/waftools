@@ -1,67 +1,118 @@
-v0.0.9, 2014-04-01 -- Initial release.
+History
+-------
+Following lists the changes per released version.
 
-v0.1.0, 2014-04-08 -- Added export function of C/C++ tasks to Visual Studio (msdev) projects.
+**v0.0.9**, 2014-04-01:
 
-v0.1.1, 2014-05-10 -- Added extra check when parsing dependencies ('use') in Code::Blocks, MSDev and Eclipse modules.
-                      Added extra check in CppCheck when C/C++ sources contain non readable characters.
+- initial release.
 
-v0.1.2, 2014-07-01 -- Eclipse export fix when 'includes' and 'use' tgen arguments are specified as string intead of list.
-                      CodeBlocks export improved use LIBPATH_ and INCLUDES_ dependencies, added pthread linker option.
-                      Added 'depend' module and command; users to get an overview of dependencies between tasks.
-                      Added Doxygen module; allows users to create C/C++ source documentation.
 
-v0.1.3, 2014-07-21 -- Changed license to MIT.
-                      Updated and improved module documentaton.
-                      Improved exporting to foreign build systems and IDE's (msdev, eclipse, cmake, codeblocks,
-                      make).
-                      Improved Eclipse export for Win32/MinGW.
+**v0.1.0**, 2014-04-08:
 
-v0.1.4, 2014-08-18 -- Added 'tree' module to package documentation.
-                      Added location variable to waftools package.
-                      Improved speed when exporting to other build systems (e.g. make, eclipse, cmake, ...) when
-                      using the 'export' module.
-                      Issue #2, improved installation path of package data files (e.g. msdev.sln). 
-                      Fixed exporting to msdev, cmake, codeblocks on Windows.
+- *msdev*; added export function of C/C++ tasks to Visual Studio projects.
 
-v0.1.5, 2014-08-24 -- Corrected download url in setup.py.
-                      Always use tar.gz format for released packages.
-                      Extracted 'options' and 'configure' (containing GNU CC stuff) to separate 'gnucc' waftools module
-                      and updated playground/wscript accordingly.
 
-v0.1.6, 2014-09-03 -- Makefiles export:
-                      - fixed creation of relative source paths.
-                      - fixed problem when using underscores in directory or task names.
-                      CppCheck reports:
-                      - fixed broken hyperlinks when using FireFox (use 'file:///' as prefix in 'href').
+**v0.1.1**, 2014-05-10:
 
-v0.1.7, 2014-10-06 -- Added support for multiple build environments for Makefile, Codeblocks modules.
-                      Added new module 'ccross'; to be used for multiple build environments; e.g. one native
-                      build environment and one or more cross compile environments.
-					  Improved Eclipse export; now support mulitple build variants (e.g. build debug GCC, MinGW, ARM and PPC 
-					  at the same time, from one project). Only export settings defined within the environment; don't
-					  assume and auto-create Debug and Release for each build variant. 
+- *codeblocks*; added extra check when parsing dependencies (*use*)
+- *msdev*; added extra check when parsing dependencies (*use*)
+- *eclipse*; added extra check when parsing dependencies (*use*)
+- *cppcheck*; added extra check on C/C++ sources containing non human readable characters
 
-v0.1.8, 2014-10-11 -- Updated package trove classifiers
-                      Added 'indent' module; use GNU indent to clean up and format C/C++ source code.
-                      Updated module documentation.
-                      
-v0.2.0, 2014-10-15 -- Added support for waf-1.8.x; several fixes for environment variables being changed to type(list).
-                      Use new 'unity' and 'batched_cc' tools from waf-1.8.x when available.
 
-v0.3.0, 2014-10-23 -- Added 'wafinstall' script; can be used to install 'waf' build system.
+**v0.1.2**, 2014-07-01:
 
-v0.3.1, 2014-10-30 -- Issue #4; added missing package files ('msdev.sln' and 'doxy.config')
-                      Improved 'wafinstall' script (beta).
+- *eclipse*; improved export when *includes* and *use* tgen arguments are specified as string intead of list
+- *codeblocks*; use LIBPATH and INCLUDES dependencies, added pthread linker option
+- *depend*; new module that allows users to get an overview of dependencies between tasks
+- *doxygen*; new module that allows users to create C/C++ source documentation
 
-v0.3.2, 2014-11-03 -- Issue #5; fixed detection of (cross)compilers in 'ccross' module when using waf-1.8.x.
 
-v0.3.3, 2014-11-04 -- Improved wafinstall script (detect tar.gz or tar.bz2).
-                      Makefile fixes: 
-                      - handle cflags in task generator being specified as string
-                      - added support for read_shlib()
-                      - only build C/C++ tasks
-                      - use correct makefile, build directory and libpaths for variants
-                      Eclipse fixes:
-                      - added support for 'dummy' lib exporting headers only
-                      - added support for read_shlib()
-                      - use 'lib' from task generator.
+**v0.1.3**, 2014-07-21:
+
+- *license*; changed license to MIT
+- *documentation*; updated and improved detailed description of modules
+- *msdev*, *eclipse*, *cmake*, *codeblocks*, *make*; improved export function
+- *eclipse*; improved export when using MinGW on Windows
+
+
+**v0.1.4**, 2014-08-18:
+
+- *depends*, *tree*; renamed *depends* module into *tree*
+- *documenation*; added *tree* to package description
+- *waftools*; added 'location' variable (i.e. 'waftools.location')
+- *msdev*, *eclipse*, *cmake*, *codeblocks*, *make*; improved export speed
+- issue2_, issue3_; improved installation path of package data files (e.g. msdev.sln) 
+- *msdev*, *cmake*, *codeblocks*; fixed export on Windows
+
+
+**v0.1.5**, 2014-08-24:
+
+- *general*; corrected download url in setup.py
+- *general*; always use *tgz* format for released packages
+- *gnucc*; new module containing GNU C/C++ compiler specific configuration settings
+- *examples*; updated build scripts in 'playground'
+
+
+**v0.1.6**, 2014-09-03:
+
+- *makefile*; corrected creation of relative source paths and fixed a problem when using underscores in directory or task names
+- *cppcheck*; fixed broken hyperlinks when using firefox web browser
+
+
+**v0.1.7**, 2014-10-06:
+
+- *makefile*, *codeblocks*, *eclipse*; added support for multiple build environments (cross-compile)
+- *codeblocks*; added support for multiple build environments (cross-compile)
+- *eclipse*; changed export, now only export settings defined within the environment
+
+
+**v0.1.8**, 2014-10-11:
+
+- *general*; updated package trove classifiers in setup.py
+- *indent*; new module uses GNU indent in order to clean-up and format C/C++ source code
+- *documentation*; improved detailed description of modules
+
+
+**v0.2.0**, 2014-10-15:
+
+- *general*; added support for waf-1.8.x, several fixes for environment variables being changed to type(list)
+- *ccross*; use new *unity* and *batched_cc* tools from waf-1.8.x when available
+
+
+**v0.3.0**, 2014-10-23:
+
+- *wafinstall*; added install script, can be used to install the *waf* build system
+
+
+**v0.3.1**, 2014-10-30:
+
+- issue4_; added missing package files ('msdev.sln' and 'doxy.config')
+- *wafinstall*; improved/revised *waf* install script (beta)
+
+
+**v0.3.2**, 2014-11-03:
+
+- issue5_; fixed detection of (cross)compilers in *ccross* module when using waf-1.8.x
+
+
+**v0.3.3**, 2014-11-04:
+
+- *wafinstall*; corrected detection of compression of the waf archive (gz or bz2)
+- *makefile*; several fixes and improvements:
+
+	- handle cflags in task generator being specified as string
+	- added support for read_shlib()
+	- only build C/C++ tasks
+	- use correct makefile, build directory and libpaths for variants (cross-compile)
+	
+- *eclipse*; several fixes and improvements:
+
+	- added support for library task generators exporting headers only (i.e. no source)
+	- added missing external libraries in project; use 'lib' from task generator, added support for read_shlib(), a.k.a. *fake_lib*
+
+
+.. _issue2: https://bitbucket.org/Moo7/waftools/issue/2/exception-when-exporting-to-msdev
+.. _issue3: https://bitbucket.org/Moo7/waftools/issue/3/exception-when-exporting-to-msdev
+.. _issue4: https://bitbucket.org/Moo7/waftools/issue/4/msdevsln-not-included-in-the-latest
+.. _issue5: https://bitbucket.org/Moo7/waftools/issue/5/detecting-cross-compiler-fails
