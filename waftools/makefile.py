@@ -850,12 +850,16 @@ class MakeChild(Make):
 
 	def _get_cflags(self, gen):
 		cflags = getattr(gen, 'cflags', [])
+		if isinstance(cflags, str):
+			cflags = cflags.split()
 		if 'cshlib' in gen.features:
 			cflags.extend(self.bld.env.CFLAGS_cshlib)
 		return ' '.join(cflags)
 
 	def _get_cxxflags(self, gen):
 		cxxflags = getattr(gen, 'cxxflags', [])
+		if isinstance(cxxflags, str):
+			cxxflags = cxxflags.split()
 		if 'cxxshlib' in gen.features:
 			cxxflags.extend(self.bld.env.CXXFLAGS_cxxshlib)
 		return ' '.join(cxxflags)
