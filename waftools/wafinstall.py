@@ -210,15 +210,15 @@ def getopts(argv):
 	
 	opts, args = getopt.getopt(argv[1:], 'hv:u:t:', ['help', 'version=', 'tools='])
 	for opt, arg in opts:
-		if o in ('-h', '--help'):
+		if opt in ('-h', '--help'):
 			usage()
 			sys.exit()
-		elif o in ('-v', '--version'):
+		elif opt in ('-v', '--version'):
 			version = arg
-		elif o in ('-t', '--tools'):
+		elif opt in ('-t', '--tools'):
 			tools = arg
 	return (version, tools, bindir, libdir)
-	
+
 	
 def main(argv=sys.argv, level=logging.INFO):
 	'''downloads, unpacks, creates and installs waf package.'''
