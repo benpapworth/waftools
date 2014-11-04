@@ -4,10 +4,10 @@
    contain the root `toctree` directive.
 
 
-Waftools 0.3.0 documentation
+Waftools 0.3.3 documentation
 ============================
 Welcome! This is the documentation for the *waftools* package, last updated 
-Oct 23\ :sup:`rd`\  2014.
+Nov 4\ :sup:`th`\  2014.
 
 
 Overview
@@ -327,6 +327,27 @@ Indices and tables
 * :ref:`search`
 
 
+Installation
+============
+The preferred to install this package is by means of the Python package installer::
+
+	pip install -I waftools
+	
+If this, for some reason does not work, you can allso clone the repository and install 
+the package from it::
+
+	cd ~
+	git clone https://bitbucket.org/Moo7/waftools.git waftools
+	cd waftools
+	python setup.py sdist install
+
+
+Contained within the *waftools* package is a special install script which can be used to 
+install the waf build system itself::
+
+	wafinstall [--version=version] [--tools=unity,batched_cc]
+
+	
 Credits
 =======
 The report generations part of the *cppcheck* tool is based on a script (of 
