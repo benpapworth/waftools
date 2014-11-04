@@ -751,14 +751,21 @@ class CDTProject(EclipseProject):
 		for use in uses:
 			try:
 				tg = self.bld.get_tgen_by_name(use)
-			except Errors.WafError:
+			except Errors.WafError as e:
 				pass
 			else:
 				includes = Utils.to_list(getattr(tg, 'export_includes', []))
-				includes = list(set([str(i).lstrip('./') for i in includes]))
+				sources = Utils.to_list(getattr(tg, 'source', []))
+				if not len(sources):
+					top = tg.path.abspath().replace('\\', '/')
+					includes = ['%s/%s' % (top, i) for i in includes if len(i)]
+				else:
+					includes = list(set([str(i).lstrip('./') for i in includes]))
+					includes = ['"${workspace_loc:/%s/%s}"' % (use, i) for i in includes if len(i)]
+					
 				for include in includes:
 					listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
-					listoption.set('value', '"${workspace_loc:/%s/%s}"' % (use, include))
+					listoption.set('value', include)
 
 	def compiler_add_defines(self, compiler, language):
 		if self.language != language:
@@ -831,8 +838,14 @@ class CDTProject(EclipseProject):
 			except Errors.WafError:
 				pass
 			else:
+				name = tgen.get_name()
 				if set(('cstlib', 'cshlib','cxxstlib', 'cxxshlib')) & set(tgen.features):
-					libs.append(tgen.get_name())
+					libs.append((name,None))
+
+				elif 'fake_lib' in tgen.features:
+					paths = [p.replace('\\', '/') for p in tgen.lib_paths]					
+					libs.append((name, paths))
+
 		return libs if len(libs) else None
 
 	def toolchain_linker_add_libs(self, linker, language):
@@ -842,7 +855,7 @@ class CDTProject(EclipseProject):
 		option = ElementTree.SubElement(linker, 'option', {'name':'Libraries (-l)', 'valueType':'libs'})
 		option.set('superClass', 'gnu.%s.link.option.libs' % (language))
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
-		for lib in libs:
+		for (lib, _) in libs:
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 			listoption.set('value', lib)
 
@@ -853,9 +866,13 @@ class CDTProject(EclipseProject):
 		option = ElementTree.SubElement(linker, 'option', {'name':'Library search path (-L)', 'valueType':'libPaths'})
 		option.set('superClass', 'gnu.%s.link.option.paths' % (language))
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
-		for lib in libs:
+		for (lib, paths) in libs:
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
-			listoption.set('value', '"${workspace_loc:/%s/%s}"' % (lib, self.cdt['name']))
+			if not paths:
+				listoption.set('value', '"${workspace_loc:/%s/%s}"' % (lib, self.cdt['name']))
+			else:
+				for path in paths:
+					listoption.set('value', path)
 
 	def toolchain_linker_add_input(self, linker, language):
 		if self.language != language or self.cdt['ext'] == 'lib':
