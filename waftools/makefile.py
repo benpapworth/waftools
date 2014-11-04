@@ -702,6 +702,10 @@ class MakeChild(Make):
 			if len(set(tg.features) & set(['cshlib', 'cxxshlib'])):
 				self.lib['shared']['name'].append(tg.get_name())
 				self.lib['shared']['path'].append(tg.path.relpath().replace('\\','/'))
+			if len(set(tg.features) & set(['fake_lib'])):
+				self.lib['shared']['name'].append(tg.get_name())
+				self.lib['shared']['path'].extend([p.replace('\\', '/') for p in tg.lib_paths])
+				
 		for lib in Utils.to_list(getattr(self.gen, 'lib', [])):
 			self.lib['shared']['name'].append(lib)
 
@@ -877,8 +881,15 @@ class MakeChild(Make):
 		return ' '.join(flags)
 
 	def _get_libpath(self, kind):
-		libpath = self.lib[kind]['path']
-		return ' \\\n\t'.join(['$(TOP)/build/%s' % l for l in libpath])
+		paths = self.lib[kind]['path']
+		top = self.bld.path.abspath().replace('\\', '/')
+		libpath = []
+		for p in paths:
+			if os.path.abspath(p) and p.startswith(top):
+				libpath.append(p.replace(top, '$(TOP)', 1))
+			else:
+				libpath.append('$(TOP)/build/%s' % p)				
+		return ' \\\n\t'.join(libpath)
 
 	def _get_lib(self, kind):
 		lib = self.lib[kind]['name']
