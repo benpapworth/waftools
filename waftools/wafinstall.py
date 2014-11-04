@@ -75,11 +75,11 @@ def download(url, saveto):
 	return os.path.realpath(saveto)
 
 
-def deflate(name, path='.'):
+def deflate(archive, path='.'):
 	'''deflates the waf archive.'''
-	logging.info("tar jxf %s" % name)
-	c = 'gz' if os.path.splitext(name)[1] in ('gz', 'tgz') else 'bz2'
-	with tarfile.open(name, 'r:%s' % c) as tar:
+	c = 'gz' if os.path.splitext(archive)[1] in ('.gz', '.tgz') else 'bz2'
+	logging.info("tar %s %s" % ('zxvf' if c=='gz' else 'jxvf', archive))
+	with tarfile.open(archive, 'r:%s' % c) as tar:
 		for member in tar.getmembers():
 			tar.extract(member, path=path)
 			logging.debug('\t%s' % member.name)
