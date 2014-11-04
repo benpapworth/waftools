@@ -55,9 +55,13 @@ v0.3.1, 2014-10-30 -- Issue #4; added missing package files ('msdev.sln' and 'do
 
 v0.3.2, 2014-11-03 -- Issue #5; fixed detection of (cross)compilers in 'ccross' module when using waf-1.8.x.
 
-v0.3.3, 2014-11-04 -- makefile(fix): handle cflags in task generator being specified as string.
-                      Improved wafinstall script (detect tar.gz or tar.bz2).
-                      makefile(fix): added support for read_shlib().
-                      eclipse(fix): added support for 'dummy' lib exporting headers only.
-                      eclipse(fix): added support for read_shlib().
-                      eclipse(fix): use 'lib' from task generator.
+v0.3.3, 2014-11-04 -- Improved wafinstall script (detect tar.gz or tar.bz2).
+                      Makefile fixes: 
+                      - handle cflags in task generator being specified as string
+                      - added support for read_shlib()
+                      - only build C/C++ tasks
+                      - use correct makefile, build directory and libpaths for variants
+                      Eclipse fixes:
+                      - added support for 'dummy' lib exporting headers only
+                      - added support for read_shlib()
+                      - use 'lib' from task generator.

@@ -489,10 +489,11 @@ def export(bld):
 		return
 
 	root = MakeRoot(bld)
-	for tgen in bld.task_gen_cache_names.values():
-		child = MakeChild(bld, tgen, tgen.tasks)
-		child.export()
-		root.add_child(child.get_data())
+	for tgen in bld.task_gen_cache_names.values():	
+		if set(('c', 'cxx')) & set(tgen.features):		
+			child = MakeChild(bld, tgen, tgen.tasks)
+			child.export()
+			root.add_child(child.get_data())
 	root.export()
 
 
@@ -669,21 +670,26 @@ class MakeChild(Make):
 
 	def _get_content(self):
 		if 'cprogram' in self.gen.features:
-			return self._get_cprogram_content()
+			s = self._get_cprogram_content()
 		elif 'cstlib' in self.gen.features:
-			return self._get_cstlib_content()
+			s = self._get_cstlib_content()
 		elif 'cshlib' in self.gen.features:
-			return self._get_cshlib_content()
+			s = self._get_cshlib_content()
 		elif 'cxxprogram' in self.gen.features:
-			return self._get_cxxprogram_content()
+			s = self._get_cxxprogram_content()
 		elif 'cxxstlib' in self.gen.features:
-			return self._get_cxxstlib_content()
+			s = self._get_cxxstlib_content()
 		elif 'cxxshlib' in self.gen.features:
-			return self._get_cxxshlib_content()
+			s = self._get_cxxshlib_content()
+		else:
+			s = MAKEFILE_CHILD
+			s = super(MakeChild, self).populate(s)
 
-		s = MAKEFILE_CHILD
-		s = super(MakeChild, self).populate(s)
-		return s
+		loc = 'build'
+		if self.bld.variant:
+			loc += '/%s' % self.bld.variant
+		install = MAKEFILE_LOC % (loc, loc)			
+		return re.sub('==INSTALL==', install, s)			
 		
 	def get_data(self):
 		gen = self.gen
@@ -889,8 +895,10 @@ class MakeChild(Make):
 		for p in paths:
 			if os.path.abspath(p) and p.startswith(top):
 				libpath.append(p.replace(top, '$(TOP)', 1))
+			elif self.bld.variant:
+				libpath.append('$(TOP)/build/%s/%s' % (self.bld.variant, p))
 			else:
-				libpath.append('$(TOP)/build/%s' % p)				
+				libpath.append('$(TOP)/build/%s' % p)
 		return ' \\\n\t'.join(libpath)
 
 	def _get_lib(self, kind):
@@ -1120,6 +1128,16 @@ uninstall:
 
 '''
 
+MAKEFILE_LOC = \
+'''
+ifeq ($(TOP),)
+TOP=$(CURDIR)
+OUT=$(TOP)/%s
+else
+OUT=$(subst $(sp),/,$(call rptotop) %s $(call rpofcomp))
+endif
+'''
+
 MAKEFILE_CPROGRAM = \
 '''#------------------------------------------------------------------------------
 # WAFTOOLS generated makefile
@@ -1138,12 +1156,7 @@ comma:=,
 #------------------------------------------------------------------------------
 # definition of build and install locations
 #------------------------------------------------------------------------------
-ifeq ($(TOP),)
-TOP=$(CURDIR)
-OUT=$(TOP)/build
-else
-OUT=$(subst $(sp),/,$(call rptotop) build $(call rpofcomp))
-endif
+==INSTALL==
 
 PREFIX?=$(HOME)
 BINDIR?=$(PREFIX)/bin
@@ -1257,12 +1270,7 @@ comma:=,
 #------------------------------------------------------------------------------
 # definition of build and install locations
 #------------------------------------------------------------------------------
-ifeq ($(TOP),)
-TOP=$(CURDIR)
-OUT=$(TOP)/build
-else
-OUT=$(subst $(sp),/,$(call rptotop) build $(call rpofcomp))
-endif
+==INSTALL==
 
 PREFIX?=$(HOME)
 BINDIR?=$(PREFIX)/bin
@@ -1375,12 +1383,7 @@ comma:=,
 #------------------------------------------------------------------------------
 # definition of build and install locations
 #------------------------------------------------------------------------------
-ifeq ($(TOP),)
-TOP=$(CURDIR)
-OUT=$(TOP)/build
-else
-OUT=$(subst $(sp),/,$(call rptotop) build $(call rpofcomp))
-endif
+==INSTALL==
 
 #------------------------------------------------------------------------------
 # component data
@@ -1468,12 +1471,7 @@ comma:=,
 #------------------------------------------------------------------------------
 # definition of build and install locations
 #------------------------------------------------------------------------------
-ifeq ($(TOP),)
-TOP=$(CURDIR)
-OUT=$(TOP)/build
-else
-OUT=$(subst $(sp),/,$(call rptotop) build $(call rpofcomp))
-endif
+==INSTALL==
 
 PREFIX?=$(HOME)
 LIBDIR?=$(PREFIX)/lib
@@ -1594,12 +1592,7 @@ comma:=,
 #------------------------------------------------------------------------------
 # definition of build and install locations
 #------------------------------------------------------------------------------
-ifeq ($(TOP),)
-TOP=$(CURDIR)
-OUT=$(TOP)/build
-else
-OUT=$(subst $(sp),/,$(call rptotop) build $(call rpofcomp))
-endif
+==INSTALL==
 
 PREFIX?=$(HOME)
 LIBDIR?=$(PREFIX)/lib
@@ -1720,12 +1713,7 @@ comma:=,
 #------------------------------------------------------------------------------
 # definition of build and install locations
 #------------------------------------------------------------------------------
-ifeq ($(TOP),)
-TOP=$(CURDIR)
-OUT=$(TOP)/build
-else
-OUT=$(subst $(sp),/,$(call rptotop) build $(call rpofcomp))
-endif
+==INSTALL==
 
 #------------------------------------------------------------------------------
 # component data
