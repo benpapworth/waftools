@@ -35,13 +35,19 @@ Installation
 ------------
 The package can be installed using pip::
 
-	pip install waftools
+	pip install -I waftools
 
 or by cloning the repository and using distutils::
 
-	git clone https://Moo7@bitbucket.org/Moo7/waftools.git
+	cd ~
+	git clone https://bitbucket.org/Moo7/waftools.git waftools
 	cd waftools
-	python setup.py install 
+	python setup.py sdist install
+
+Contained within the *waftools* package is a special install script which can be used to 
+install the waf build system itself::
+
+	wafinstall [--version=version] [--tools=unity,batched_cc]
 
 
 Usage
