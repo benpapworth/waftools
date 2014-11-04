@@ -18,6 +18,9 @@ url = "https://bitbucket.org/Moo7/waftools"
 
 with open('README.txt') as f:
 	long_description = f.read()
+with open('CHANGES.txt') as f:
+	long_description += f.read()
+	
 
 if "--user" in sys.argv:
 	data_dir = '%s/waftools' % site.getusersitepackages()
@@ -26,15 +29,18 @@ else:
 
 setup(
 	name = "waftools",
-	packages = ["waftools"],
-	install_requires = ["pygments"],
 	version = waftools.version,
-	description = "Handy tools for the WAF meta build environment",
 	author = "Michel Mooij",
 	author_email = "michel.mooij7@gmail.com",
-	license = 'MIT',
+	maintainer = "Michel Mooij",
+	maintainer_email = "michel.mooij7@gmail.com",
 	url = url,
 	download_url = "%s/downloads/waftools-%s.tar.gz" % (url, waftools.version),
+	description = "Handy tools for the WAF meta build environment",
+	long_description = long_description,
+	packages = ["waftools"],
+	install_requires = ["pygments"],
+	license = 'MIT',
 	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++", "msdev", "doxygen"],
 	platforms = 'any',
 	data_files = [(data_dir, ['waftools/msdev.sln', 'waftools/doxy.config'])],
@@ -60,7 +66,6 @@ setup(
 		"Topic :: Software Development :: Build Tools",
 		"Topic :: Software Development :: Embedded Systems",
 		"Topic :: Utilities",
-		],
-	long_description = long_description
+	],
 )
 
