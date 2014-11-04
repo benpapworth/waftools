@@ -858,6 +858,9 @@ class CDTProject(EclipseProject):
 		for (lib, _) in libs:
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 			listoption.set('value', lib)
+		for lib in getattr(self.tgen, 'lib', []):
+			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+			listoption.set('value', lib)
 
 	def toolchain_linker_add_libpaths(self, linker, language):
 		libs = self.toolchain_linker_get_libs(language)

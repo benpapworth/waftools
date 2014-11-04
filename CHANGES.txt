@@ -60,3 +60,4 @@ v0.3.3, 2014-11-04 -- makefile(fix): handle cflags in task generator being speci
                       makefile(fix): added support for read_shlib().
                       eclipse(fix): added support for 'dummy' lib exporting headers only.
                       eclipse(fix): added support for read_shlib().
+                      eclipse(fix): use 'lib' from task generator.
