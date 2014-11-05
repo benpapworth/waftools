@@ -150,6 +150,27 @@ class MsDevContext(BuildContext):
 		self.timer = Utils.Timer()
 
 
+def get_targets(bld):
+	'''Returns a list of user specified build targets or None if no specific
+	build targets has been selected using the *--targets=* command line option.
+
+	:param bld: a *waf* build instance from the top level *wscript*.
+	:type bld: waflib.Build.BuildContext
+	:returns: a list of user specified target names (using --targets=x,y,z) or None
+	'''
+	if bld.targets == '':
+		return None
+	
+	targets = bld.targets.split(',')
+	deps = []
+	for target in targets:
+		uses = Utils.to_list(getattr(bld.get_tgen_by_name(target), 'use', None))
+		if uses:
+			deps += uses
+	targets += list(set(deps))
+	return targets
+
+
 def export(bld):
 	'''Exports all C and C++ task generators as **Visual Studio** projects
 	and creates a **Visual Studio** solution containing references to 
@@ -161,8 +182,12 @@ def export(bld):
 	if not bld.options.msdev and not hasattr(bld, 'msdev'):
 		return
 
-	solution = MsDevSolution(bld)
+	solution = MsDevSolution(bld)	
+	targets = get_targets(bld)
+
 	for tgen in bld.task_gen_cache_names.values():
+		if targets and tgen.get_name() not in targets:
+			continue
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			project = MsDevProject(bld, tgen)
 			project.export()
@@ -183,7 +208,11 @@ def cleanup(bld):
 	if not bld.options.msdev and not hasattr(bld, 'msdev'):
 		return
 
+	targets = get_targets(bld)
+		
 	for tgen in bld.task_gen_cache_names.values():
+		if targets and tgen.get_name() not in targets:
+			continue
 		project = MsDevProject(bld, tgen)
 		project.cleanup()
 
