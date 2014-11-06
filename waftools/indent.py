@@ -108,12 +108,12 @@ class GnuIndentContext(BuildContext):
 	def exec_indent(self, tgen, sources, headers):
 		'''execute GNU indent on the source and include files of task generator
 
-		:param tgen:		task of which the source code should be beautified
-		:type tgen:			waflib.Task.TaskGenerator
-		:param sources:		list of source file names
-		:type sources:		list(str, str, ..)
-		:param headers:		list of include file names
-		:type headers:		list(str, str, ..)
+		:param tgen:        task of which the source code should be beautified
+		:type tgen:         waflib.Task.TaskGenerator
+		:param sources:     list of source file names
+		:type sources:      list(str, str, ..)
+		:param headers:     list of include file names
+		:type headers:      list(str, str, ..)
 		'''
 		cleanup = False if self.env.INDENT_CLEAN==[] else True
 		command = self.env.INDENT

@@ -25,7 +25,7 @@ def configure(conf):
 	command line --debug option.
 	
 	:param conf: configuration context 
-	:type conf: waflib.Configure.ConfigurationContext	
+	:type conf: waflib.Configure.ConfigurationContext
 	'''
 	if conf.options.debug:
 		flags = ['-Wall', '-g', '-ggdb']

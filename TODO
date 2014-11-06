@@ -1,6 +1,6 @@
 waftools/wafinstall.py
 - test in linux
 
-documentation
-- add description on usage for 'wafinstall' (?)
+test automation
+- setup buildbot farm
 

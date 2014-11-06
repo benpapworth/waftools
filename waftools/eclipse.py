@@ -14,8 +14,8 @@ See https://www.eclipse.org and https://www.eclipse.org/cdt for a more detailed
 description on how to install and use it for your particular Desktop environment.
 
 .. note::
-	Export of C/C++ projects are supported for GCC/MinGW compilers only, 
-	other compilers and/or environments (e.g. MSVC, CygWin) are NOT supported!
+    Export of C/C++ projects are supported for GCC/MinGW compilers only, 
+    other compilers and/or environments (e.g. MSVC, CygWin) are NOT supported!
 
 Description
 -----------
@@ -49,8 +49,8 @@ projects already have been exported::
 
 
 .. warning:: 
-	Export of multiple C/C++ build tasks (program, stlib and/or shlib) 
-	which have been defined within the same directory is not supported.
+    Export of multiple C/C++ build tasks (program, stlib and/or shlib) 
+    which have been defined within the same directory is not supported.
 
 Projects will be exported such that they will use the same settings and 
 structure as has been defined for that build task within the *waf* build 
@@ -528,7 +528,7 @@ class CDTProject(EclipseProject):
 		scanner.set('instanceId', '%s;%s.;%s;%s' % (i, i, c, f))
 		ElementTree.SubElement(scanner, 'autodiscovery', {'enabled': 'true', 'problemReportingEnabled' : 'true', 'selectedProfileId' : ''})
 
-	def	cconfig_get(self, module):
+	def cconfig_get(self, module):
 		'''Returns configuration module'''
 		for cconfig in module.findall('cconfiguration'):
 			if cconfig.get('id') and cconfig.get('id').startswith(self.cdt['parent']):
@@ -538,7 +538,7 @@ class CDTProject(EclipseProject):
 							return cconfig
 		return None
 
-	def	cconfig_update(self, cconfig):
+	def cconfig_update(self, cconfig):
 		'''Update configuration module.'''
 		cconfig.set('id', self.cdt['instance'])
 		for storage in cconfig.findall('storageModule'):
@@ -547,7 +547,7 @@ class CDTProject(EclipseProject):
 			if storage.get('moduleId') == 'cdtBuildSystem':
 				self.cconfig_buildsystem_update(storage)
 
-	def	cconfig_settings_update(self, storage):
+	def cconfig_settings_update(self, storage):
 		storage.set('name', self.cdt['name'])
 		storage.set('id', self.cdt['instance'])
 
@@ -564,7 +564,7 @@ class CDTProject(EclipseProject):
 				if entry.get('kind') == 'libraryFile':
 					entry.set('name', '%s' % name)
 
-	def	cconfig_buildsystem_update(self, storage):
+	def cconfig_buildsystem_update(self, storage):
 		config = storage.find('configuration')
 		config.set('name', self.cdt['name'])
 		config.set('buildArtefactType', self.cdt['buildArtefactType'])
@@ -580,12 +580,12 @@ class CDTProject(EclipseProject):
 		folder.set('id','%s.' % (self.cdt['instance']))
 		self.cconfig_toolchain_update(folder)
 
-	def	cconfig_toolchain_update(self, folder):
+	def cconfig_toolchain_update(self, folder):
 		toolchain = folder.find('toolChain')
 		toolchain.set('superClass', self.cdt['toolchain'])
 		toolchain.set('id', '%s.%s' % (self.cdt['toolchain'], self.get_uuid()))
 		name = 'MinGW GCC' if sys.platform=='win32' else 'Linux GCC'
-		if self.cross and sys.platform!='win32':		
+		if self.cross and sys.platform!='win32':
 			name = 'Cross GCC'
 		toolchain.set('name', name)
 
@@ -843,7 +843,7 @@ class CDTProject(EclipseProject):
 					libs.append((name,None))
 
 				elif 'fake_lib' in tgen.features:
-					paths = [p.replace('\\', '/') for p in tgen.lib_paths]					
+					paths = [p.replace('\\', '/') for p in tgen.lib_paths]
 					libs.append((name, paths))
 
 		return libs if len(libs) else None

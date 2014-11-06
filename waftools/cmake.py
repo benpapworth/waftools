@@ -108,7 +108,7 @@ class CMakeContext(BuildContext):
 			self.get_tgen_by_name('')
 		except Exception:
 			pass
-		
+
 		self.cmake = True
 		if self.options.clean:
 			cleanup(self)
@@ -125,12 +125,12 @@ def export(bld):
 	'''
 	if not bld.options.cmake and not hasattr(bld, 'cmake'):
 		return
-	
+
 	cmakes = {}
 	loc = bld.path.relpath().replace('\\', '/')
 	top = CMake(bld, loc)
 	cmakes[loc] = top
-	
+
 	for tgen in bld.task_gen_cache_names.values():
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			loc = tgen.path.relpath().replace('\\', '/')
@@ -152,10 +152,10 @@ def cleanup(bld):
 	'''
 	if not bld.options.clean:
 		return
-	
+
 	loc = bld.path.relpath().replace('\\', '/')
 	CMake(bld, loc).cleanup()
-	
+
 	for gen in bld.task_gen_cache_names.values():
 		loc = gen.path.relpath().replace('\\', '/')
 		CMake(bld, loc).cleanup()
@@ -167,7 +167,7 @@ class CMake(object):
 		self.location = location
 		self.cmakes = []
 		self.tgens = []
-		
+
 	def export(self):
 		content = self._get_content()
 		if not content:
@@ -197,7 +197,7 @@ class CMake(object):
 	def _get_fname(self):
 		name = '%s/CMakeLists.txt' % (self.location)
 		return name
-		
+
 	def _find_node(self):
 		name = self._get_fname()
 		if not name:
@@ -212,7 +212,7 @@ class CMake(object):
 
 	def _get_content(self):
 		is_top = (self.location == self.bld.path.relpath())
-				
+
 		content = ''
 		if is_top:
 			content += 'cmake_minimum_required (VERSION 2.6)\n'
@@ -232,7 +232,7 @@ class CMake(object):
 			flags = env.CXXFLAGS
 			if len(flags):
 				content += 'set(CMAKE_CXX_FLAGS "%s")\n' % (' '.join(flags))
-		
+
 		if len(self.tgens):
 			content += '\n'
 			for tgen in self.tgens:
@@ -253,7 +253,7 @@ class CMake(object):
 		for src in tgen.source:
 			content += '\n    %s' % (src.path_from(tgen.path).replace('\\','/'))
 		content += ')\n\n'
-		
+
 		includes = self._get_genlist(tgen, 'includes')
 		if len(includes):
 			content += 'set(%s_INCLUDES' % (name)
@@ -267,13 +267,13 @@ class CMake(object):
 		if len(defines):
 			content += 'add_definitions(-D%s)\n' % (' -D'.join(defines))
 			content += '\n'
-		
+
 		if set(('cshlib', 'cxxshlib')) & set(tgen.features):
 			content += 'add_library(%s SHARED ${%s_SOURCES})\n' % (name, name)
 			
 		elif set(('cstlib', 'cxxstlib')) & set(tgen.features):
 			content += 'add_library(%s ${%s_SOURCES})\n' % (name, name)
-	
+
 		else:
 			content += 'add_executable(%s ${%s_SOURCES})\n' % (name, name)
 

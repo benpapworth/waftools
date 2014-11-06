@@ -24,9 +24,9 @@ package:
 - C/C++ export to makefiles (e.g. **make**, **cmake**)
 - C/C++ export to IDE's (e.g. **Code::Blocks**, **Eclipse**, **Visual Studio**)
 - C/C++ source code checking using **cppcheck** (including *html* reports)
-- Clean and format C/C++ source code using GNU indent 
-- Create installers using NSIS
-- Create C/C++ documentation using DoxyGen
+- Clean and format C/C++ source code using **GNU** **indent**
+- Create installers using **NSIS**
+- Create C/C++ documentation using **DoxyGen**
 - List dependencies between build tasks
 - Use 'unity' and 'batched_cc' tools when available (waf-1.8.x)
 

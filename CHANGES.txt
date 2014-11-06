@@ -2,9 +2,10 @@ History
 -------
 Following lists the changes per released version.
 
-**v0.3.4**, 2014-11-05:
+**v0.3.4**, 2014-11-06:
 
-- *msdev*; only export projects for selected targets (e.g. --targets=a,b,)
+- *msdev*, *makefile*; only export projects for selected targets (e.g. --targets=a,b,)
+- *wafinstall*; by default do not install files from waflib/Tools/extras (i.e. --tools=None)
 
 
 **v0.3.3**, 2014-11-04:
