@@ -479,6 +479,27 @@ class MakeFileContext(BuildContext):
 		self.timer = Utils.Timer()
 
 
+def get_targets(bld):
+	'''Returns a list of user specified build targets or None if no specific
+	build targets has been selected using the *--targets=* command line option.
+
+	:param bld: a *waf* build instance from the top level *wscript*.
+	:type bld: waflib.Build.BuildContext
+	:returns: a list of user specified target names (using --targets=x,y,z) or None
+	'''
+	if bld.targets == '':
+		return None
+	
+	targets = bld.targets.split(',')
+	deps = []
+	for target in targets:
+		uses = Utils.to_list(getattr(bld.get_tgen_by_name(target), 'use', None))
+		if uses:
+			deps += uses
+	targets += list(set(deps))
+	return targets
+
+
 def export(bld):
 	'''Exports all C and C++ task generators to makefiles.
 	
@@ -489,8 +510,12 @@ def export(bld):
 		return
 
 	root = MakeRoot(bld)
-	for tgen in bld.task_gen_cache_names.values():	
-		if set(('c', 'cxx')) & set(tgen.features):		
+	targets = get_targets(bld)
+	
+	for tgen in bld.task_gen_cache_names.values():
+		if targets and tgen.get_name() not in targets:
+			continue
+		if set(('c', 'cxx')) & set(tgen.features):
 			child = MakeChild(bld, tgen, tgen.tasks)
 			child.export()
 			root.add_child(child.get_data())
@@ -507,9 +532,14 @@ def cleanup(bld):
 		return
 
 	root = MakeRoot(bld)
+	targets = get_targets(bld)
+	
 	for tgen in bld.task_gen_cache_names.values():
+		if targets and tgen.get_name() not in targets:
+			continue
 		child = MakeChild(bld, tgen, tgen.tasks)
 		child.cleanup()
+	
 	root.cleanup()
 
 
@@ -566,7 +596,7 @@ class MakeRoot(Make):
 		self.childs = []
 
 	def _get_name(self):
-		name = self.bld.path.relpath().replace('\\', '/')		
+		name = self.bld.path.relpath().replace('\\', '/')
 		if self.bld.variant:
 			name += '/makefile_%s.mk' % (self.bld.variant)
 		else:
@@ -667,7 +697,7 @@ class MakeChild(Make):
 		if self.bld.variant:
 			name = '%s/%s_%s.mk' % (gen.path.relpath(), gen.get_name(), self.bld.variant)
 		else:
-			name = '%s/%s.mk' % (gen.path.relpath(), gen.get_name())			
+			name = '%s/%s.mk' % (gen.path.relpath(), gen.get_name())
 		return name.replace('\\', '/')
 
 	def _get_content(self):
@@ -690,8 +720,8 @@ class MakeChild(Make):
 		loc = 'build'
 		if self.bld.variant:
 			loc += '/%s' % self.bld.variant
-		install = MAKEFILE_LOC % (loc, loc)			
-		return re.sub('==INSTALL==', install, s)			
+		install = MAKEFILE_LOC % (loc, loc)
+		return re.sub('==INSTALL==', install, s)
 		
 	def get_data(self):
 		gen = self.gen
