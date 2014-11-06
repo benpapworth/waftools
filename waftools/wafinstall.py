@@ -102,7 +102,8 @@ def install_waflib(waf, extras=[], libdir=LIBDIR):
 	'''installs waflib.'''
 	mkdirs(libdir)
 	rm(os.path.join(libdir, 'waflib'))
-
+	if len(extras):
+		extras.append('__init__')
 	extras = ['%s.py' % e for e in extras]
 	top = os.getcwd()
 	try:
@@ -222,7 +223,7 @@ def getopts(argv):
 	return (version, tools, bindir, libdir)
 
 
-def main(argv=sys.argv, level=logging.INFO):
+def main(argv=sys.argv, level=logging.DEBUG):
 	'''downloads, unpacks, creates and installs waf package.'''
 	logging.basicConfig(level=level, format=' %(message)s')
 	try:

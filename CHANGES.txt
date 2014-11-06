@@ -5,7 +5,7 @@ Following lists the changes per released version.
 **v0.3.4**, 2014-11-06:
 
 - *msdev*, *makefile*; only export projects for selected targets (e.g. --targets=a,b,)
-- *wafinstall*; by default do not install files from waflib/Tools/extras (i.e. --tools=None)
+- *wafinstall*; by default do not install files from waflib/Tools/extras (i.e. --tools=None), add missing __init__.py file to waflib/Tools/extras.
 
 
 **v0.3.3**, 2014-11-04:
