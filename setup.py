@@ -3,10 +3,6 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 
-# TODO:
-# 	copy setup.py/script tricks from Pygments
-#	https://bitbucket.org/birkenfeld/pygments-main
-
 import sys
 import site
 from setuptools import setup
@@ -22,7 +18,7 @@ with open('CHANGES.txt') as f:
 	long_description += f.read()
 	
 
-if "--user" in sys.argv:
+if "--user" in sys.argv and sys.platform != "win32":
 	data_dir = '%s/waftools' % site.getusersitepackages()
 else:
 	data_dir = '%s/waftools' % distutils.sysconfig.get_python_lib()
@@ -41,7 +37,7 @@ setup(
 	packages = ["waftools"],
 	install_requires = ["pygments"],
 	license = 'MIT',
-	keywords = ["waf", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "c", "c++", "msdev", "doxygen"],
+	keywords = ["waf", "c", "c++", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "msdev", "doxygen", "GNU indent"],
 	platforms = 'any',
 	data_files = [(data_dir, ['waftools/msdev.sln', 'waftools/doxy.config'])],
 	entry_points = {
@@ -52,7 +48,6 @@ setup(
 	classifiers = [
 		"Development Status :: 4 - Beta",		
 		"Environment :: Console",
-		"Environment :: Win32 (MS Windows)",
 		"Intended Audience :: Developers",
 		"License :: OSI Approved :: MIT License",
 		"Operating System :: Microsoft :: Windows :: Windows 7",
