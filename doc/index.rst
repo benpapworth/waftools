@@ -4,10 +4,10 @@
    contain the root `toctree` directive.
 
 
-Waftools 0.3.3 documentation
+Waftools 0.3.4 documentation
 ============================
 Welcome! This is the documentation for the *waftools* package, last updated 
-November 4\ :sup:`th`\  2014.
+November 6\ :sup:`th`\  2014.
 
 
 Overview
@@ -37,8 +37,36 @@ Following provides a non-exhausting list of functions provided by this package:
 - Use 'unity' and 'batched_cc' tools when available (waf-1.8.x)
 
 
-Cross-compile build environments
---------------------------------
+Installation
+============
+The preferred to install this package is by means of the Python package installer::
+
+	pip install -I waftools
+	
+If this, for some reason does not work, you can allso clone the repository and install 
+the package from it::
+
+	cd ~
+	git clone https://bitbucket.org/Moo7/waftools.git waftools
+	cd waftools
+	python setup.py sdist install
+
+
+Contained within the *waftools* package is a special install script which can be used to 
+install the waf build system itself::
+
+	wafinstall [--version=version] [--tools=unity,batched_cc]
+
+Using the *--tools* command line option, the *waf* tools to be installed from 
+*waflib/Tools/extras* can be specified in a comma separated list. When omitted no 
+tools from *extras* will be installed.
+
+
+Usage
+=====
+
+Cross compilation
+-----------------
 The code snippet below provides an example of how a complete build environment
 can be created allowing you to build, not only for the host system, but also 
 for one or more target platforms using a C/C++ cross compiler::
@@ -102,8 +130,8 @@ included using the *bld.recurse('../somepath')* command from the top level scrip
 of that tree.
 
 
-Source code checking
---------------------
+Code checking
+-------------
 C/C++ source code can be checked using the **CppCheck** static source analysis 
 tool. Results of sources checked by **CppCheck** will be presented in a HTML
 based report. The report contains a single index file containing a summary of 
@@ -161,9 +189,9 @@ be generated using the following command::
 Once completed the HTML report can be found and at: **./reports/cppcheck/index.html**
 
 
-Generating source code documentation
-------------------------------------
-Source code documentation for C/C++ build tasks can be created using 
+Code documentation
+------------------
+For C/C++ build tasks source code documentation can be created using 
 **DoxyGen**. Once generated the documentation can be found at: 
 **./reports/doxygen/**.
 
@@ -192,8 +220,8 @@ For more information please refer to the detailed description of the
 :ref:`doxygen <mod_doxygen>` module.
 
 
-Export to integrated development environments
----------------------------------------------
+Export to IDE's
+---------------
 C/C++ build tasks (i.e. programs, static and shared libraries) can
 be exported to project, workspace and/or solution files for either 
 **Code::Blocks**, **Eclipse** (using CDT) or **MSDev** (Microsoft
@@ -263,8 +291,8 @@ For more information please refer to the detailed description of the
 :ref:`package <mod_package>` module.
 
 
-Export to other build systems
------------------------------
+Export to (c)make
+-----------------
 When needed C/C++ build tasks (programs, static or shared libraries) can be
 exported to other build system formats (e.g. make, cmake). When doing so the 
 definitions and settings as defined within the waf_ build environment will be
@@ -308,8 +336,8 @@ For more information please refer to the detailed description of the
 :ref:`cmake <mod_cmake>` and :ref:`makefile <mod_makefile>` modules.
 
 
-Detailed description
-====================
+Modules
+=======
 Following links provide a detailed description for each module contained within
 this package:
 
@@ -325,27 +353,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-
-Installation
-============
-The preferred to install this package is by means of the Python package installer::
-
-	pip install -I waftools
-	
-If this, for some reason does not work, you can allso clone the repository and install 
-the package from it::
-
-	cd ~
-	git clone https://bitbucket.org/Moo7/waftools.git waftools
-	cd waftools
-	python setup.py sdist install
-
-
-Contained within the *waftools* package is a special install script which can be used to 
-install the waf build system itself::
-
-	wafinstall [--version=version] [--tools=unity,batched_cc]
 
 
 Credits
