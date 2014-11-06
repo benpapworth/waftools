@@ -125,12 +125,9 @@ def config_base(conf):
 		conf.load('compiler_cxx unity')
 		conf.load('batched_cc')
 	except Errors.ConfigurationError as e:
-		Logs.warn("WARNING: %s" % e)
-		Logs.info("INFO: waf(%s), trying build without tools(unity,batched_cc)" % v)
+		# retry configuration without unity,batched_cc
 		conf.load('compiler_c')
 		conf.load('compiler_cxx')
-	else:
-		Logs.info("INFO: waf(%s), building with tools(unity,batched_cc)" % v)
 	conf.load('cppcheck')
 	conf.load('codeblocks')
 	conf.load('eclipse')
