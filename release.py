@@ -38,7 +38,9 @@ subprocess.call('python waftools/wafinstall.py'.split())
 
 
 # WAFTOOLS: install latest (required for Sphinx documentation)
-cmd = 'python setup.py install%s' % '' if sys.platform=='win32' else ' --user'
+cmd = 'python setup.py install'
+if sys.platform != 'win32':
+	cmd += ' --user'
 subprocess.call(cmd.split())
 
 
