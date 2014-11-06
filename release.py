@@ -6,10 +6,17 @@
 '''
 Description
 -----------
-Create a new release, performs following steps: 
-- build package and documentation using waf (distclean, configure, build, distclean)
-- tags and publishes the release using git
-- creates and uploads the package to PyPi
+Creates a new release::
+
+	- install required packages using pip
+	- install waflib, required for Sphinx documentation
+	- install waftools, required for Sphinx documentation
+	- create html documentation using Sphinx
+	- create zip containing html documentation
+	- create waftools package to be uploaded to BitBucket
+	- tags the new release using git
+	- publishes the package on PyPi
+
 '''
 
 
