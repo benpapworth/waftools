@@ -18,16 +18,16 @@ be updated as well.
 Usage
 -----
 In order to install waf call:
-	python wafinstall.py [options]
+    python wafinstall.py [options]
 
 Available options:
-	-h | --help		prints this help message.
+    -h | --help     prints this help message.
 
-	-v | --version	waf package version to install, e.g.
-					-v1.8.2
+    -v | --version  waf package version to install, e.g.
+                    -v1.8.2
 
-	-t | --tools	comma seperated list of waf tools to be used
-					default=unity,batched_cc
+    -t | --tools    comma seperated list of waf tools to be used
+                    default=None
 '''
 
 import os
@@ -49,7 +49,7 @@ except ImportError:
 
 
 WAF_VERSION = "1.8.2"
-WAF_TOOLS = "unity,batched_cc"
+WAF_TOOLS = None
 
 HOME = os.path.expanduser('~')
 if sys.platform == "win32":
@@ -87,7 +87,9 @@ def deflate(archive, path='.'):
 
 def create(release, tools):
 	'''creates the waf binary.'''
-	cmd = "python waf-light --make-waf --tools=%s" % tools	
+	cmd = "python waf-light --make-waf"
+	if tools:
+		cmd += ' --tools=%s' % tools
 	top = os.getcwd()
 	try:
 		logging.info(cmd)
@@ -117,18 +119,18 @@ def install_waflib(waf, extras=[], libdir=LIBDIR):
 	finally:
 		os.chdir(top)
 
-	
+
 def install(release, bindir, libdir, tools):
 	'''installs waf at the given location.'''
 	mkdirs(bindir)
 	dst = os.path.join(bindir, 'waf').replace('~', HOME)
 	src = os.path.join('.', release, 'waf')
 	cp(src, dst)
-	os.chmod(dst, stat.S_IRWXU)	
-	install_waflib(release, libdir=libdir, extras=tools.split(','))
+	os.chmod(dst, stat.S_IRWXU)
+	install_waflib(release, libdir=libdir, extras=tools.split(',') if tools else [])
 	if sys.platform == "win32":
 		cp("%s.bat" % src, "%s.bat" % dst)
-	env_set('PATH', bindir, extend=True)	
+	env_set('PATH', bindir, extend=True)
 	env_set('WAFDIR', libdir)
 
 
@@ -219,7 +221,7 @@ def getopts(argv):
 			tools = arg
 	return (version, tools, bindir, libdir)
 
-	
+
 def main(argv=sys.argv, level=logging.INFO):
 	'''downloads, unpacks, creates and installs waf package.'''
 	logging.basicConfig(level=level, format=' %(message)s')
@@ -236,7 +238,7 @@ def main(argv=sys.argv, level=logging.INFO):
 	logging.info("WAF version=%s, tools=%s, url=%s, bin=%s, lib=%s" % (version, tools, url, bindir, libdir))
 
 	top = os.getcwd()
-	tmp = tempfile.mkdtemp()	
+	tmp = tempfile.mkdtemp()
 	try:
 		cd(tmp)
 		download(url, package)
@@ -273,7 +275,7 @@ def cd(path):
 	'''changes current working directory.'''
 	logging.debug("cd %s" % path)
 	os.chdir(path)
-	
+
 
 if __name__ == "__main__":
 	code = main(argv=sys.argv, level=logging.DEBUG)
