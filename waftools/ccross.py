@@ -137,11 +137,13 @@ def config_base(conf):
 	conf.load('tree')
 
 
-def configure(conf):
-	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')
-	prefix = str(conf.env.PREFIX).replace('\\', '/')
-	cross = get_config(conf.env.CCROSSINI)
+def config_cross(conf, fname, prefix):
+	'''create and configure cross compile environments
 
+ 	uses the the configuration data as specified in the *.ini
+	file using configparser.ExtendedInterpolation syntax.
+	'''
+	cross = get_config(fname)
 	for name, ini in cross.items(): # setup cross compile environment(s)
 		conf.setenv(name)
 		conf.env.CCROSS = cross
@@ -149,6 +151,12 @@ def configure(conf):
 		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
 		conf.env.LIBDIR = '%s/opt/%s/lib' % (prefix, name)
 		
+		for (var, action, value) in ini['env']:
+			if action == 'set':
+				conf.env[var] = value
+			else:
+				conf.env.append_unique(var, value)	
+
 		pre = ini['prefix']
 		conf.find_program('%s-gcc' % (pre), var='CC')
 		
@@ -163,6 +171,17 @@ def configure(conf):
 		
 		conf.find_program('%s-ar' % (pre), var='AR')
 		config_base(conf)
+
+
+def configure(conf):
+	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')
+	prefix = str(conf.env.PREFIX).replace('\\', '/')
+	
+	fname = conf.env.CCROSSINI
+	if isinstance(fname, list) and len(fname):
+		fname = fname[0]
+	if isinstance(fname, str):
+		config_cross(fname)
 
 	conf.setenv('')
 	conf.env.CCROSS = cross
@@ -204,7 +223,8 @@ def get_config(name):
 	for s in c.sections():
 		cross[s] = {}
 		cross[s]['prefix'] = c.get(s,'prefix')
-		cross[s]['shlib'] = [l for l in str(c.get(s,'shlib')).split(',') if not l == ''] 
+		cross[s]['shlib'] = [l for l in str(c.get(s,'shlib')).split(',') if len(l)]
+		cross[s]['env'] = [l.split('\t') for l in c.get(s,'env').splitlines() if len(l)]
 	return cross
 
 
