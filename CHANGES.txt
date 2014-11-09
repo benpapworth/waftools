@@ -2,6 +2,12 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.3.5**, 2014-11-09:
+- *ccross*; added support for defining environment variables in 'cross.ini'
+- *wafinstall*; allways create 'extras' directory (required for 'compiler_c' tool)
+
+
+
 **v0.3.4**, 2014-11-06:
 
 - *msdev*, *makefile*; only export projects for selected targets (e.g. --targets=a,b,)

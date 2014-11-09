@@ -100,11 +100,13 @@ def create(release, tools):
 
 def install_waflib(waf, extras=[], libdir=LIBDIR):
 	'''installs waflib.'''
-	mkdirs(libdir)
 	rm(os.path.join(libdir, 'waflib'))
+
 	if len(extras):
 		extras.append('__init__')
 	extras = ['%s.py' % e for e in extras]
+
+	mkdirs(os.path.join(libdir, 'waflib', 'extras'))
 	top = os.getcwd()
 	try:
 		os.chdir(waf)

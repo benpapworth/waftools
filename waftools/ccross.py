@@ -105,6 +105,10 @@ from waftools.eclipse import EclipseContext
 def options(opt):
 	opt.add_option('--all', dest='all', default=False, action='store_true', 
 				help='execute command for cross-compile environments as well')
+
+	opt.add_option('--ccrossini', dest='ccrossini', default='ccross.ini', action='store', 
+				help='cross compile configuration')
+
 	opt.load('cmake', tooldir=waftools.location)
 	opt.load('codeblocks', tooldir=waftools.location)
 	opt.load('cppcheck', tooldir=waftools.location)
@@ -118,74 +122,16 @@ def options(opt):
 	opt.load('indent', tooldir=waftools.location)
 
 
-def config_base(conf):
-	v = Context.WAFVERSION
-	try:
-		conf.load('compiler_c unity')
-		conf.load('compiler_cxx unity')
-		conf.load('batched_cc')
-	except Errors.ConfigurationError as e:
-		# retry configuration without unity,batched_cc
-		conf.load('compiler_c')
-		conf.load('compiler_cxx')
-	conf.load('cppcheck')
-	conf.load('codeblocks')
-	conf.load('eclipse')
-	conf.load('gnucc')
-	conf.load('makefile')
-	conf.load('msdev')
-	conf.load('tree')
-
-
-def config_cross(conf, fname, prefix):
-	'''create and configure cross compile environments
-
- 	uses the the configuration data as specified in the *.ini
-	file using configparser.ExtendedInterpolation syntax.
-	'''
-	cross = get_config(fname)
-	for name, ini in cross.items(): # setup cross compile environment(s)
-		conf.setenv(name)
-		conf.env.CCROSS = cross
-		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
-		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
-		conf.env.LIBDIR = '%s/opt/%s/lib' % (prefix, name)
-		
-		for (var, action, value) in ini['env']:
-			if action == 'set':
-				conf.env[var] = value
-			else:
-				conf.env.append_unique(var, value)	
-
-		pre = ini['prefix']
-		conf.find_program('%s-gcc' % (pre), var='CC')
-		
-		for ext in ('gxx','g++','c++'):
-			cxx = '%s-%s' % (pre, ext)
-			try:
-				conf.find_program(cxx, var='CXX')
-			except Errors.ConfigurationError as e:
-				Logs.debug("program '%s' not found" % (cxx))
-			else:
-				break
-		
-		conf.find_program('%s-ar' % (pre), var='AR')
-		config_base(conf)
-
-
 def configure(conf):
 	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')
-	prefix = str(conf.env.PREFIX).replace('\\', '/')
 	
-	fname = conf.env.CCROSSINI
-	if isinstance(fname, list) and len(fname):
-		fname = fname[0]
-	if isinstance(fname, str):
-		config_cross(fname)
+	conf.env.PREFIX = str(conf.env.PREFIX).replace('\\', '/')
+	conf.env.CCROSSINI = conf.options.ccrossini
+	conf.env.CCROSS = _get_config(conf.options.ccrossini)
+	_config_cross(conf)
 
 	conf.setenv('')
-	conf.env.CCROSS = cross
-	config_base(conf)
+	_config_base(conf)
 	conf.load('cmake')
 	conf.load('doxygen')
 	conf.load('package')
@@ -208,15 +154,71 @@ def build(bld, trees=[]):
 			bld.recurse(script)
 
 
-def get_config(name):
+def _config_base(conf):
+	v = Context.WAFVERSION
+	try:
+		conf.load('compiler_c unity')
+		conf.load('compiler_cxx unity')
+		conf.load('batched_cc')
+	except Errors.ConfigurationError as e: # retry without unity,batched_cc
+		conf.load('compiler_c')
+		conf.load('compiler_cxx')
+	conf.load('cppcheck')
+	conf.load('codeblocks')
+	conf.load('eclipse')
+	conf.load('gnucc')
+	conf.load('makefile')
+	conf.load('msdev')
+	conf.load('tree')
+
+
+def _config_cross(conf):
+	'''create and configure cross compile environments
+
+
+ 	uses the the configuration data as specified in the *.ini
+	file using configparser.ExtendedInterpolation syntax.
+	'''
+	prefix = conf.env.PREFIX
+	ccross = conf.env.CCROSS
+
+	for name, ini in cross.items(): # setup cross compile environment(s)
+		conf.setenv(name)
+		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
+		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
+		conf.env.LIBDIR = '%s/opt/%s/lib' % (prefix, name)
+		
+		for (var, action, value) in ini['env']:
+			if action == 'set':
+				conf.env[var] = value
+			else:
+				conf.env.append_unique(var, value)	
+
+		pre = ini['prefix']
+		conf.find_program('%s-gcc' % (pre), var='CC')
+		
+		for ext in ('gxx','g++','c++'):
+			cxx = '%s-%s' % (pre, ext)
+			try:
+				conf.find_program(cxx, var='CXX')
+			except Errors.ConfigurationError as e:
+				Logs.debug("program '%s' not found" % (cxx))
+			else:
+
+				break
+		
+		conf.find_program('%s-ar' % (pre), var='AR')
+		_config_base(conf)
+
+
+def _get_config(name):
 	'''Returns dictionary of cross-compile build environments. Dictionary key name
 	depict the environment name (i.e. variant name).
+
 	
 	:param name: Complete path to the config.ini file
 	:type name: str
 	'''
-	if not os.path.exists(name):
-		return {}
 	cross = {}
 	c = configparser.ConfigParser()
 	c.read(name)
