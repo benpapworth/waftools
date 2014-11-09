@@ -1,9 +1,6 @@
 #!/usr/bin/sh
 
-WAFVERSION=1.8.2
-TEMP=/tmp/waftools-$RANDOM
 BIN=~/.local/bin
-
 
 while getopts ":ua" opt; do
 	case $opt in
@@ -47,7 +44,7 @@ else
 fi
 
 
-echo "--> updating yum packages.."
+echo "--> updating yum packages..."
 sudo yum -y install python-pip python-pygments wget
 sudo yum -y groupinstall "C Development Tools and Libraries"
 
@@ -60,46 +57,12 @@ then
 fi
 
 
-echo "--> updating wafools to latest.."
+echo "--> updating wafools to latest..."
 pip install -I --user waftools
 
 
-mkdir $TEMP
-cd $TEMP
-echo `pwd`
+echo "--> installing waf..."
+wafinstall
 
 
-echo "--> downloading waf $WAFVERSION.."
-wget http://ftp.waf.io/pub/release/waf-$WAFVERSION.tar.bz2
-
-
-echo "--> extracting waf $WAFVERSION.."
-tar -xjvf waf-$WAFVERSION.tar.bz2
-
-
-echo "--> building waf $WAFVERSION.."
-cd waf-$WAFVERSION
-./waf-light --make-waf --tools=unity,batched_cc
-
-
-echo "--> installing waf $WAFVERSION.."
-if [ -e $BIN/waf ]
-then
-	rm -rf $BIN/.waf-*
-fi
-cp waf $BIN
-chmod 777 $BIN/waf
-
-
-echo "--> deleting temp files.."
-cd ~
-rm -rf $TEMP
-
-
-if ! hash waf 2>/dev/null
-then
-	echo 'export PATH=~/.local/bin:$PATH' >> ~/.bashrc
-fi
-echo "--> done."
-exit
 
