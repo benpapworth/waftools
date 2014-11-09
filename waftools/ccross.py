@@ -37,7 +37,6 @@ for one or more target platforms using a C/C++ cross compiler::
 	top = '.'
 	out = 'build'
 	prefix = 'output'
-	ccrossini = os.path.abspath('ccross.ini').replace('\\', '/')
 
 	VERSION = '0.0.1'
 	APPNAME = 'cross-test'
@@ -53,7 +52,7 @@ for one or more target platforms using a C/C++ cross compiler::
 	def build(bld):
 		ccross.build(bld, trees=['components'])
 
-	for var in ccross.variants(ccrossini):
+	for var in ccross.variants():
 		for ctx in ccross.contexts():
 			name = ctx.__name__.replace('Context','').lower()
 			class _t(ctx):
@@ -89,6 +88,7 @@ of that tree.
 '''
 
 import os
+import sys
 try:
 	import ConfigParser as configparser
 except:
@@ -102,11 +102,16 @@ from waftools.makefile import MakeFileContext
 from waftools.eclipse import EclipseContext
 
 
+CCROSS_INI='ccross.ini'
+CCROSS_ARG='--ccross'
+CCROSS_OPT='ccross'
+
+
 def options(opt):
 	opt.add_option('--all', dest='all', default=False, action='store_true', 
 				help='execute command for cross-compile environments as well')
 
-	opt.add_option('--ccrossini', dest='ccrossini', default='ccross.ini', action='store', 
+	opt.add_option(CCROSS_ARG, dest=CCROSS_OPT, default=CCROSS_INI, action='store', 
 				help='cross compile configuration')
 
 	opt.load('cmake', tooldir=waftools.location)
@@ -126,8 +131,8 @@ def configure(conf):
 	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')
 	
 	conf.env.PREFIX = str(conf.env.PREFIX).replace('\\', '/')
-	conf.env.CCROSSINI = conf.options.ccrossini
-	conf.env.CCROSS = _get_config(conf.options.ccrossini)
+	conf.env.CCROSSINI = getattr(conf.options, CCROSS_OPT)
+	conf.env.CCROSS = _get_config(conf.env.CCROSSINI)
 	_config_cross(conf)
 
 	conf.setenv('')
@@ -175,14 +180,13 @@ def _config_base(conf):
 def _config_cross(conf):
 	'''create and configure cross compile environments
 
-
  	uses the the configuration data as specified in the *.ini
 	file using configparser.ExtendedInterpolation syntax.
 	'''
 	prefix = conf.env.PREFIX
 	ccross = conf.env.CCROSS
 
-	for name, ini in cross.items(): # setup cross compile environment(s)
+	for name, ini in ccross.items(): # setup cross compile environment(s)
 		conf.setenv(name)
 		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
 		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
@@ -219,6 +223,8 @@ def _get_config(name):
 	:param name: Complete path to the config.ini file
 	:type name: str
 	'''
+	if not os.path.exists(name):
+		Logs.warn("CCROSS: ini file '%s' not found!" % name)
 	cross = {}
 	c = configparser.ConfigParser()
 	c.read(name)
@@ -230,14 +236,21 @@ def _get_config(name):
 	return cross
 
 
-def variants(name):
+def variants(name=None):
 	'''Returns a list of variant names; i.e. a list of names for build environments 
 	that have been defined in the 'ccross.ini' configuration file.
 	
 	:param name: Complete path to the config.ini file
 	:type name: str
 	'''
-	cross = get_config(name)
+	if not name:
+		name = CCROSS_INI
+		opt = '%s=' % CCROSS_ARG
+		for a in sys.argv:
+			if a.startswith(opt):
+				name = a.replace(opt, '')
+
+	cross = _get_config(name)
 	return list(cross.keys())
 
 

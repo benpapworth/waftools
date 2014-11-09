@@ -11,7 +11,6 @@ from waftools import ccross
 top = '.'
 out = 'build'
 prefix = 'output'
-ccrossini = os.path.abspath('ccross.ini').replace('\\', '/')
 
 
 VERSION = waftools.version
@@ -24,7 +23,6 @@ def options(opt):
 
 
 def configure(conf):
-	conf.env.CCROSSINI = ccrossini
 	conf.load('ccross')
 
 
@@ -33,12 +31,11 @@ def build(bld):
 
 
 def dist(ctx):
-	ctx.algo = 'tar.gz'
-	ctx.excl = ' **/*~ **/.lock-w* **/CVS/** **/.svn/** downloads/** ext/** build/** tmp/**'
+	ctx.excl = '**/*~ .lock-w* .git/** %s/** %s/**' % (out, prefix)
 
 
 # create commands for cross-compile environments
-for var in ccross.variants(ccrossini):
+for var in ccross.variants():
 	for ctx in ccross.contexts():
 		name = ctx.__name__.replace('Context','').lower()
 		class _t(ctx):
