@@ -4,7 +4,7 @@
 
 import os
 
-version = "0.3.5"
+version = "0.3.6"
 location = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -16,9 +16,20 @@ def build(bld, trees=[]):
 	:param: trees: list of source tree names
 	:type trees: list
 	'''
+	recurse(bld, trees)
+
+
+def recurse(ctx, trees=[]):
+	'''Recurse on all given source trees.
+	
+	:param: ctx: waf context
+	:type ctx: waflib.Context.Context
+	:param: trees: list of source tree names
+	:type trees: list
+	'''
 	for tree in trees:
 		for script in get_scripts(tree, 'wscript'):
-			bld.recurse(script)
+			ctx.recurse(script)
 
 
 def get_scripts(top, name):

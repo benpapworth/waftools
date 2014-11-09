@@ -2,6 +2,11 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.3.6**, 2014-11-xx:
+
+- *waftools*; added generic *waftools.recurse(ctx,trees=[])* function
+
+
 **v0.3.5**, 2014-11-09:
 
 - *ccross*; specify configuration file (cross.ini) using command line argument
