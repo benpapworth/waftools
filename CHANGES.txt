@@ -3,6 +3,7 @@ History
 Following lists the changes per released version.
 
 **v0.3.5**, 2014-11-09:
+
 - *ccross*; specify configuration file (cross.ini) using command line argument
 - *ccross*; added support for defining environment variables in 'cross.ini'
 - *wafinstall*; allways create 'extras' directory (required for 'compiler_c' tool)
