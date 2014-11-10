@@ -2,10 +2,11 @@ History
 -------
 Following lists the changes per released version.
 
-**v0.3.6**, 2014-11-xx:
+**v0.3.6**, 2014-11-10:
 
 - *waftools*; added generic *waftools.recurse(ctx,trees=[])* function
-
+- issue8_; check if options (e.g. *env*) exist in cross.ini file
+- *ccross*; use normal compiler, linker and archvier if no prefix has been specified in ccross.ini
 
 **v0.3.5**, 2014-11-09:
 
@@ -134,3 +135,4 @@ Following lists the changes per released version.
 .. _issue3: https://bitbucket.org/Moo7/waftools/issue/3/exception-when-exporting-to-msdev
 .. _issue4: https://bitbucket.org/Moo7/waftools/issue/4/msdevsln-not-included-in-the-latest
 .. _issue5: https://bitbucket.org/Moo7/waftools/issue/5/detecting-cross-compiler-fails
+.. _issue8: https://bitbucket.org/Moo7/waftools/issue/8/module-crosspy-fails-in-v035

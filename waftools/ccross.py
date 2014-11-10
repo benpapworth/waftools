@@ -94,7 +94,7 @@ try:
 except:
 	import configparser
 
-from waflib import Scripting, Errors, Context, Logs
+from waflib import Scripting, Errors, Logs
 from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallContext
 import waftools
 from waftools.codeblocks import CodeblocksContext
@@ -160,12 +160,11 @@ def build(bld, trees=[]):
 
 
 def _config_base(conf):
-	v = Context.WAFVERSION
 	try:
 		conf.load('compiler_c unity')
 		conf.load('compiler_cxx unity')
 		conf.load('batched_cc')
-	except Errors.ConfigurationError as e: # retry without unity,batched_cc
+	except Errors.ConfigurationError: # retry without unity,batched_cc
 		conf.load('compiler_c')
 		conf.load('compiler_cxx')
 	conf.load('cppcheck')
@@ -199,19 +198,20 @@ def _config_cross(conf):
 				conf.env.append_unique(var, value)	
 
 		pre = ini['prefix']
-		conf.find_program('%s-gcc' % (pre), var='CC')
+		cc = '%s-gcc' % (pre) if pre else 'gcc'			
+		conf.find_program(cc, var='CC')
 		
 		for ext in ('gxx','g++','c++'):
-			cxx = '%s-%s' % (pre, ext)
+			cxx = '%s-%s' % (pre, ext) if pre else ext
 			try:
 				conf.find_program(cxx, var='CXX')
-			except Errors.ConfigurationError as e:
+			except Errors.ConfigurationError:
 				Logs.debug("program '%s' not found" % (cxx))
 			else:
-
 				break
 		
-		conf.find_program('%s-ar' % (pre), var='AR')
+		ar = '%s-ar' % (pre) if pre else 'ar'			
+		conf.find_program(ar, var='AR')
 		_config_base(conf)
 
 
@@ -229,10 +229,13 @@ def _get_config(name):
 	c = configparser.ConfigParser()
 	c.read(name)
 	for s in c.sections():
-		cross[s] = {}
-		cross[s]['prefix'] = c.get(s,'prefix')
-		cross[s]['shlib'] = [l for l in str(c.get(s,'shlib')).split(',') if len(l)]
-		cross[s]['env'] = [l.split('\t') for l in c.get(s,'env').splitlines() if len(l)]
+		cross[s] = {'prefix' : None, 'shlib' : [], 'env' : []}
+		if c.has_option(s, 'prefix'):
+			cross[s]['prefix'] = c.get(s,'prefix')
+		if c.has_option(s, 'shlib'):
+			cross[s]['shlib'] = [l for l in str(c.get(s,'shlib')).split(',') if len(l)]
+		if c.has_option(s, 'env'):
+			cross[s]['env'] = [l.split('\t') for l in c.get(s,'env').splitlines() if len(l)]
 	return cross
 
 
