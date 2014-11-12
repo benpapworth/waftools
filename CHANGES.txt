@@ -3,7 +3,10 @@ History
 Following lists the changes per released version.
 
 **v0.3.7**, 2014-11-12:
+- *general*; added package dependency to *chardet*
 - *ccross*; fix when using multiple cross compilers
+- *cppcheck*; detect character encoding when parsing on source failed.
+
 
 **v0.3.6**, 2014-11-10:
 

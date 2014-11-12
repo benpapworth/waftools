@@ -160,6 +160,8 @@ import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
 import pygments
 from pygments import formatters, lexers
+from pygments.formatters import HtmlFormatter
+import chardet
 from waflib import TaskGen, Context, Logs, Utils
 
 
@@ -676,7 +678,7 @@ class CppcheckGen(Cppcheck):
 				content = div
 				srcnode = bld.root.find_node(source)
 				hl_lines = [e.line for e in errors if getattr(e, 'line')]
-				formatter = CppcheckHtmlFormatter(linenos=True, style='colorful', hl_lines=hl_lines, lineanchors='line')
+				formatter = CppCheckFormatter(linenos=True, style='colorful', hl_lines=hl_lines, lineanchors='line')
 				formatter.errors = [e for e in errors if getattr(e, 'line')]
 				css_style_defs = formatter.get_style_defs('.highlight')
 
@@ -688,16 +690,19 @@ class CppcheckGen(Cppcheck):
 				else:
 					lexer = pygments.lexers.guess_lexer_for_filename(source, "")
 				
-				s = pygments.highlight(srcnode.read(), lexer, formatter)
+				c = srcnode.read()
+				encoding = chardet.detect(c)['encoding']
+				s = pygments.highlight(c, lexer, formatter)
+				table = None
 				try:
 					table = ElementTree.fromstring(s)
-				except Exception as e:
-					Logs.warn('FILE CONTAINS ILLEGAL CHARACTERS:')
-					Logs.warn('  %s' % source)
-					Logs.info('')
-					raise e
-					
-				content.append(table)
+				except UnicodeError:
+					Logs.warn('FAILED TO PARSE SOURCE FILE:')
+					Logs.warn('  file     = %s' % source)
+					Logs.warn('  encoding = %s' % encoding)
+
+				if table is not None:
+					content.append(table)
 
 		content = ElementTree.tostring(root, method='html')
 		content = self._html_clean(content)
@@ -732,7 +737,7 @@ class CppcheckGen(Cppcheck):
 		content.append(table)
 
 
-class CppcheckHtmlFormatter(pygments.formatters.HtmlFormatter):
+class CppCheckFormatter(HtmlFormatter):
 	'''Formatter used for adding error messages to HTML report containing
 	syntax highlighted source code.
 	'''
@@ -746,7 +751,7 @@ class CppcheckHtmlFormatter(pygments.formatters.HtmlFormatter):
 		location.
 		'''
 		line_no = 1
-		for i, t in super(CppcheckHtmlFormatter, self).wrap(source, outfile):
+		for i, t in super(CppCheckFormatter, self).wrap(source, outfile):
 			# If this is a source code line we want to add a span tag at the end.
 			if i == 1:
 				for error in self.errors:
