@@ -149,7 +149,7 @@ def build(bld, trees=[]):
 		for lib in libs:
 			bld.read_shlib(lib, paths=bld.env.LIBPATH)
 
-	elif bld.options.all:
+	if bld.options.all and not bld.variant:
 		if bld.cmd in ('build', 'clean', 'install', 'uninstall', 'codeblocks', 'makefile', 'eclipse'):
 			for variant in bld.env.CCROSS.keys():
 				Scripting.run_command('%s_%s' % (bld.cmd, variant))
@@ -186,7 +186,7 @@ def _config_cross(conf):
 	ccross = conf.env.CCROSS
 
 	for name, ini in ccross.items(): # setup cross compile environment(s)
-		conf.setenv(name)
+		conf.setenv(name, env=conf.env.derive())
 		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
 		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
 		conf.env.LIBDIR = '%s/opt/%s/lib' % (prefix, name)
