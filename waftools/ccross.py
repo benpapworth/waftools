@@ -186,7 +186,8 @@ def _config_cross(conf):
 	ccross = conf.env.CCROSS
 
 	for name, ini in ccross.items(): # setup cross compile environment(s)
-		conf.setenv(name, env=conf.env.derive())
+		conf.setenv(name)
+		conf.env.CCROSS = ccross
 		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
 		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
 		conf.env.LIBDIR = '%s/opt/%s/lib' % (prefix, name)
