@@ -476,6 +476,9 @@ class CDTProject(EclipseProject):
 			self.cdt['cpp_linker'] = 'cdt.managedbuild.tool.gnu.cpp.linker%s' % (tt)
 			self.cdt['assembler'] = 'cdt.managedbuild.tool.gnu.assembler%s' % (tt)
 
+		if self.cdt['kind'] == 'Executable':
+			self.launch = CDTLaunch(bld, tgen, self.cdt['instance'], self.cdt['build'], self.cdt['artifactExtension'])
+			
 	def get_uuid(self):
 		uuid = codecs.encode(os.urandom(4), 'hex_codec')
 		return int(uuid, 16)
@@ -495,6 +498,16 @@ class CDTProject(EclipseProject):
 			if module.get('moduleId') == 'scannerConfiguration':
 				self.update_scanner_configuration(module)
 		return ElementTree.tostring(root)
+
+	def export(self):
+		super(CDTProject, self).export()
+		if hasattr(self, 'launch'):
+			self.launch.export()
+
+	def cleanup(self):
+		super(CDTProject, self).cleanup()
+		if hasattr(self, 'launch'):
+			self.launch.cleanup()
 
 	def update_cdt_core_settings(self, module):
 		cconfig = self.cconfig_get(module)
@@ -891,6 +904,69 @@ class CDTProject(EclipseProject):
 		ElementTree.SubElement(inputtype, 'additionalInput', {'kind':'additionalinput', 'paths':'$(LIBS)'})
 
 
+class CDTLaunch(Project):
+	'''Class for exporting a *CDT* launcher for C/C++ programs.
+
+	:param bld: a *waf* build instance from the top level *wscript*.
+	:type bld: waflib.Build.BuildContext
+	
+	:param gen: The C/C++ task generator for which the launcher should be 
+				created.
+	:type gen: waflib.Task.TaskGen
+
+	:param instance: Identifier from the *Eclipse* *CDT* project of the program
+				to be started by this launcher
+	:type instance: str
+	
+	:param btype: Build type and build directory name (debug|release)
+	:type btype: str
+    
+	:param ext: Program name extension
+	:type ext: str
+	'''
+	def __init__(self, bld, tgen, instance, btype, ext):
+		super(CDTLaunch, self).__init__(bld, tgen)
+		self.comments = ['<?xml version="1.0" encoding="UTF-8" standalone="no"?>']
+		self.template = ECLIPSE_CDT_LAUNCH
+		self.build_dir = btype
+		self.build_config_id = instance
+		self.program = '%s%s' % (tgen.get_name(), '.%s' % ext if len(ext) else '')
+
+	def get_fname(self):
+		name = '%s(%s).launch' % (self.tgen.get_name(), self.build_dir)
+		if self.tgen:
+			name = '%s/%s' % (self.tgen.path.relpath(), name)
+		return name.replace('\\', '/')
+
+	def get_content(self):
+		root = ElementTree.fromstring(self.template)
+		for attrib in root.iter('stringAttribute'):
+			if attrib.get('key') == 'org.eclipse.cdt.launch.PROGRAM_NAME':
+				attrib.set('value', '%s/%s' % (self.build_dir, self.program))
+			if attrib.get('key') == 'org.eclipse.cdt.launch.PROJECT_ATTR':
+				attrib.set('value', self.tgen.get_name())
+			if attrib.get('key') == 'org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR':
+				attrib.set('value', self.build_config_id)
+
+		for attrib in root.iter('listAttribute'):
+			if attrib.get('key') == 'org.eclipse.debug.core.MAPPED_RESOURCE_PATHS':
+				attrib.find('listEntry').set('value', '/%s' % self.tgen.get_name())
+
+		attrib = root.find('mapAttribute')
+		
+		uses = get_deps(self.bld, self.tgen.get_name())		
+		for use in uses:
+			try:
+				tg = self.bld.get_tgen_by_name(use)
+			except Errors.WafError:
+				pass
+			else:
+				if set(('cshlib', 'cxxshlib')) & set(tg.features):
+					mapentry = ElementTree.SubElement(attrib, 'mapEntry', {'key':'PATH' if sys.platform=='win32' else 'LD_LIBRARY_PATH'})
+					mapentry.set('value', '${workspace_loc:/%s/%s}' % (tg.get_name(), self.build_dir))
+		return ElementTree.tostring(root)
+
+
 ECLIPSE_PROJECT = \
 '''<?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
@@ -975,3 +1051,41 @@ ECLIPSE_CDT_CCONFIGURATION = '''
 </cconfiguration>
 '''
 
+
+ECLIPSE_CDT_LAUNCH = \
+'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.cdt.launch.applicationLaunchType">
+	<booleanAttribute key="org.eclipse.cdt.dsf.gdb.AUTO_SOLIB" value="true"/>
+	<listAttribute key="org.eclipse.cdt.dsf.gdb.AUTO_SOLIB_LIST"/>
+	<stringAttribute key="org.eclipse.cdt.dsf.gdb.DEBUG_NAME" value="gdb"/>
+	<booleanAttribute key="org.eclipse.cdt.dsf.gdb.DEBUG_ON_FORK" value="false"/>
+	<stringAttribute key="org.eclipse.cdt.dsf.gdb.GDB_INIT" value=".gdbinit"/>
+	<booleanAttribute key="org.eclipse.cdt.dsf.gdb.NON_STOP" value="false"/>
+	<booleanAttribute key="org.eclipse.cdt.dsf.gdb.REVERSE" value="false"/>
+	<listAttribute key="org.eclipse.cdt.dsf.gdb.SOLIB_PATH"/>
+	<stringAttribute key="org.eclipse.cdt.dsf.gdb.TRACEPOINT_MODE" value="TP_NORMAL_ONLY"/>
+	<booleanAttribute key="org.eclipse.cdt.dsf.gdb.UPDATE_THREADLIST_ON_SUSPEND" value="false"/>
+	<booleanAttribute key="org.eclipse.cdt.dsf.gdb.internal.ui.launching.LocalApplicationCDebuggerTab.DEFAULTS_SET" value="true"/>
+	<intAttribute key="org.eclipse.cdt.launch.ATTR_BUILD_BEFORE_LAUNCH_ATTR" value="2"/>
+	<stringAttribute key="org.eclipse.cdt.launch.COREFILE_PATH" value=""/>
+	<stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_ID" value="gdb"/>
+	<stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_START_MODE" value="run"/>
+	<booleanAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN" value="true"/>
+	<stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN_SYMBOL" value="main"/>
+	<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value=""/>
+	<stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value=""/>
+	<booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="true"/>
+	<stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value=""/>
+	<booleanAttribute key="org.eclipse.cdt.launch.use_terminal" value="true"/>
+	<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+		<listEntry value=""/>
+	</listAttribute>
+	<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+		<listEntry value="4"/>
+	</listAttribute>
+	<mapAttribute key="org.eclipse.debug.core.environmentVariables">
+	</mapAttribute>
+	<stringAttribute key="org.eclipse.dsf.launch.MEMORY_BLOCKS" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&#13;&#10;&lt;memoryBlockExpressionList context=&quot;reserved-for-future-use&quot;/&gt;&#13;&#10;"/>
+	<stringAttribute key="process_factory_id" value="org.eclipse.cdt.dsf.gdb.GdbProcessFactory"/>
+</launchConfiguration>
+'''
