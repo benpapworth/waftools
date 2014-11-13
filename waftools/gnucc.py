@@ -27,11 +27,13 @@ def configure(conf):
 	:param conf: configuration context 
 	:type conf: waflib.Configure.ConfigurationContext
 	'''
+	flags = ['-Wall', '-pthread']
+
 	if conf.options.debug:
-		flags = ['-Wall', '-g', '-ggdb', '-pthread']
+		flags.extend(['-g', '-ggdb'])
 		defines = []
 	else:
-		flags = ['-Wall', '-O3']
+		flags.extend(['-O3'])
 		defines = ['NDEBUG']
 
 	for cc in ('CFLAGS', 'CXXFLAGS'):

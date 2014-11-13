@@ -713,6 +713,22 @@ class CDTProject(EclipseProject):
 			optimization_level = 'most'
 			debug_level = 'none'
 
+		if language == 'c':
+			options = ['-c']
+			flags = self.tgen.env.CFLAGS
+		else:
+			flags = self.tgen.env.CXXFLAGS
+			options = ['-c++']
+
+		if self.tgen.env.CC_VERSION[0] not in ('1', '2'):
+			options.append('-fmessage-length=0') # only when not using ancient compilers
+
+		for f in flags:
+			if f.startswith('-W') or f.startswith('-O') or f == '-g': # handled elsewhere
+				continue
+			options.append(f)
+		options = ' '.join(options)
+
 		gnut = self.cdt['gnut']
 		t = 'gnu.%s.compiler%s' % (language, '.%s' % gnut if gnut else '')
 
@@ -726,10 +742,9 @@ class CDTProject(EclipseProject):
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 		option.set('value', 'gnu.%s.debugging.level.%s' % (language, debug_level))
 
-		if self.tgen.env.DEST_CPU == 'powerpc': # TODO: only when using ancient 2.95 compiler!
-			option = ElementTree.SubElement(compiler, 'option', {'value':'-c','valueType':'string'})
-			option.set('superClass', 'gnu.c.compiler.option.misc.other')
-			option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+		option = ElementTree.SubElement(compiler, 'option', {'value':options,'valueType':'string'})
+		option.set('superClass', 'gnu.c.compiler.option.misc.other')
+		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 
 		if self.cdt['ext'] == 'so' and self.language == language:
 			option = ElementTree.SubElement(compiler, 'option', {'value':'true','valueType':'boolean'})
@@ -836,9 +851,7 @@ class CDTProject(EclipseProject):
 		self.toolchain_linker_add_libpaths(linker, language)
 		self.toolchain_linker_add_input(linker, language)
 
-	def toolchain_linker_get_libs(self, language):
-		if self.language != language:
-			return None
+	def toolchain_linker_get_libs(self):
 		libs = []
 		for use in getattr(self.tgen, 'use', []):
 			try:
@@ -853,30 +866,34 @@ class CDTProject(EclipseProject):
 				elif 'fake_lib' in tgen.features:
 					paths = [p.replace('\\', '/') for p in tgen.lib_paths]
 					libs.append((name, paths))
-
-		return libs if len(libs) else None
+		return libs
 
 	def toolchain_linker_add_libs(self, linker, language):
-		libs = self.toolchain_linker_get_libs(language)
-		if not libs:
+		if self.language != language:
 			return
+
 		option = ElementTree.SubElement(linker, 'option', {'name':'Libraries (-l)', 'valueType':'libs'})
 		option.set('superClass', 'gnu.%s.link.option.libs' % (language))
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+
+		libs = self.toolchain_linker_get_libs()
 		for (lib, _) in libs:
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 			listoption.set('value', lib)
+			
 		for lib in getattr(self.tgen, 'lib', []):
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 			listoption.set('value', lib)
 
 	def toolchain_linker_add_libpaths(self, linker, language):
-		libs = self.toolchain_linker_get_libs(language)
-		if not libs:
+		if self.language != language:
 			return
+
 		option = ElementTree.SubElement(linker, 'option', {'name':'Library search path (-L)', 'valueType':'libPaths'})
 		option.set('superClass', 'gnu.%s.link.option.paths' % (language))
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
+
+		libs = self.toolchain_linker_get_libs()
 		for (lib, paths) in libs:
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 			if not paths:

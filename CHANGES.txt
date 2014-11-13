@@ -2,7 +2,9 @@ History
 -------
 Following lists the changes per released version.
 
-**v0.3.8**, 2014-11-12:
+**v0.3.8**, 2014-11-13:
+- issue9_; add *-pthread* option by default in gnucc and use it for export(*eclipse*, *makefiles*, *codeblocks*)
+- *eclipse*; [bug fix] added shared system libs
 - *eclipse*; added *eclipse_skipme* task generator option
 - *codeblocks*; added *codeblocks_skipme* task generator option
 - *cmake*; added *cmake_skipme* task generator option
@@ -151,3 +153,5 @@ Following lists the changes per released version.
 .. _issue4: https://bitbucket.org/Moo7/waftools/issue/4/msdevsln-not-included-in-the-latest
 .. _issue5: https://bitbucket.org/Moo7/waftools/issue/5/detecting-cross-compiler-fails
 .. _issue8: https://bitbucket.org/Moo7/waftools/issue/8/module-crosspy-fails-in-v035
+.. _issue9: https://bitbucket.org/Moo7/waftools/issue/9/eclipse-missing-pthread
+
