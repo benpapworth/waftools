@@ -28,7 +28,7 @@ def configure(conf):
 	:type conf: waflib.Configure.ConfigurationContext
 	'''
 	if conf.options.debug:
-		flags = ['-Wall', '-g', '-ggdb']
+		flags = ['-Wall', '-g', '-ggdb', '-pthread']
 		defines = []
 	else:
 		flags = ['-Wall', '-O3']
