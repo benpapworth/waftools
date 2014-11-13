@@ -84,12 +84,20 @@ Usage
 **Eclipse** project and workspace files can be exported using the *eclipse* 
 command, as shown in the example below::
 
-        $ waf eclipse
+    $ waf eclipse
 
 When needed, exported **Eclipse** project- and workspaces files can be 
 removed using the *clean* command, as shown in the example below::
 
-        $ waf eclipse --clean
+    $ waf eclipse --clean
+        
+
+Tasks generators to be excluded can be marked with the *skipme* option 
+as shown below::
+
+    def build(bld):
+        bld.program(name='foo',	src='foobar.c',	eclipse_skip=True)
+
 '''
 
 
@@ -100,6 +108,7 @@ import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
 from waflib import Utils, Logs, Errors, Context
 from waflib.Build import BuildContext
+import waftools
 
 
 def options(opt):
@@ -155,31 +164,6 @@ class EclipseContext(BuildContext):
 		self.timer = Utils.Timer()
 
 
-def get_deps(bld, target):
-	'''Returns a list of (nested) targets on which this target depends'''	
-	uses = Utils.to_list(getattr(bld.get_tgen_by_name(target), 'use', []))
-	deps = uses[:]
-	for use in uses:
-		deps += get_deps(bld, use)
-	return deps
-
-
-def get_targets(bld):
-	'''Returns a list of user specified build targets or None if no specific
-	build targets has been selected using the *--targets=* command line option.
-
-	:param bld: a *waf* build instance from the top level *wscript*.
-	:type bld: waflib.Build.BuildContext
-	:returns: a list of user specified target names (using --targets=x,y,z) or None
-	'''
-	if bld.targets == '':
-		return None
-	targets = bld.targets.split(',')
-	for target in targets:
-		targets += get_deps(bld, target)
-	return targets
-
-
 def export(bld):
 	'''Generates Eclipse CDT projects for each C/C++ task.
 
@@ -195,10 +179,12 @@ def export(bld):
 		return
 
 	detect_project_duplicates(bld)
-	targets = get_targets(bld)
+	targets = waftools.get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
+			continue
+		if getattr(tgen, 'eclipse_skipme', False):
 			continue
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			Project(bld, tgen).export()
@@ -214,10 +200,12 @@ def cleanup(bld):
 	if not bld.options.eclipse and not hasattr(bld, 'eclipse'):
 		return
 
-	targets = get_targets(bld)
+	targets = waftools.get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
+			continue
+		if getattr(tgen, 'eclipse_skipme', False):
 			continue
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			Project(bld, tgen).cleanup()

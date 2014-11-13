@@ -57,11 +57,19 @@ All exported *cmake* build files can be removed in 'one go' using the *cmake*
 *cleanup* option::
 
         $ waf cmake --cmake-clean
+
+Tasks generators to be excluded can be marked with the *skipme* option 
+as shown below::
+
+    def build(bld):
+        bld.program(name='foo', src='foobar.c', cmake_skip=True)
+
 '''
 
 
 from waflib.Build import BuildContext
 from waflib import Utils, Logs, Context
+import waftools
 
 
 def options(opt):
@@ -130,8 +138,13 @@ def export(bld):
 	loc = bld.path.relpath().replace('\\', '/')
 	top = CMake(bld, loc)
 	cmakes[loc] = top
+	targets = waftools.get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
+		if targets and tgen.get_name() not in targets:
+			continue
+		if getattr(tgen, 'cmake_skipme', False):
+			continue
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			loc = tgen.path.relpath().replace('\\', '/')
 			if loc not in cmakes:
@@ -155,10 +168,16 @@ def cleanup(bld):
 
 	loc = bld.path.relpath().replace('\\', '/')
 	CMake(bld, loc).cleanup()
+	targets = waftools.get_targets(bld)
 
-	for gen in bld.task_gen_cache_names.values():
-		loc = gen.path.relpath().replace('\\', '/')
-		CMake(bld, loc).cleanup()
+	for tgen in bld.task_gen_cache_names.values():
+		if targets and tgen.get_name() not in targets:
+			continue
+		if getattr(tgen, 'cmake_skipme', False):
+			continue
+		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+			loc = tgen.path.relpath().replace('\\', '/')
+			CMake(bld, loc).cleanup()
 
 
 class CMake(object):

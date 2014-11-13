@@ -2,6 +2,14 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.3.8**, 2014-11-12:
+- *eclipse*; added *eclipse_skipme* task generator option
+- *codeblocks*; added *codeblocks_skipme* task generator option
+- *cmake*; added *cmake_skipme* task generator option
+- *msdev*; added *msdev_skipme* task generator option
+- *codeblocks*, *cmake*; only export projects for selected targets (e.g. --targets=a,b,)
+
+
 **v0.3.7**, 2014-11-12:
 - *general*; added package dependency to *chardet*
 - *ccross*; fix when using multiple cross compilers

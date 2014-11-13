@@ -263,123 +263,123 @@ Example below presents the content of the makefile for the *chello* component
 that has been exported from the test directory::
 
 
-		#------------------------------------------------------------------------------
-		# WAFTOOLS generated makefile
-		# version: 0.1.5
-		# waf: 1.7.15
-		#------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
+    # WAFTOOLS generated makefile
+    # version: 0.1.5
+    # waf: 1.7.15
+    #------------------------------------------------------------------------------
 
-		SHELL=/bin/sh
+    SHELL=/bin/sh
 
-		# commas, spaces and tabs:
-		sp:= 
-		sp+= 
-		tab:=$(sp)$(sp)$(sp)$(sp)
-		comma:=,
+    # commas, spaces and tabs:
+    sp:= 
+    sp+= 
+    tab:=$(sp)$(sp)$(sp)$(sp)
+    comma:=,
 
-		#------------------------------------------------------------------------------
-		# definition of build and install locations
-		#------------------------------------------------------------------------------
-		ifeq ($(TOP),)
-		TOP=$(CURDIR)
-		OUT=$(TOP)/build
-		else
-		OUT=$(subst $(sp),/,$(call rptotop) build $(call rpofcomp))
-		endif
+    #------------------------------------------------------------------------------
+    # definition of build and install locations
+    #------------------------------------------------------------------------------
+    ifeq ($(TOP),)
+    TOP=$(CURDIR)
+    OUT=$(TOP)/build
+    else
+    OUT=$(subst $(sp),/,$(call rptotop) build $(call rpofcomp))
+    endif
 
-		PREFIX?=$(HOME)
-		BINDIR?=$(PREFIX)/bin
-		LIBDIR?=$(PREFIX)/lib
+    PREFIX?=$(HOME)
+    BINDIR?=$(PREFIX)/bin
+    LIBDIR?=$(PREFIX)/lib
 
-		#------------------------------------------------------------------------------
-		# component data
-		#------------------------------------------------------------------------------
-		BIN=chello
-		OUTPUT=$(OUT)/$(BIN)
+    #------------------------------------------------------------------------------
+    # component data
+    #------------------------------------------------------------------------------
+    BIN=chello
+    OUTPUT=$(OUT)/$(BIN)
 
-		# REMARK: use $(wildcard src/*.c) to include all sources.
-		SOURCES= \
-			src/hello.c
+    # REMARK: use $(wildcard src/*.c) to include all sources.
+    SOURCES= \
+        src/hello.c
 
-		OBJECTS=$(SOURCES:.c=.1.o)
+    OBJECTS=$(SOURCES:.c=.1.o)
 
-		DEFINES+=HELLO_VERSION='"1.2.3"'
-		DEFINES:=$(addprefix -D,$(DEFINES))
+    DEFINES+=HELLO_VERSION='"1.2.3"'
+    DEFINES:=$(addprefix -D,$(DEFINES))
 
-		INCLUDES+= \
-			./include
+    INCLUDES+= \
+        ./include
 
-		HEADERS:=$(foreach inc,$(INCLUDES),$(wildcard $(inc)/*.h))
-		INCLUDES:=$(addprefix -I,$(INCLUDES))
+    HEADERS:=$(foreach inc,$(INCLUDES),$(wildcard $(inc)/*.h))
+    INCLUDES:=$(addprefix -I,$(INCLUDES))
 
-		CFLAGS+=
+    CFLAGS+=
 
-		LINKFLAGS+=
+    LINKFLAGS+=
 
-		RPATH+=
-		RPATH:= $(addprefix -Wl$(comma)-rpath$(comma),$(RPATH))
+    RPATH+=
+    RPATH:= $(addprefix -Wl$(comma)-rpath$(comma),$(RPATH))
 
-		LIBPATH_ST+=
-		LIBPATH_ST:= $(addprefix -L,$(LIBPATH_ST))
+    LIBPATH_ST+=
+    LIBPATH_ST:= $(addprefix -L,$(LIBPATH_ST))
 
-		LIB_ST+=
-		LIB_ST:= $(addprefix -l,$(LIB_ST))
+    LIB_ST+=
+    LIB_ST:= $(addprefix -l,$(LIB_ST))
 
-		LIBPATH_SH+=
-		LIBPATH_SH:= $(addprefix -L,$(LIBPATH_SH))
+    LIBPATH_SH+=
+    LIBPATH_SH:= $(addprefix -L,$(LIBPATH_SH))
 
-		LINK_ST= -Wl,-Bstatic $(LIBPATH_ST) $(LIB_ST)
+    LINK_ST= -Wl,-Bstatic $(LIBPATH_ST) $(LIB_ST)
 
-		LIB_SH+=
-		LIB_SH:= $(addprefix -l,$(LIB_SH))
+    LIB_SH+=
+    LIB_SH:= $(addprefix -l,$(LIB_SH))
 
-		LINK_SH= -Wl,-Bdynamic $(LIBPATH_SH) $(LIB_SH)
+    LINK_SH= -Wl,-Bdynamic $(LIBPATH_SH) $(LIB_SH)
 
-		#------------------------------------------------------------------------------
-		# returns the relative path of this component from the top directory
-		#------------------------------------------------------------------------------
-		define rpofcomp
-		$(subst $(subst ~,$(HOME),$(TOP))/,,$(CURDIR))
-		endef
+    #------------------------------------------------------------------------------
+    # returns the relative path of this component from the top directory
+    #------------------------------------------------------------------------------
+    define rpofcomp
+    $(subst $(subst ~,$(HOME),$(TOP))/,,$(CURDIR))
+    endef
 
-		#------------------------------------------------------------------------------
-		# returns the relative path of this component to the top directory
-		#------------------------------------------------------------------------------
-		define rptotop
-		$(foreach word,$(subst /,$(sp),$(call rpofcomp)),..)
-		endef
+    #------------------------------------------------------------------------------
+    # returns the relative path of this component to the top directory
+    #------------------------------------------------------------------------------
+    define rptotop
+    $(foreach word,$(subst /,$(sp),$(call rpofcomp)),..)
+    endef
 
-		#------------------------------------------------------------------------------
-		# define targets
-		#------------------------------------------------------------------------------
-		commands= build clean install uninstall all
+    #------------------------------------------------------------------------------
+    # define targets
+    #------------------------------------------------------------------------------
+    commands= build clean install uninstall all
 
-		.DEFAULT_GOAL=all
+    .DEFAULT_GOAL=all
 
-		#------------------------------------------------------------------------------
-		# definitions of recipes (i.e. make targets)
-		#------------------------------------------------------------------------------
-		all: build
+    #------------------------------------------------------------------------------
+    # definitions of recipes (i.e. make targets)
+    #------------------------------------------------------------------------------
+    all: build
 
-		build: $(OBJECTS)
-			$(CC) $(LINKFLAGS) $(addprefix $(OUT)/,$(OBJECTS)) -o $(OUTPUT) $(RPATH) $(LINK_ST) $(LINK_SH)
+    build: $(OBJECTS)
+        $(CC) $(LINKFLAGS) $(addprefix $(OUT)/,$(OBJECTS)) -o $(OUTPUT) $(RPATH) $(LINK_ST) $(LINK_SH)
 
-		clean:
-			$(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)
-			rm -f $(OUTPUT)
+    clean:
+        $(foreach obj,$(OBJECTS),rm -f $(OUT)/$(obj);)
+        rm -f $(OUTPUT)
 
-		install: build
-			mkdir -p $(BINDIR)
-			cp $(OUTPUT) $(BINDIR)
+    install: build
+        mkdir -p $(BINDIR)
+        cp $(OUTPUT) $(BINDIR)
 
-		uninstall:
-			rm -f $(BINDIR)/$(BIN)
+    uninstall:
+        rm -f $(BINDIR)/$(BIN)
 
-		$(OBJECTS): $(HEADERS)
-			mkdir -p $(OUT)/$(dir $@)
-			$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) $(subst .1.o,.c,$@) -c -o $(OUT)/$@
+    $(OBJECTS): $(HEADERS)
+        mkdir -p $(OUT)/$(dir $@)
+        $(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) $(subst .1.o,.c,$@) -c -o $(OUT)/$@
 
-		.PHONY: $(commands)
+    .PHONY: $(commands)
 
 
 Note that only one segment of this file, the named *component* *data* contains 
@@ -479,27 +479,6 @@ class MakeFileContext(BuildContext):
 		self.timer = Utils.Timer()
 
 
-def get_targets(bld):
-	'''Returns a list of user specified build targets or None if no specific
-	build targets has been selected using the *--targets=* command line option.
-
-	:param bld: a *waf* build instance from the top level *wscript*.
-	:type bld: waflib.Build.BuildContext
-	:returns: a list of user specified target names (using --targets=x,y,z) or None
-	'''
-	if bld.targets == '':
-		return None
-	
-	targets = bld.targets.split(',')
-	deps = []
-	for target in targets:
-		uses = Utils.to_list(getattr(bld.get_tgen_by_name(target), 'use', None))
-		if uses:
-			deps += uses
-	targets += list(set(deps))
-	return targets
-
-
 def export(bld):
 	'''Exports all C and C++ task generators to makefiles.
 	
@@ -510,7 +489,7 @@ def export(bld):
 		return
 
 	root = MakeRoot(bld)
-	targets = get_targets(bld)
+	targets = waftools.get_targets(bld)
 	
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
@@ -532,13 +511,14 @@ def cleanup(bld):
 		return
 
 	root = MakeRoot(bld)
-	targets = get_targets(bld)
+	targets = waftools.get_targets(bld)
 	
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
 			continue
-		child = MakeChild(bld, tgen, tgen.tasks)
-		child.cleanup()
+		if set(('c', 'cxx')) & set(tgen.features):
+			child = MakeChild(bld, tgen, tgen.tasks)
+			child.cleanup()
 	
 	root.cleanup()
 

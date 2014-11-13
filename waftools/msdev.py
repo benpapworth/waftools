@@ -58,12 +58,12 @@ environment as much as possible. Note that since cross compilation is not
 really supported in this IDE, only the first environment encountered that
 is targeted for **MS Windows** will be exported; i.e. an environment in 
 which::
-	
-	bld.env.DEST_OS == 'win32'
+
+    bld.env.DEST_OS == 'win32'
 
 is true.
 
-	
+
 Please note that in contrast to a *normal* IDE setup the exported projects 
 will contain either a *debug* **or** a *release* build target but not both at
 the same time. By doing so exported projects will always use the same settings
@@ -76,15 +76,22 @@ Usage
 **Visual Studio** project and workspace files can be exported using the *msdev* 
 command, as shown in the example below::
 
-        $ waf msdev
+    $ waf msdev
 
 When needed, exported **Visual Studio** project- and solution files can be 
 removed using the *clean* command, as shown in the example below::
 
-        $ waf msdev --clean
+    $ waf msdev --clean
 
 Once exported simply open the *appname.sln* using **Visual Studio**
 this will automatically open all exported projects as well.
+
+Tasks generators to be excluded can be marked with the *skipme* option 
+as shown below::
+
+    def build(bld):
+        bld.program(name='foo', src='foobar.c', msdev_skip=True)
+
 '''
 
 import os
@@ -96,6 +103,8 @@ import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
 from waflib import Utils, Logs, Errors, Context
 from waflib.Build import BuildContext
+import waftools
+
 
 def options(opt):
 	'''Adds command line options to the *waf* build environment 
@@ -150,27 +159,6 @@ class MsDevContext(BuildContext):
 		self.timer = Utils.Timer()
 
 
-def get_targets(bld):
-	'''Returns a list of user specified build targets or None if no specific
-	build targets has been selected using the *--targets=* command line option.
-
-	:param bld: a *waf* build instance from the top level *wscript*.
-	:type bld: waflib.Build.BuildContext
-	:returns: a list of user specified target names (using --targets=x,y,z) or None
-	'''
-	if bld.targets == '':
-		return None
-	
-	targets = bld.targets.split(',')
-	deps = []
-	for target in targets:
-		uses = Utils.to_list(getattr(bld.get_tgen_by_name(target), 'use', None))
-		if uses:
-			deps += uses
-	targets += list(set(deps))
-	return targets
-
-
 def export(bld):
 	'''Exports all C and C++ task generators as **Visual Studio** projects
 	and creates a **Visual Studio** solution containing references to 
@@ -182,11 +170,13 @@ def export(bld):
 	if not bld.options.msdev and not hasattr(bld, 'msdev'):
 		return
 
-	solution = MsDevSolution(bld)	
-	targets = get_targets(bld)
+	solution = MsDevSolution(bld)
+	targets = waftools.get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
+			continue
+		if getattr(tgen, 'msdev_skipme', False):
 			continue
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			project = MsDevProject(bld, tgen)
@@ -208,13 +198,16 @@ def cleanup(bld):
 	if not bld.options.msdev and not hasattr(bld, 'msdev'):
 		return
 
-	targets = get_targets(bld)
-		
+	targets = waftools.get_targets(bld)
+
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
 			continue
-		project = MsDevProject(bld, tgen)
-		project.cleanup()
+		if getattr(tgen, 'msdev_skipme', False):
+			continue
+		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+			project = MsDevProject(bld, tgen)
+			project.cleanup()
 
 	solution = MsDevSolution(bld)
 	solution.cleanup()
@@ -225,11 +218,11 @@ class MsDev(object):
 	**Visual Studio** projects and solutions.
 
 	:param bld: Build context as used in *wscript* files of your *waf* build
-				environment.
-	:type bld:	waflib.Build.BuildContext
+	            environment.
+	:type bld:  waflib.Build.BuildContext
 	'''
 
-	PROGRAM	= '1'
+	PROGRAM = '1'
 	'''Identifier for projects containing an executable'''
 
 	OBJECT  = '3'
@@ -274,7 +267,7 @@ class MsDev(object):
 			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 		for node in cwd.ant_glob('*.sln'):
 			node.delete()
-			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())			
+			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 		node = self._find_node()
 		if node:
 			node.delete()
@@ -319,8 +312,8 @@ class MsDevSolution(MsDev):
 	environment.
 
 	:param bld: Build context as used in *wscript* files of your *waf* build
-				environment.
-	:type bld:	waflib.Build.BuildContext
+	            environment.
+	:type bld:  waflib.Build.BuildContext
 	'''
 	
 	def __init__(self, bld):
@@ -333,7 +326,7 @@ class MsDevSolution(MsDev):
 		return '%s.sln' % getattr(Context.g_module, Context.APPNAME)
 
 	def export(self):
-		'''Exports a **Visual Studio** solution.'''	
+		'''Exports a **Visual Studio** solution.'''
 		src = '%s/msdev.sln' % os.path.dirname(__file__)
 		dst = self._get_fname()
 		shutil.copyfile(src, dst)
@@ -355,7 +348,7 @@ class MsDevSolution(MsDev):
 						except KeyError:
 							pass
 						else:
-							f.write('\t\t{%s} = {%s}\n' % (pid, pid))						
+							f.write('\t\t{%s} = {%s}\n' % (pid, pid))
 					f.write('\tEndProjectSection\n')
 				f.write('EndProject\n')
 			for line in s[3:8]:
@@ -369,12 +362,12 @@ class MsDevSolution(MsDev):
 	def add_project(self, name, fname, deps, pid):
 		'''Adds a project to the workspace.
 		
-		:param name:	Name of the project.
-		:type name:		str
-		:param fname:	Complete path to the project file
-		:type fname: 	str
-		:param deps:	List of names on which this project depends
-		:type deps: 	list of str
+		:param name:    Name of the project.
+		:type name:     str
+		:param fname:   Complete path to the project file
+		:type fname:    str
+		:param deps:    List of names on which this project depends
+		:type deps:     list of str
 		'''
 		self.projects[name] = (fname, deps, pid)
 
@@ -384,12 +377,12 @@ class MsDevProject(MsDev):
 	projects.
 
 	:param bld: Build context as used in *wscript* files of your *waf* build
-				environment.
-	:type bld:	waflib.Build.BuildContext
+	            environment.
+	:type bld:  waflib.Build.BuildContext
 	
 	:param gen: Task generator that contains all information of the task to be
-				converted and exported to the **Visual Studio** project.
-	:type gen:	waflib.Task.TaskGen	
+	            converted and exported to the **Visual Studio** project.
+	:type gen:  waflib.Task.TaskGen
 	'''
 
 	def __init__(self, bld, gen):
@@ -480,7 +473,7 @@ class MsDevProject(MsDev):
 			if filtr.get('Name') == 'Source Files':
 				for source in filtr.iter('File'):
 					sources.append(source.get('RelativePath'))
-				break		
+				break
 		if len(sources) == 0:
 			filtr = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Source Files', 'Filter':'cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx'})
 			filtr.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
@@ -589,8 +582,8 @@ class MsDevProject(MsDev):
 		gen = self.gen
 		defines = self._get_genlist(gen, 'defines') + gen.bld.env.DEFINES
 		if 'win32' in sys.platform:
-			defines = [d.replace('"', '\\"') for d in defines]			
-		defines = ';'.join(defines)			
+			defines = [d.replace('"', '\\"') for d in defines]
+		defines = ';'.join(defines)
 		return defines
 
 	def _get_link_options(self):
@@ -610,7 +603,7 @@ class MsDevProject(MsDev):
 		libs = Utils.to_list(getattr(gen, 'lib', []))
 		for l in ('m'): # remove posix libraries, that integrated in MVSCRT
 			if libs.count(l):
-				libs.remove(l)		
+				libs.remove(l)
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		for dep in deps:
 			try:
@@ -746,3 +739,4 @@ MSDEV_PROJECT = \
 	</Globals>
 </VisualStudioProject>
 '''
+

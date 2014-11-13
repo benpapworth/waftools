@@ -57,21 +57,21 @@ environment. Projects will contain exactly **one** build target per build
 variant that has been defined in the *waf* build environment, as explained in
 the example below;
 
-	**input**:
-	In a *waf* build environment three variants have been defined, one 
-	default (without name) build used for normal compiling and linking for the 
-	current host, and two variants used for cross compiling and linking for
-	embedded systems; one is named *arm5* the other *arm7*.
-	Also the *complete* environment has been configured to be build with
-	debugging information (i.e. the CFLAGS and CXXFLAGS both contain the 
-	compiler option`-g`).
-	
-	**output**:
-	Each exported project will contain the following build targets:
-	- The first named **debug**, for the current host platform,
-	- The second named **arm5-debug**, for the ARM5 target, and
-	- The third named **arm7-debug**, for the ARM7 target. 
-	
+    **input**:
+    In a *waf* build environment three variants have been defined, one 
+    default (without name) build used for normal compiling and linking for the 
+    current host, and two variants used for cross compiling and linking for
+    embedded systems; one is named *arm5* the other *arm7*.
+    Also the *complete* environment has been configured to be build with
+    debugging information (i.e. the CFLAGS and CXXFLAGS both contain the 
+    compiler option`-g`).
+    
+    **output**:
+    Each exported project will contain the following build targets:
+    - The first named **debug**, for the current host platform,
+    - The second named **arm5-debug**, for the ARM5 target, and
+    - The third named **arm7-debug**, for the ARM7 target. 
+
 Please note that in contrast to a *normal* IDE setup the exported projects 
 will contain either a *debug* **or** a *release* build target but not both at
 the same time. By doing so exported projects will always use the same settings
@@ -103,15 +103,22 @@ Usage
 **Code::Blocks** project and workspace files can be exported using the 
 *codeblocks* command, as shown in the example below::
 
-        $ waf codeblocks
+    $ waf codeblocks
 
 When needed, exported **Code::Blocks** project- and workspaces files can be 
 removed using the *clean* command, as shown in the example below::
 
-        $ waf codeblocks --clean
+    $ waf codeblocks --clean
 
 Once exported simple open the *codeblocks.workspace* using **Code::Blocks**.
 This will automatically open all exported projects as well.
+
+Tasks generators to be excluded can be marked with the *skipme* option 
+as shown below::
+
+    def build(bld):
+        bld.program(name='foo', src='foobar.c', codeblocks_skip=True)
+
 '''
 
 # TODO: contains errors for cross-compilers (WIN32 specific?)
@@ -124,6 +131,8 @@ import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
 from waflib import Utils, Logs, Errors, Context
 from waflib.Build import BuildContext
+import waftools
+
 
 def options(opt):
 	'''Adds command line options to the *waf* build environment 
@@ -141,7 +150,7 @@ def configure(conf):
 	
 	:param conf: Configuration context from the *waf* build environment.
 	:type conf: waflib.Configure.ConfigurationContext
-	'''	
+	'''
 	pass
 
 
@@ -191,8 +200,13 @@ def export(bld):
 
 	cc_name = bld.env.CC_NAME
 	workspace = CBWorkspace(bld)
+	targets = waftools.get_targets(bld)
 
-	for tgen in bld.task_gen_cache_names.values():	
+	for tgen in bld.task_gen_cache_names.values():
+		if targets and tgen.get_name() not in targets:
+			continue
+		if getattr(tgen, 'codeblocks_skipme', False):
+			continue
 		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
 			project = CBProject(bld, tgen)
 			project.export()
@@ -231,9 +245,16 @@ def cleanup(bld):
 	if not bld.options.codeblocks and not hasattr(bld, 'codeblocks'):
 		return
 
-	for tgen in bld.task_gen_cache_names.values():	
-		project = CBProject(bld, tgen)
-		project.cleanup()
+	targets = waftools.get_targets(bld)
+
+	for tgen in bld.task_gen_cache_names.values():
+		if targets and tgen.get_name() not in targets:
+			continue
+		if getattr(tgen, 'codeblocks_skipme', False):
+			continue
+		if set(('c', 'cxx')) & set(getattr(tgen, 'features', [])):
+			project = CBProject(bld, tgen)
+			project.cleanup()
 
 	project = WafCBProject(bld)
 	project.cleanup()
@@ -247,11 +268,11 @@ class CodeBlocks(object):
 	**Code::Blocks** projects and workspaces.
 
 	:param bld: Build context as used in *wscript* files of your *waf* build
-				environment.
-	:type bld:	waflib.Build.BuildContext
+	            environment.
+	:type bld:  waflib.Build.BuildContext
 	'''
 
-	PROGRAM	= '1'
+	PROGRAM = '1'
 	'''Identifier for projects containing an executable'''
 
 	STLIB   = '2'
@@ -332,8 +353,8 @@ class CBWorkspace(CodeBlocks):
 	environment.
 
 	:param bld: Build context as used in *wscript* files of your *waf* build
-				environment.
-	:type bld:	waflib.Build.BuildContext
+	            environment.
+	:type bld:  waflib.Build.BuildContext
 	'''
 	
 	def __init__(self, bld):
@@ -361,18 +382,18 @@ class CBWorkspace(CodeBlocks):
 				except KeyError:
 					pass
 				else:
-					ElementTree.SubElement(project, 'Depends', attrib={'filename':fname})				
+					ElementTree.SubElement(project, 'Depends', attrib={'filename':fname})
 		return ElementTree.tostring(root)
 
 	def add_project(self, name, fname, deps):
 		'''Adds a project to the workspace.
 		
-		:param name:	Name of the project.
-		:type name:		str
-		:param fname:	Complete path to the project file
-		:type fname: 	str
-		:param deps:	List of names on which this project depends
-		:type deps: 	list of str
+		:param name:    Name of the project.
+		:type name:     str
+		:param fname:   Complete path to the project file
+		:type fname:    str
+		:param deps:    List of names on which this project depends
+		:type deps:     list of str
 		'''
 		self.projects[name] = (fname, deps)
 
@@ -382,12 +403,12 @@ class CBProject(CodeBlocks):
 	projects.
 
 	:param bld: Build context as used in *wscript* files of your *waf* build
-				environment.
-	:type bld:	waflib.Build.BuildContext
+	            environment.
+	:type bld:  waflib.Build.BuildContext
 	
 	:param gen: Task generator that contains all information of the task to be
-				converted and exported to the **Code::Blocks** project.
-	:type gen:	waflib.Task.TaskGen
+	            converted and exported to the **Code::Blocks** project.
+	:type gen:  waflib.Task.TaskGen
 	'''
 
 	def __init__(self, bld, gen):
@@ -599,7 +620,7 @@ class CBProject(CodeBlocks):
 			except Errors.WafError:
 				pass
 			else:
-				deps += self._get_deps(child)		
+				deps += self._get_deps(child)
 		return deps
 		
 	def _get_compiler_includes(self):
@@ -739,7 +760,7 @@ class WafCBProject(CodeBlocks):
 
 		Will only be added if target does not exist yet.
 		'''
-		build = project.find('Build')			
+		build = project.find('Build')
 		for target in build.iter('Target'):
 			if target.get('title') == 'XXX':
 				commands = ElementTree.SubElement(target, 'ExtraCommands')
@@ -823,3 +844,4 @@ CODEBLOCKS_PROJECT = \
     </Project>
 </CodeBlocks_project_file>
 '''
+
