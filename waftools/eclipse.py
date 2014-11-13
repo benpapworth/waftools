@@ -178,8 +178,8 @@ def export(bld):
 	if not bld.options.eclipse and not hasattr(bld, 'eclipse'):
 		return
 
-	detect_project_duplicates(bld)
 	targets = waftools.get_targets(bld)
+	detect_project_duplicates(bld, targets)
 
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
@@ -212,7 +212,7 @@ def cleanup(bld):
 			CDTProject(bld, tgen).cleanup()
 
 
-def detect_project_duplicates(bld):
+def detect_project_duplicates(bld, targets):
 	'''Warns when multiple TaskGen's have been defined in the same directory.
 
 	Since Eclipse works with static project filenames, only one project per
@@ -226,6 +226,9 @@ def detect_project_duplicates(bld):
 	anomalies = {}
 
 	for tgen in bld.task_gen_cache_names.values():
+		if targets and tgen.get_name() not in targets:
+			continue
+		
 		name = tgen.get_name()
 		location = str(tgen.path.relpath()).replace('\\', '/')
 		
@@ -942,7 +945,7 @@ class CDTLaunch(Project):
 
 		attrib = root.find('mapAttribute')
 		
-		uses = get_deps(self.bld, self.tgen.get_name())		
+		uses = waftools.get_deps(self.bld, self.tgen.get_name())
 		for use in uses:
 			try:
 				tg = self.bld.get_tgen_by_name(use)

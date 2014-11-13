@@ -3,6 +3,7 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 import os
+from waflib import Utils
 
 version = "0.3.8"
 location = os.path.abspath(os.path.dirname(__file__))
