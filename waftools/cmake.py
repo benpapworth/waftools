@@ -287,14 +287,14 @@ class CMake(object):
 			content += 'add_definitions(-D%s)\n' % (' -D'.join(defines))
 			content += '\n'
 
-		if set(('cshlib', 'cxxshlib')) & set(tgen.features):
-			content += 'add_library(%s SHARED ${%s_SOURCES})\n' % (name, name)
-			
-		elif set(('cstlib', 'cxxstlib')) & set(tgen.features):
-			content += 'add_library(%s ${%s_SOURCES})\n' % (name, name)
-
-		else:
+		if set(('cprogram', 'cxxprogram')) & set(tgen.features):
 			content += 'add_executable(%s ${%s_SOURCES})\n' % (name, name)
+		
+		elif set(('cshlib', 'cxxshlib')) & set(tgen.features):
+			content += 'add_library(%s SHARED ${%s_SOURCES})\n' % (name, name)
+
+		else: # cstlib, cxxstlib or objects
+			content += 'add_library(%s ${%s_SOURCES})\n' % (name, name)
 
 		libs = getattr(tgen, 'use', []) + getattr(tgen, 'lib', [])
 		if len(libs):

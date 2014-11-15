@@ -2,6 +2,12 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.3.9**, 2014-11-15:
+- *waftools*; return unique list of deps in *waftools.get_deps()*
+- *eclipse*; [bug fix] export *bld.objects()* as static library
+- *cmake*; [bug fix] export *bld.objects()* as static library
+
+
 **v0.3.8**, 2014-11-13:
 - issue9_; add *-pthread* option by default in gnucc and use it for export(*eclipse*, *makefiles*, *codeblocks*)
 - *eclipse*; [bug fix] added shared system libs

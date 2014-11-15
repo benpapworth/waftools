@@ -4,10 +4,10 @@
    contain the root `toctree` directive.
 
 
-Waftools 0.3.8 documentation
+Waftools 0.3.9 documentation
 ============================
 Welcome! This is the documentation for the *waftools* package, last updated 
-November 13\ :sup:`th`\  2014.
+November 15\ :sup:`th`\  2014.
 
 
 Overview

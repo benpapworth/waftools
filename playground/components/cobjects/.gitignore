@@ -1,0 +1,7 @@
+*.launch
+/debug-*/
+/debug/
+/release/
+/release-*/
+.settings/
+

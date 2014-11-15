@@ -389,6 +389,10 @@ class CDTProject(EclipseProject):
 	'''
 	def __init__(self, bld, tgen):
 		super(CDTProject, self).__init__(bld, tgen, '.cproject', ECLIPSE_CDT_PROJECT)
+		
+		if not set(('c', 'cxx')) & set(tgen.features):
+			bld.fatal("ERROR: '%s' is not a C/C++ build task" % tgen.get_name())
+		
 		d = tgen.env.DEST_OS
 		c = tgen.env.DEST_CPU
 		l = 'cpp' if 'cxx' in tgen.features else 'c'
@@ -404,13 +408,13 @@ class CDTProject(EclipseProject):
 			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.exe'
 			self.cdt['artifactExtension'] = 'exe' if d=='win32' else ''
 
-		if set(('cshlib', 'cxxshlib')) & set(tgen.features):
+		elif set(('cshlib', 'cxxshlib')) & set(tgen.features):
 			self.cdt['ext'] = 'so'
 			self.cdt['kind'] = 'Shared Library'
 			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.sharedLib'
 			self.cdt['artifactExtension'] = 'dll' if d=='win32' else 'so'
 
-		if set(('cstlib', 'cxxstlib')) & set(tgen.features):
+		else: # cstlib, cxxstlib or plain objects
 			self.cdt['ext'] = 'lib'
 			self.cdt['kind'] = 'Static Library'
 			self.cdt['buildArtefactType'] = 'org.eclipse.cdt.build.core.buildArtefactType.staticLib'
@@ -754,7 +758,7 @@ class CDTProject(EclipseProject):
 	def compiler_add_includes(self, compiler, language):
 		if self.language != language:
 			return
-		uses = Utils.to_list(getattr(self.tgen, 'use', []))
+		uses = waftools.get_deps(self.bld, self.tgen.get_name())
 		includes = Utils.to_list(getattr(self.tgen, 'includes', []))
 		
 		if not len(uses) and not len(includes):
@@ -771,6 +775,14 @@ class CDTProject(EclipseProject):
 				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 				listoption.set('value', '"${workspace_loc:/${ProjName}/%s}"' % (include))
 
+		includes = list(self.bld.env.INCLUDES)
+		includes = [i.abspath() if hasattr(i, 'abspath') else i for i in includes]
+		includes = [i.replace('\\', '/') for i in includes]
+		for include in includes:
+			if os.path.exists(include):
+				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+				listoption.set('value', '"%s"' % (include))
+				
 		for use in uses:
 			try:
 				tg = self.bld.get_tgen_by_name(use)
@@ -783,7 +795,8 @@ class CDTProject(EclipseProject):
 					top = tg.path.abspath().replace('\\', '/')
 					includes = ['%s/%s' % (top, i) for i in includes if len(i)]
 				else:
-					includes = list(set([str(i).lstrip('./') for i in includes]))
+					includes = list(set([str(i) for i in includes]))
+					includes = [i.lstrip('./') if i.startswith('./') else i for i in includes]
 					includes = ['"${workspace_loc:/%s/%s}"' % (use, i) for i in includes if len(i)]
 					
 				for include in includes:
@@ -851,21 +864,69 @@ class CDTProject(EclipseProject):
 		self.toolchain_linker_add_libpaths(linker, language)
 		self.toolchain_linker_add_input(linker, language)
 
-	def toolchain_linker_get_libs(self):
-		libs = []
-		for use in getattr(self.tgen, 'use', []):
-			try:
-				tgen = self.bld.get_tgen_by_name(use)
-			except Errors.WafError:
-				pass
-			else:
-				name = tgen.get_name()
-				if set(('cstlib', 'cshlib','cxxstlib', 'cxxshlib')) & set(tgen.features):
-					libs.append((name,None))
+	def _get_libs(self, target, nest):
+		try:
+			tgen = self.bld.get_tgen_by_name(target)
+		except Errors.WafError:
+			return []
+		name = tgen.get_name()
+		features = Utils.to_list(getattr(tgen, 'features', []))
+		
+		if 'fake_lib' in features:
+			paths = [p.replace('\\', '/') for p in tgen.lib_paths]
+			return [(nest, name, None, paths)]
+		
+		if not set(('c','cxx')) & set(features):
+			return []
+		
+		libs = [(nest, name, name, None)]		
+		
+		if set(('cshlib', 'cxxshlib')) & set(features):
+			return libs
+		
+		for lib in Utils.to_list(getattr(tgen, 'lib', [])):
+			libs.append((nest, lib, None, None))
+			
+		for use in getattr(tgen, 'use', []):
+			libs.extend(self._get_libs(use, nest+1))
+		
+		return libs
 
-				elif 'fake_lib' in tgen.features:
-					paths = [p.replace('\\', '/') for p in tgen.lib_paths]
-					libs.append((name, paths))
+	def toolchain_linker_get_libs(self):
+		'''returns a list of tuples containing lib name, task name and list of 
+		search paths.
+		
+		libs = [(str, str, []), (str, str, []), ... ]
+		
+		'''
+		tgen = self.tgen
+		name = tgen.get_name()
+		libs = []
+		uses = []
+		for use in Utils.to_list(getattr(tgen, 'use', [])):
+			uses.extend(self._get_libs(use, 0))
+			
+		# sort by task with highest nesting
+		uses = list(set(uses))
+		uses = sorted(uses, key=lambda use: use[0])
+		uses = uses[::-1]
+
+		# insert tasks at start of list
+        # lowest nesting at start
+		for (_, lib, name, paths) in uses:
+			if name:
+				entry = (lib, name, paths)
+				if entry not in libs:
+					libs.insert(0, entry)
+
+		# append system libraries at end of list
+		for lib in Utils.to_list(getattr(tgen, 'lib', [])):
+			libs.append((lib, None, None))
+		for (_, lib, name, paths) in uses:
+			if not name:
+				entry = (lib, name, paths)
+				if entry not in libs:
+					libs.append(entry)
 		return libs
 
 	def toolchain_linker_add_libs(self, linker, language):
@@ -877,11 +938,7 @@ class CDTProject(EclipseProject):
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 
 		libs = self.toolchain_linker_get_libs()
-		for (lib, _) in libs:
-			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
-			listoption.set('value', lib)
-			
-		for lib in getattr(self.tgen, 'lib', []):
+		for (lib, _, _) in libs:
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 			listoption.set('value', lib)
 
@@ -894,11 +951,12 @@ class CDTProject(EclipseProject):
 		option.set('id', '%s.%s' % (option.get('superClass'), self.get_uuid()))
 
 		libs = self.toolchain_linker_get_libs()
-		for (lib, paths) in libs:
-			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
-			if not paths:
-				listoption.set('value', '"${workspace_loc:/%s/%s}"' % (lib, self.cdt['name']))
-			else:
+		for (_, name, paths) in libs:
+			if name:
+				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+				listoption.set('value', '"${workspace_loc:/%s/%s}"' % (name, self.cdt['name']))
+			elif paths:
+				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 				for path in paths:
 					listoption.set('value', path)
 

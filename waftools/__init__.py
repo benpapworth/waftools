@@ -5,7 +5,7 @@
 import os
 from waflib import Utils
 
-version = "0.3.8"
+version = "0.3.9"
 location = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -51,7 +51,7 @@ def get_scripts(top, name):
 	for loc in locations:
 		if any(os.path.dirname(loc).endswith(t) for t in locations):
 			continue
-		scripts.append(loc)
+		scripts.append(loc.replace('\\', '/'))
 	return scripts
 
 
@@ -68,7 +68,7 @@ def get_deps(bld, target):
 	deps = uses[:]
 	for use in uses:
 		deps += get_deps(bld, use)
-	return deps
+	return list(set(deps))
 
 
 def get_targets(bld):
