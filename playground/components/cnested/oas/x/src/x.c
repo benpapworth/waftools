@@ -4,6 +4,6 @@
 
 int x(int v)
 {
-	return (x(v) + 1);
+	return (y(v) + 1);
 }
 
