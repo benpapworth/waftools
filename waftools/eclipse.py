@@ -907,7 +907,6 @@ class CDTProject(EclipseProject):
 			uses.extend(self._get_libs(use, 0))
 			
 		# sort by task with highest nesting
-		uses = list(set(uses))
 		uses = sorted(uses, key=lambda use: use[0])
 		uses = uses[::-1]
 
