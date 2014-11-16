@@ -243,8 +243,9 @@ def cppcheck_execute(self):
 	check = bld.env.CPPCHECK_EXECUTE
 	
 	# check if this task generator should be checked
-	if not bool(check) and not bld.options.cppcheck:
-		return
+	if not bool(check):
+		if not bld.options.cppcheck and not bld.options.cppcheck_err_resume:
+			return
 	if getattr(self, 'cppcheck_skip', False):
 		return
 
@@ -684,14 +685,14 @@ class CppcheckGen(Cppcheck):
 
 				# TODO: TEMP fix for pygments when using python3
 				# only support C/C++ highlighting
-				if sys.version_info[0] > 2:
-					from pygments.lexers import CLexer
-					lexer = CLexer()
-				else:
-					lexer = pygments.lexers.guess_lexer_for_filename(source, "")
+				#if sys.version_info[0] > 2:
+				#	from pygments.lexers import CLexer
+				#	lexer = CLexer()
+				#else:
+				lexer = pygments.lexers.guess_lexer_for_filename(source, "")
 				
 				c = srcnode.read()
-				encoding = chardet.detect(c)['encoding']
+				##TODO FIXME: encoding = chardet.detect(c)['encoding']
 				s = pygments.highlight(c, lexer, formatter)
 				table = None
 				try:
@@ -699,7 +700,7 @@ class CppcheckGen(Cppcheck):
 				except UnicodeError:
 					Logs.warn('FAILED TO PARSE SOURCE FILE:')
 					Logs.warn('  file     = %s' % source)
-					Logs.warn('  encoding = %s' % encoding)
+					##TODO FIXME: Logs.warn('  encoding = %s' % encoding)
 
 				if table is not None:
 					content.append(table)
