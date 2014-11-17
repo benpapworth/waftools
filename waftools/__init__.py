@@ -4,7 +4,7 @@
 
 import os
 
-version = "0.4.0"
+version = "0.4.1"
 location = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -52,23 +52,6 @@ def get_scripts(top, name):
 			continue
 		scripts.append(loc.replace('\\', '/'))
 	return scripts
-
-
-def get_deps(bld, target):
-	'''Returns a list of (nested) targets on which this target depends.
-	
-	:param bld: a *waf* build instance from the top level *wscript*
-	:type bld: waflib.Build.BuildContext
-	:param target: task name for which the dependencies should be returned
-	:type target: str
-	:returns: a list of task names on which the given target depends
-	'''
-	from waflib import Utils
-	uses = Utils.to_list(getattr(bld.get_tgen_by_name(target), 'use', []))
-	deps = uses[:]
-	for use in uses:
-		deps += get_deps(bld, use)
-	return list(set(deps))
 
 
 def get_targets(bld):

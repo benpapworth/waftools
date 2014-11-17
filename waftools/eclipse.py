@@ -131,6 +131,22 @@ def configure(conf):
 	pass
 
 
+def get_deps(bld, target):
+	'''Returns a list of (nested) targets on which this target depends.
+	
+	:param bld: a *waf* build instance from the top level *wscript*
+	:type bld: waflib.Build.BuildContext
+	:param target: task name for which the dependencies should be returned
+	:type target: str
+	:returns: a list of task names on which the given target depends
+	'''
+	uses = Utils.to_list(getattr(bld.get_tgen_by_name(target), 'use', []))
+	deps = uses[:]
+	for use in uses:
+		deps += get_deps(bld, use)
+	return list(set(deps))
+
+
 class EclipseContext(BuildContext):
 	'''export C/C++ tasks to Eclipse CDT projects.'''
 	cmd = 'eclipse'
@@ -758,7 +774,7 @@ class CDTProject(EclipseProject):
 	def compiler_add_includes(self, compiler, language):
 		if self.language != language:
 			return
-		uses = waftools.get_deps(self.bld, self.tgen.get_name())
+		uses = get_deps(self.bld, self.tgen.get_name())
 		includes = Utils.to_list(getattr(self.tgen, 'includes', []))
 		
 		if not len(uses) and not len(includes):
@@ -1019,7 +1035,7 @@ class CDTLaunch(Project):
 
 		attrib = root.find('mapAttribute')
 		
-		uses = waftools.get_deps(self.bld, self.tgen.get_name())
+		uses = get_deps(self.bld, self.tgen.get_name())
 		for use in uses:
 			try:
 				tg = self.bld.get_tgen_by_name(use)
