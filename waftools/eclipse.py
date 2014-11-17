@@ -178,7 +178,7 @@ def export(bld):
 	if not bld.options.eclipse and not hasattr(bld, 'eclipse'):
 		return
 
-	targets = waftools.get_targets(bld)
+	targets = waftools.deps.get_targets(bld)
 	detect_project_duplicates(bld, targets)
 
 	for tgen in bld.task_gen_cache_names.values():
@@ -200,7 +200,7 @@ def cleanup(bld):
 	if not bld.options.eclipse and not hasattr(bld, 'eclipse'):
 		return
 
-	targets = waftools.get_targets(bld)
+	targets = waftools.deps.get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
@@ -758,7 +758,7 @@ class CDTProject(EclipseProject):
 	def compiler_add_includes(self, compiler, language):
 		if self.language != language:
 			return
-		uses = waftools.get_deps(self.bld, self.tgen.get_name())
+		uses = waftools.deps.get_deps(self.bld, self.tgen.get_name())
 		includes = Utils.to_list(getattr(self.tgen, 'includes', []))
 		
 		if not len(uses) and not len(includes):
@@ -1019,7 +1019,7 @@ class CDTLaunch(Project):
 
 		attrib = root.find('mapAttribute')
 		
-		uses = waftools.get_deps(self.bld, self.tgen.get_name())
+		uses = waftools.deps.get_deps(self.bld, self.tgen.get_name())
 		for use in uses:
 			try:
 				tg = self.bld.get_tgen_by_name(use)

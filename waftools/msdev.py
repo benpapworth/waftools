@@ -171,7 +171,7 @@ def export(bld):
 		return
 
 	solution = MsDevSolution(bld)
-	targets = waftools.get_targets(bld)
+	targets = waftools.deps.get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
@@ -198,7 +198,7 @@ def cleanup(bld):
 	if not bld.options.msdev and not hasattr(bld, 'msdev'):
 		return
 
-	targets = waftools.get_targets(bld)
+	targets = waftools.deps.get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:

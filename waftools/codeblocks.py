@@ -200,7 +200,7 @@ def export(bld):
 
 	cc_name = bld.env.CC_NAME
 	workspace = CBWorkspace(bld)
-	targets = waftools.get_targets(bld)
+	targets = waftools.deps.get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
@@ -245,7 +245,7 @@ def cleanup(bld):
 	if not bld.options.codeblocks and not hasattr(bld, 'codeblocks'):
 		return
 
-	targets = waftools.get_targets(bld)
+	targets = waftools.deps.get_targets(bld)
 
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:

@@ -489,7 +489,7 @@ def export(bld):
 		return
 
 	root = MakeRoot(bld)
-	targets = waftools.get_targets(bld)
+	targets = waftools.deps.get_targets(bld)
 	
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
@@ -511,7 +511,7 @@ def cleanup(bld):
 		return
 
 	root = MakeRoot(bld)
-	targets = waftools.get_targets(bld)
+	targets = waftools.deps.get_targets(bld)
 	
 	for tgen in bld.task_gen_cache_names.values():
 		if targets and tgen.get_name() not in targets:
