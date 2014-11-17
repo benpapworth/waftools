@@ -2,6 +2,10 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.0**, 2014-11-17:
+- *waftools*; install failes; do not import waflib.Utils from package level
+
+
 **v0.3.9**, 2014-11-16:
 - *waftools*; return unique list of deps in *waftools.get_deps()*
 - *eclipse*; [bug fix] use general compiler flags and includes

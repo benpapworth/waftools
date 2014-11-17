@@ -3,9 +3,8 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 import os
-from waflib import Utils
 
-version = "0.3.9"
+version = "0.4.0"
 location = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -63,7 +62,8 @@ def get_deps(bld, target):
 	:param target: task name for which the dependencies should be returned
 	:type target: str
 	:returns: a list of task names on which the given target depends
-	'''	
+	'''
+	from waflib import Utils
 	uses = Utils.to_list(getattr(bld.get_tgen_by_name(target), 'use', []))
 	deps = uses[:]
 	for use in uses:
