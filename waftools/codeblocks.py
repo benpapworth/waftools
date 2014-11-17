@@ -132,6 +132,7 @@ from xml.dom import minidom
 from waflib import Utils, Logs, Errors, Context
 from waflib.Build import BuildContext
 import waftools
+from waftools import deps
 
 
 def options(opt):

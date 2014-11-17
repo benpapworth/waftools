@@ -424,6 +424,7 @@ import re
 from waflib import Utils, Context, Logs
 from waflib.Build import BuildContext
 import waftools
+from waftools import deps
 
 
 def options(opt):

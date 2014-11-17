@@ -70,6 +70,7 @@ as shown below::
 from waflib.Build import BuildContext
 from waflib import Utils, Logs, Context
 import waftools
+from waftools import deps
 
 
 def options(opt):
