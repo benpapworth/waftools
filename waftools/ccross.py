@@ -69,11 +69,14 @@ build environments can be specified in a seperate .INI file (named ccross.ini
 in the example above) using following syntax::
 
 	[arm]
+	c = gcc
+	cxx = g++
 	prefix = arm-linux-gnueabihf
 
 The section name, *arm* in the example above, specifies the name of the cross-compile
-build environment variant. The prefix will be in used to create the concrete names of
-the cross compile toolchain binaries::
+build environment variant. The prefix combined with compiler type (c,cxx) will be 
+used in order to create the concrete names of the cross compile toolchain 
+binaries::
 
 	AR	= arm-linux-gnueabihf-ar
 	CC	= arm-linux-gnueabihf-gcc
@@ -94,8 +97,11 @@ try:
 except:
 	import configparser
 
-from waflib import Scripting, Errors, Logs
+from waflib import Scripting, Errors, Logs, Utils
 from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallContext
+from waflib.Tools.compiler_c import c_compiler
+from waflib.Tools.compiler_cxx import cxx_compiler
+
 import waftools
 from waftools.codeblocks import CodeblocksContext
 from waftools.makefile import MakeFileContext
@@ -110,10 +116,15 @@ CCROSS_OPT='ccross'
 def options(opt):
 	opt.add_option('--all', dest='all', default=False, action='store_true', 
 				help='execute command for cross-compile environments as well')
+				
+	opt.add_option('--cchost', dest='cchost', default=False, action='store_true', 
+				help='use the default C/C++ compiler for this platform')
 
 	opt.add_option(CCROSS_ARG, dest=CCROSS_OPT, default=CCROSS_INI, action='store', 
 				help='cross compile configuration')
 
+	opt.load('compiler_c')
+	opt.load('compiler_cxx')
 	opt.load('cmake', tooldir=waftools.location)
 	opt.load('codeblocks', tooldir=waftools.location)
 	opt.load('cppcheck', tooldir=waftools.location)
@@ -128,19 +139,105 @@ def options(opt):
 
 
 def configure(conf):
-	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')
-	
+	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')	
 	conf.env.PREFIX = str(conf.env.PREFIX).replace('\\', '/')
 	conf.env.CCROSSINI = getattr(conf.options, CCROSS_OPT)
-	conf.env.CCROSS = _get_config(conf.env.CCROSSINI)
-	_config_cross(conf)
+	conf.env.CCROSS = get_ccross(conf.env.CCROSSINI)
+	
+	c = c_compiler.copy()
+	cxx = cxx_compiler.copy()
+	host = Utils.unversioned_sys_platform()
+	if host not in c_compiler:
+		host = 'default'
+	configure_cross(conf, host)
+	configure_host(conf, host, c, cxx)
 
+
+def configure_host(conf, host, c, cxx):	
 	conf.setenv('')
-	_config_base(conf)
+	conf.msg('Configure environment', '%s (host)' % host, color='PINK')	
+	if conf.options.cchost:
+		c_compiler[host] = c[host]
+		cxx_compiler[host] = cxx[host]
+	else:
+		c_compiler[host] = ['gcc']
+		cxx_compiler[host] = ['g++']
+
+	configure_base(conf)
 	conf.load('cmake')
 	conf.load('doxygen')
 	conf.load('package')
 	conf.load('indent')
+
+
+def configure_cross(conf, host):
+	'''create and configure cross compile environments
+
+ 	uses the the configuration data as specified in the *.ini
+	file using configparser.ExtendedInterpolation syntax.
+	'''
+	prefix = conf.env.PREFIX
+	ccross = conf.env.CCROSS
+	
+	for name, ini in ccross.items(): # setup cross compile environment(s)
+		conf.setenv(name)
+		conf.msg('Configure environment', '%s (cross)' % name, color='PINK')
+		conf.env.CCROSS = ccross
+		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
+		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
+		conf.env.LIBDIR = '%s/opt/%s/lib' % (prefix, name)
+		
+		for (var, action, value) in ini['env']:
+			if action == 'set':
+				conf.env[var] = value
+			else:
+				conf.env.append_unique(var, value)
+
+		c_compiler[host] = ini['c']
+		cxx_compiler[host] = ini['cxx']
+
+		head = ini['prefix']
+		for tail in ini['c']:
+			if tail != 'msvc':
+				try:
+					cc = '%s-%s' % (head, tail) if head else tail
+					conf.find_program(cc, var='CC')
+				except Errors.ConfigurationError:
+					Logs.debug("program '%s' not found" % (cc))
+				else:
+					break
+		
+		for tail in ini['cxx']:
+			if tail != 'msvc':
+				try:
+					cxx = '%s-%s' % (head, tail) if head else tail
+					conf.find_program(cxx, var='CXX')
+				except Errors.ConfigurationError:
+					Logs.debug("program '%s' not found" % (cxx))
+				else:
+					break
+
+		if ini['c'][0] != 'msvc':
+			ar = '%s-ar' % (head) if head else 'ar'
+			conf.find_program(ar, var='AR')
+		configure_base(conf)
+
+
+def configure_base(conf):
+	try:
+		conf.load('compiler_c unity')
+		conf.load('compiler_cxx unity')
+		conf.load('batched_cc')
+	except Errors.ConfigurationError: # retry without unity,batched_cc
+		conf.load('compiler_c')
+		conf.load('compiler_cxx')
+	conf.load('cppcheck')
+	conf.load('codeblocks')
+	conf.load('eclipse')
+	conf.load('gnucc')
+	conf.load('makefile')
+	conf.load('msdev')
+	conf.load('tree')
 
 
 def build(bld, trees=[]):
@@ -158,79 +255,26 @@ def build(bld, trees=[]):
 		for script in waftools.get_scripts(tree, 'wscript'):
 			bld.recurse(script)
 
-
-def _config_base(conf):
-	try:
-		conf.load('compiler_c unity')
-		conf.load('compiler_cxx unity')
-		conf.load('batched_cc')
-	except Errors.ConfigurationError: # retry without unity,batched_cc
-		conf.load('compiler_c')
-		conf.load('compiler_cxx')
-	conf.load('cppcheck')
-	conf.load('codeblocks')
-	conf.load('eclipse')
-	conf.load('gnucc')
-	conf.load('makefile')
-	conf.load('msdev')
-	conf.load('tree')
-
-
-def _config_cross(conf):
-	'''create and configure cross compile environments
-
- 	uses the the configuration data as specified in the *.ini
-	file using configparser.ExtendedInterpolation syntax.
-	'''
-	prefix = conf.env.PREFIX
-	ccross = conf.env.CCROSS
-
-	for name, ini in ccross.items(): # setup cross compile environment(s)
-		conf.setenv(name)
-		conf.env.CCROSS = ccross
-		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)
-		conf.env.BINDIR = '%s/opt/%s/bin' % (prefix, name)
-		conf.env.LIBDIR = '%s/opt/%s/lib' % (prefix, name)
 		
-		for (var, action, value) in ini['env']:
-			if action == 'set':
-				conf.env[var] = value
-			else:
-				conf.env.append_unique(var, value)	
-
-		pre = ini['prefix']
-		cc = '%s-gcc' % (pre) if pre else 'gcc'			
-		conf.find_program(cc, var='CC')
-		
-		for ext in ('gxx','g++','c++'):
-			cxx = '%s-%s' % (pre, ext) if pre else ext
-			try:
-				conf.find_program(cxx, var='CXX')
-			except Errors.ConfigurationError:
-				Logs.debug("program '%s' not found" % (cxx))
-			else:
-				break
-		
-		ar = '%s-ar' % (pre) if pre else 'ar'			
-		conf.find_program(ar, var='AR')
-		_config_base(conf)
-
-
-def _get_config(name):
+def get_ccross(fname):
 	'''Returns dictionary of cross-compile build environments. Dictionary key name
 	depict the environment name (i.e. variant name).
 
 	
-	:param name: Complete path to the config.ini file
-	:type name: str
+	:param fname: Complete path to the config.ini file
+	:type fname: str
 	'''
-	if not os.path.exists(name):
-		Logs.warn("CCROSS: ini file '%s' not found!" % name)
+	if not os.path.exists(fname):
+		Logs.warn("CCROSS: ini file '%s' not found!" % fname)
 	cross = {}
 	c = configparser.ConfigParser()
-	c.read(name)
+	c.read(fname)
 	for s in c.sections():
-		cross[s] = {'prefix' : None, 'shlib' : [], 'env' : []}
+		cross[s] = {'prefix' : None, 'shlib' : [], 'env' : [], 'c': ['gcc'], 'cxx': ['g++']}
+		if c.has_option(s, 'c'):
+			cross[s]['c'] = c.get(s,'c').split(',')
+		if c.has_option(s, 'cxx'):
+			cross[s]['cxx'] = c.get(s,'cxx').split(',')
 		if c.has_option(s, 'prefix'):
 			cross[s]['prefix'] = c.get(s,'prefix')
 		if c.has_option(s, 'shlib'):
@@ -240,21 +284,21 @@ def _get_config(name):
 	return cross
 
 
-def variants(name=None):
+def variants(fname=None):
 	'''Returns a list of variant names; i.e. a list of names for build environments 
 	that have been defined in the 'ccross.ini' configuration file.
 	
-	:param name: Complete path to the config.ini file
-	:type name: str
+	:param fname: Complete path to the config.ini file
+	:type fname: str
 	'''
-	if not name:
-		name = CCROSS_INI
+	if not fname:
+		fname = CCROSS_INI
 		opt = '%s=' % CCROSS_ARG
 		for a in sys.argv:
 			if a.startswith(opt):
-				name = a.replace(opt, '')
+				fname = a.replace(opt, '')
 
-	cross = _get_config(name)
+	cross = get_ccross(fname)
 	return list(cross.keys())
 
 
