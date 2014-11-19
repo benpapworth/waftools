@@ -15,7 +15,7 @@ environment. Note that many linux distributions already provide a ready to
 install version of **cppcheck**. On *Fedora*, for instance, it can be installed
 using *yum*::
 
-	$ sudo yum install cppcheck
+    $ sudo yum install cppcheck
 
 
 Description
@@ -38,49 +38,47 @@ also be changed to, see command line options.
 Example below present an example of the reports generated in a build environment
 in which three *C* components have been defined::
 
-	.
-	├── components
-	│   ├── chello
-	│   │   ├── include
-	│   │   │   └── hello.h
-	│   │   ├── src
-	│   │   │   └── hello.c
-	│   │   └── wscript
-	│   ├── ciambad
-	│   │   ├── cppcheck.suppress
-	│   │   ├── include
-	│   │   ├── src
-	│   │   │   └── iambad.c
-	│   │   └── wscript
-	│   └── cleaking
-	│       ├── include
-	│       │   └── leaking.h
-	│       ├── src
-	│       │   └── leaking.c
-	│       └── wscript
-	├── reports
-	│   └── cppcheck
-	│       ├── components
-	│       │   ├── chello
-	│       │   │   ├── chello
-	│       │   │   │   ├── index.html
-	│       │   │   │   └── style.css
-	│       │   │   └── chello.xml
-	│       │   ├── ciambad
-	│       │   │   ├── ciambad
-	│       │   │   │   ├── 0.html
-	│       │   │   │   ├── index.html
-	│       │   │   │   └── style.css
-	│       │   │   └── ciambad.xml
-	│       │   └── cleaking
-	│       │       ├── cleaking
-	│       │       │   ├── 0.html
-	│       │       │   ├── index.html
-	│       │       │   └── style.css
-	│       │       └── cleaking.xml
-	│       ├── index.html
-	│       └── style.css
-	└── wscript
+    .
+    ├── components
+    │   ├── chello
+    │   │   ├── include
+    │   │   │   └── hello.h
+    │   │   ├── src
+    │   │   │   └── hello.c
+    │   │   └── wscript
+    │   ├── ciambad
+    │   │   ├── cppcheck.suppress
+    │   │   ├── include
+    │   │   ├── src
+    │   │   │   └── iambad.c
+    │   │   └── wscript
+    │   └── cleaking
+    │       ├── include
+    │       │   └── leaking.h
+    │       ├── src
+    │       │   └── leaking.c
+    │       └── wscript
+    ├── reports
+    │   └── cppcheck
+    │       ├── components
+    │       │   ├── chello
+    │       │   │   ├── chello.html
+    │       │   │   ├── index.html
+    │       │   │   ├── style.css
+    │       │   │   └── chello.xml
+    │       │   ├── ciambad
+    │       │   │   ├── ciambad.html
+    │       │   │   ├── index.html
+    │       │   │   ├── style.css
+    │       │   │   └── ciambad.xml
+    │       │   └── cleaking
+    │       │       ├── cleaking.html
+    │       │       ├── index.html
+    │       │       ├── style.css
+    │       │       └── cleaking.xml
+    │       ├── index.html
+    │       └── style.css
+    └── wscript
 
 Note that each report for a task generator from the components directory 
 contains an extra indent in the reports directory; cppchecks reports are stored
@@ -105,25 +103,25 @@ Usage
 In order to use this waftool simply add it to the 'options' and 'configure' 
 functions of your main *waf* script as shown in the example below::
 
-	import waftools
+    import waftools
 
-	def options(opt):
-		opt.load('cppcheck', tooldir=waftools.location)
+    def options(opt):
+        opt.load('cppcheck', tooldir=waftools.location)
 
-	def configure(conf):
-		conf.load('cppcheck')
+    def configure(conf):
+        conf.load('cppcheck')
 
 When configured as shown in the example above, **cppcheck** will perform a 
 source code analysis on all C/C++ tasks that have been defined in your *waf* 
 build environment when using the '--cppcheck' build option::
 
-	waf build --cppcheck
+    waf build --cppcheck
 
 The example shown below for a C program will be used as input for **cppcheck** 
 when building the task::
 
-	def build(bld):
-		bld.program(name='foo', src='foobar.c')
+    def build(bld):
+        vbld.program(name='foo', src='foobar.c')
 
 The result of the source code analysis will be stored both as XML and HTML 
 files in the build location for the task. Should any error be detected by
@@ -132,7 +130,7 @@ report will be presented. When desired you also choose to resume with checking
 other components after a fatal error has been detected using the following command
 line option::
 
-	$ waf build --cppcheck --cppcheck-err-resume 
+    $ waf build --cppcheck --cppcheck-err-resume 
 
 When needed source code checking by **cppcheck** can be disabled per task or even 
 for each specific error and/or warning within a particular task.
@@ -140,14 +138,14 @@ for each specific error and/or warning within a particular task.
 In order to exclude a task from source code checking add the skip option to the
 task as shown below::
 
-	def build(bld):
-		bld.program(name='foo',	src='foobar.c',	cppcheck_skip=True)
+    def build(bld):
+        bld.program(name='foo', src='foobar.c', cppcheck_skip=True)
 
 When needed problems detected by cppcheck may be suppressed using a file 
 containing a list of suppression rules. The relative or absolute path to this 
 file can be added to the build task as shown in the example below::
 
-	bld.program(name='bar', src='foobar.c', cppcheck_suppress='bar.suppress')
+    bld.program(name='bar', src='foobar.c', cppcheck_suppress='bar.suppress')
 
 A **cppcheck** suppress file should contain one suppress rule per line. Each of 
 these rules will be passed as an '--suppress=<rule>' argument to **cppcheck**.
@@ -158,6 +156,8 @@ import os
 import sys
 import xml.etree.ElementTree as ElementTree
 from waflib import TaskGen, Context, Logs, Utils
+
+CPPCHECK_WARNINGS = ['error', 'warning', 'performance', 'portability', 'unusedFunction']
 
 
 def options(opt):
@@ -215,7 +215,7 @@ def configure(conf):
 	if conf.options.cppcheck:
 		conf.env.CPPCHECK_EXECUTE = [1]
 	conf.env.CPPCHECK_PATH = conf.options.cppcheck_path
-	conf.env.CPPCHECK_FATALS = conf.options.cppcheck_fatals.split(',')	
+	conf.env.CPPCHECK_FATALS = conf.options.cppcheck_fatals.split(',')
 	conf.env.CPPCHECK_STD_C = conf.options.cppcheck_std_c
 	conf.env.CPPCHECK_STD_CXX = conf.options.cppcheck_std_cxx
 	conf.env.CPPCHECK_MAX_CONFIGS = conf.options.cppcheck_max_configs
@@ -223,6 +223,22 @@ def configure(conf):
 	conf.env.CPPCHECK_LIB_ENABLE = conf.options.cppcheck_lib_enable
 	conf.find_program('cppcheck', var='CPPCHECK')
 
+
+def postfun(bld):
+	'''Method that will be invoked by the *waf* build environment once the 
+	build has been completed.
+	
+	It will use the result of the source code checking stored within the given
+	build context and use it to create a global HTML index. This global index
+	page contains a reference to all reports on C/C++ components that have been
+	checked.
+	
+	:param bld: Build context from the *waf* build environment.
+	:type bld: waflib.Build.BuildContext
+	'''
+	for entry in bld.catalog:
+		print(entry)
+	
 
 @TaskGen.feature('c')
 @TaskGen.feature('cxx')
@@ -236,132 +252,121 @@ def cppcheck_execute(self):
 	'''
 	bld = self.bld
 	check = bld.env.CPPCHECK_EXECUTE
-	root = bld.env.CPPCHECK_PATH
+	root = str(bld.env.CPPCHECK_PATH).replace('\\', '/')
 	if not bool(check):
 		if not bld.options.cppcheck and not bld.options.cppcheck_err_resume:
 			return
 	if getattr(self, 'cppcheck_skip', False):
 		return
 
-	if not hasattr(bld, 'cppcheck_catalog'):
-		bld.cppcheck_catalog = []
-		bld.add_post_fun(cppcheck_postfun)
+	if not hasattr(bld, 'catalog'):
+		bld.catalog = []
+		bld.add_post_fun(postfun)
 
 	fatals = bld.env.CPPCHECK_FATALS
 	if bld.options.cppcheck_err_resume:
 		fatals = []
 
-	cppcheck = CppcheckGen(self, root, fatals)
-	cppcheck.execute()
-	
-	index = None # HTML index
-	severities = cppcheck.severities
-
-	catalog = bld.cppcheck_catalog
-	catalog.append( (self.get_name(), index, severities) )
+	index = '%s/%s/%s/index.html' % (bld.path.abspath(), root, self.path.relpath())
+	severities = CppCheck(self, root, fatals).execute()
+	bld.catalog.append( (self.get_name(), index.replace('\\', '/'), severities) )
 
 
-def cppcheck_postfun(bld):
-	'''Method that will be invoked by the *waf* build environment once the 
-	build has been completed.
-	
-	It will use the result of the source code checking stored within the given
-	build context and use it to create a global HTML index. This global index
-	page contains a reference to all reports on C/C++ components that have been
-	checked.
-	
-	:param bld: Build context from the *waf* build environment.
-	:type bld: waflib.Build.BuildContext		
-	'''
-	pass
-	
+class Defect(object):
+	def __init__(self, id, severity, msg='', verbose='', file='', line=0):
+		self.id = id
+		self.severity = severity
+		self.msg = msg
+		self.verbose = verbose
+		self.file = file
+		self.line = line
 
-class CppcheckDefect(object):
-	'''Temporary placeholder for passing reported defects per component within 
-	this module.
-
-	At run time the following attributes will be added::
 	
-		defect.id
-		defect.severity
-		defect.msg
-		defect.verbose
-		defect.file
-		defect.line
-	'''
-
-
-class Cppcheck(object):
-	'''Base class creating a **cppcheck** source code HTML report.
+class CppCheck(object):
+	'''Class used for creating colorfull HTML reports based on the source code 
+	check results from **cppcheck**.
 	
-	:param bld: a *waf* build instance from the top level *wscript*.
-	:type bld: waflib.BuildContext
+	Excutes source code checking on each C/C++ source file defined in the 
+	task generator.
+
+	Performs following steps per source file:
+	- check source using cppcheck, use xml output
+	- save the result from stderr as xml file
+	- process and convert the results from stderr and save as html report
+	- report defects, if any, to stout and including a link to the report
 	
-	:param root: location (path) where the report should be stored 
+	:param tgen: Contains all input information for the C/C++ component
+	:type tgen: waflib.Task.TaskGen
+	:param root: top level directory for storing the reports
 	:type root: str
+	:param fatals: list of severities that should be treated as fatal when encountered
+	:type fatals: list
 	'''
-	def __init__(self, bld, root):
-		self.bld = bld
-		self.root = root.replace('\\', '/')
+	def __init__(self, tgen, root, fatals):
+		self.tgen = tgen
+		self.bld = tgen.bld
+		self.root = root
+		self.fatals = fatals
+		self.warnings = CPPCHECK_WARNINGS
 
 	def save(self, fname, content):
-		fname = '%s/%s' % (self.root, fname)
+		fname = '%s/%s/%s' % (self.root, self.tgen.path.relpath(), fname)
 		path = os.path.dirname(fname)
 		if not os.path.exists(path):
 			os.makedirs(path)
 		node = self.bld.path.make_node(fname)
 		node.write(content)
-		return node
+		return node.abspath().replace('\\', '/')
 
+	def save_xml(self, fname, stderr, cmd):
+		root = ElementTree.fromstring(stderr)
+		element = ElementTree.SubElement(root.find('cppcheck'), 'cmd')
+		element.text = cmd
+		s = ElementTree.tostring(root)
+		return self.save(fname, s.decode('utf-8'))
 
-class CppcheckGen(Cppcheck):
-	'''Class used for creating colorfull HTML reports based on the source code 
-	check results from **cppcheck**.
-	
-	:param taskgen: Contains all input information for the C/C++ component
-	:type taskgen: waflib.Task.TaskGen
-	:param root: path where the HTML report will be stored
-	:type root: str
-	:param fatals: List of severities that should be treated as fatal when encountered
-	:type fatals: list
-	'''	
-	def __init__(self, taskgen, root, fatals):
-		super(CppcheckGen, self).__init__(taskgen.bld, root)
-		self.taskgen = taskgen
-		self.severities = []
-		self.fatals = fatals
+	def defects(self, stderr):
+		defects = []
+		for error in ElementTree.fromstring(stderr).iter('error'):
+			defect = Defect(error.get('id'), error.get('severity'))
+			defect.msg = str(error.get('msg')).replace('<','&lt;')
+			defect.verbose = error.get('verbose')
+			for location in error.findall('location'):
+				defect.file = location.get('file')
+				defect.line = str(int(location.get('line')))
+			defects.append(defect)
+		return defects
+		
+	def report(self, bld, tgen, fatals, defects):
+		name = tgen.get_name()
+		url = '%s/%s/%s/index.html' % (bld.path.abspath(), self.root, tgen.path.relpath())
+		Logs.pprint('PINK', '%s:' % name)
+		for d in defects:
+			if d.severity == 'error': color = 'RED'
+			else: color = 'YELLOW' if d.severity in self.warnings else 'GREEN'
+			if d.file != '':
+				Logs.pprint(color, '\tfile:///%s (line:%s)' % (d.file, d.line))
+			Logs.pprint(color, '\t%s %s %s' % (d.id, d.severity, d.msg))
+			if d.severity in fatals:
+				bld.fatal('%s: fatal error(%s) detected' % (name, d.severity))
 
 	def execute(self):
-		'''Excutes source code checking using cppcheck on the C/C++
-		component.
-		
-		The XML results from cppcheck will converted and used to create
-		HTML reports.
+		severity = []
+		for (name, cmd) in self.commands():
+			stderr = self.bld.cmd_and_log(cmd.split(), quiet=Context.BOTH, output=Context.STDERR)
+			xml = self.save_xml(name, stderr, cmd)
+			defects = self.defects(stderr)
+			self.report(self.bld, self.tgen, self.fatals, defects)
+			severity.extend([defect.severity for defect in defects])
+		return severity
 
-		Performs following steps per task generator:
-		- save the result from command line to a XML report
-		- process and convert the results from command line
-		- report defects to standard output including a link to the report
-		
-		Returns a list of detected severities for this component.
-		'''
-		bld = self.taskgen.bld
-		cmd = self.get_command()
-
-		stderr = bld.cmd_and_log(cmd, quiet=Context.BOTH, output=Context.STDERR)
-		self.save_report(stderr, cmd)
-		defects = self.get_defects(stderr)
-		self.print_defects(defects)
-		
-		self.severities = [defect.severity for defect in defects]
-		return self.severities
-
-	def get_command(self):
-		'''returns the CPPCHECK command to be executed'''
+	def commands(self):
+		'''returns a list of the commands to be executed, one per source file'''
 		bld = self.bld
-		gen = self.taskgen
-		env = self.taskgen.env
+		gen = self.tgen
+		env = self.tgen.env
 		features = getattr(gen, 'features', [])
+		commands = []
 
 		if 'cxx' in features:
 			language = 'c++ --std=%s' % env.CPPCHECK_STD_CXX
@@ -379,60 +384,15 @@ class CppcheckGen(Cppcheck):
 			cmd += ' --enable=%s' % env.CPPCHECK_BIN_ENABLE
 		elif set(['cstlib','cshlib','cxxstlib','cxxshlib']) & set(features):
 			cmd += ' --enable=%s' % env.CPPCHECK_LIB_ENABLE
-		
+
+		inc = ''
+		for i in gen.to_incnodes(gen.to_list(getattr(gen, 'includes', []))):
+			inc += ' -I%r' % i
+		for i in gen.to_incnodes(gen.to_list(gen.env.INCLUDES)):
+			inc += ' -I%r' % i
+
 		for src in gen.to_list(gen.source):
-			cmd += ' %r' % src
-		for inc in gen.to_incnodes(gen.to_list(getattr(gen, 'includes', []))):
-			cmd += ' -I%r' % inc
-		for inc in gen.to_incnodes(gen.to_list(gen.env.INCLUDES)):
-			cmd += ' -I%r' % inc
-		return cmd.split()
-
-	def save_report(self, stderr, cmd):
-		'''Creates and saves the XML report from CppCheck to file.'''
-		root = ElementTree.fromstring(stderr)
-		element = ElementTree.SubElement(root.find('cppcheck'), 'cmd')
-		element.text = str(' '.join(cmd))
-		s = ElementTree.tostring(root)
-		content = s.decode('utf-8')		
-		gen = self.taskgen
-		fname = '%s/%s.xml' % (gen.path.relpath(), gen.get_name())
-		self.save(fname, content)
-
-	def get_defects(self, stderr):
-		defects = []
-		for error in ElementTree.fromstring(stderr).iter('error'):
-			defect = CppcheckDefect()
-			defect.id = error.get('id')
-			defect.severity = error.get('severity')
-			defect.msg = str(error.get('msg')).replace('<','&lt;')
-			defect.verbose = error.get('verbose')
-			
-			for location in error.findall('location'):
-				defect.file = location.get('file')
-				defect.line = str(int(location.get('line')))
-			defects.append(defect)
-		return defects
-
-	def print_defects(self, defects):
-		bld = self.bld
-		gen = self.taskgen
-		
-		name = gen.get_name()
-		fatal = self.fatals
-		severity = [d.severity for d in defects]
-		problems = [d for d in defects if d.severity != 'information']
-
-		if set(fatal) & set(severity):
-			exc  = "\n"
-			exc += "\nccpcheck detected fatal error(s) in task '%s', see report for details:" % (name)
-			#exc += "\n    file://%r" % (index)
-			exc += "\n"
-			bld.fatal(exc)
-
-		elif len(problems):
-			msg =  "\nccpcheck detected (possible) problem(s) in task '%s', see report for details:" % (name)
-			#msg += "\n    file://%r" % (index)
-			msg += "\n"
-			Logs.error(msg)
+			fname = '%s.xml' % os.path.splitext(str(src))[0]
+			commands.append((fname, '%s %r %s' % (cmd, src, inc)))
+		return commands
 
