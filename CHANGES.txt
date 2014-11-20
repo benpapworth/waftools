@@ -2,10 +2,11 @@ History
 -------
 Following lists the changes per released version.
 
-**v0.4.1**, 2014-11-17:
+**v0.4.1**, 2014-11-20:
 - *ccross*; added support for msvc
 - *ccross*; use gcc as default host compiler, use --cchost to use default platform compiler
 - *ccross*; added option for specifying compiler postfix in ccross.ini file
+- *cppcheck*; reimplemented using JinJa2
 
 **v0.4.0**, 2014-11-17:
 - *waftools*; moved get_deps() and get_targets() to module *deps*

@@ -155,9 +155,323 @@ these rules will be passed as an '--suppress=<rule>' argument to **cppcheck**.
 import os
 import sys
 import xml.etree.ElementTree as ElementTree
+from jinja2 import Template
+import pygments
+from pygments import formatters, lexers
+from pygments.formatters import HtmlFormatter
 from waflib import TaskGen, Context, Logs, Utils
 
 CPPCHECK_WARNINGS = ['error', 'warning', 'performance', 'portability', 'unusedFunction']
+
+
+CPPCHECK_TOP_HTML = \
+'''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+    <head>
+        <title>ocit2 0.0.2</title>
+        <link href="style.css" rel="stylesheet" type="text/css" />
+		<style type="text/css"></style>
+    </head>
+    <body class="body">
+        <div id="page-header">&#160;</div>
+        <div id="page">
+            <div id="header">
+                <h1>ocit2 0.0.2</h1>
+            </div>
+            <div id="menu">
+                <a href="index.html">Home</a>
+            </div>
+            <div id="content">
+				<table>
+					<tr>
+						<th colspan="3">Component</th>
+						<th>Severity</th>
+					</tr>
+					{% for component in components %}
+					<tr>
+						<td colspan="3"><a href={{ component.url }}>{{ component.name }}</a></td>
+						<td>{{ component.severity }}</td>
+					</tr>
+					{% endfor %}
+				</table>
+			</div>
+			<div id="footer">
+				<div>cppcheck - a tool for static C/C++ code analysis</div>
+				<div>
+				Internet: <a href="http://cppcheck.sourceforge.net">http://cppcheck.sourceforge.net</a><br>
+				Forum: <a href="http://apps.sourceforge.net/phpbb/cppcheck/">http://apps.sourceforge.net/phpbb/cppcheck/</a><br>
+				IRC: #cppcheck at irc.freenode.net
+				</div>
+				&#160;
+			</div>
+			&#160;
+		</div>
+		<div id="page-footer">&#160;</div>
+	</body>
+</html>
+'''
+
+
+CPPCHECK_INDEX_HTML = \
+'''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<title>{{ title }}</title>
+		<link href="style.css" rel="stylesheet" type="text/css" />
+		<style type="text/css"></style>
+	</head>
+	<body class="body">
+		<div id="page-header">&#160;</div>
+		<div id="page">
+			<div id="header">
+				<h1>{{ header }}</h1>
+			</div>
+			<div id="menu">
+				<a href={{ home }}>Home</a>
+			</div>
+			<div id="content">
+				<table>
+					<tr>
+						<th colspan="5">Location</th>
+						<th>Type</th>
+						<th>Severity</th>
+						<th>Description</th>
+					</tr>
+					{% for defect in defects %}
+					<tr>
+						<td colspan="5"><a href={{ defect.url }}>{{ defect.file }}</a></td>
+						<td>{{ defect.type }}</td>
+						<td>{{ defect.severity }}</td>
+						<td>{{ defect.description }}</td>
+					</tr>
+					{% endfor %}
+				</table>
+			</div>
+			<div id="footer">
+				<div>cppcheck - a tool for static C/C++ code analysis</div>
+				<div>
+				Internet: <a href="http://cppcheck.sourceforge.net">http://cppcheck.sourceforge.net</a><br>
+				Forum: <a href="http://apps.sourceforge.net/phpbb/cppcheck/">http://apps.sourceforge.net/phpbb/cppcheck/</a><br>
+				IRC: #cppcheck at irc.freenode.net
+				</div>
+				&#160;
+			</div>
+			&#160;
+		</div>
+		<div id="page-footer">&#160;</div>
+	</body>
+</html>
+'''
+
+
+CPPCHECK_HTML = \
+'''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>{{ title }}</title>
+		<link href="style.css" rel="stylesheet" type="text/css">
+		<style type="text/css"></style>
+	</head>
+	<body class="body">
+		<div id="page-header">&#160;</div>
+		<div id="page">
+			<div id="header">
+				<h1>{{ header }}</h1>
+			</div>
+			<div id="menu">
+				<a href={{ home }}>Home</a>
+				<a href={{ back }}>Back</a>
+			</div>
+			<div id="content">
+				{{ table }}
+			</div>
+			<div id="footer">
+				<div>cppcheck - a tool for static C/C++ code analysis</div>
+				<div>
+				Internet: <a href="http://cppcheck.sourceforge.net">http://cppcheck.sourceforge.net</a><br>
+				Forum: <a href="http://apps.sourceforge.net/phpbb/cppcheck/">http://apps.sourceforge.net/phpbb/cppcheck/</a><br>
+				IRC: #cppcheck at irc.freenode.net
+				</div>
+				&#160;
+			</div>
+			&#160;
+		</div>
+		<div id="page-footer">&#160;</div>
+	</body>
+</html>
+'''
+
+
+CPPCHECK_STYLE_CSS = \
+'''
+body.body {
+    font-family: Arial;
+    font-size: 13px;
+    background-color: black;
+    padding: 0px;
+    margin: 0px;
+}
+
+.error {
+    font-family: Arial;
+    font-size: 13px;
+    background-color: #ffb7b7;
+    padding: 0px;
+    margin: 0px;
+}
+
+th, td {
+    min-width: 100px;
+    text-align: left;
+}
+
+#page-header {
+    clear: both;
+    width: 1200px;
+    margin: 20px auto 0px auto;
+    height: 10px;
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+    border-bottom-color: #aaaaaa;
+}
+
+#page {
+    width: 1160px;
+    margin: auto;
+    border-left-width: 2px;
+    border-left-style: solid;
+    border-left-color: #aaaaaa;
+    border-right-width: 2px;
+    border-right-style: solid;
+    border-right-color: #aaaaaa;
+    background-color: White;
+    padding: 20px;
+}
+
+#page-footer {
+    clear: both;
+    width: 1200px;
+    margin: auto;
+    height: 10px;
+    border-top-width: 2px;
+    border-top-style: solid;
+    border-top-color: #aaaaaa;
+}
+
+#header {
+    width: 100%;
+    height: 70px;
+    background-image: url(logo.png);
+    background-repeat: no-repeat;
+    background-position: left top;
+    border-bottom-style: solid;
+    border-bottom-width: thin;
+    border-bottom-color: #aaaaaa;
+}
+
+#menu {
+    margin-top: 5px;
+    text-align: left;
+    float: left;
+    width: 100px;
+    height: 300px;
+}
+
+#menu > a {
+    margin-left: 10px;
+    display: block;
+}
+
+#content {
+    float: left;
+    width: 1020px;
+    margin: 5px;
+    padding: 0px 10px 10px 10px;
+    border-left-style: solid;
+    border-left-width: thin;
+    border-left-color: #aaaaaa;
+}
+
+#footer {
+    padding-bottom: 5px;
+    padding-top: 5px;
+    border-top-style: solid;
+    border-top-width: thin;
+    border-top-color: #aaaaaa;
+    clear: both;
+    font-size: 10px;
+}
+
+#footer > div {
+    float: left;
+    width: 33%;
+}
+
+.highlight .hll { background-color: #ffffcc }
+.highlight  { background: #ffffff; }
+.highlight .c { color: #888888 } /* Comment */
+.highlight .err { color: #FF0000; background-color: #FFAAAA } /* Error */
+.highlight .k { color: #008800; font-weight: bold } /* Keyword */
+.highlight .o { color: #333333 } /* Operator */
+.highlight .cm { color: #888888 } /* Comment.Multiline */
+.highlight .cp { color: #557799 } /* Comment.Preproc */
+.highlight .c1 { color: #888888 } /* Comment.Single */
+.highlight .cs { color: #cc0000; font-weight: bold } /* Comment.Special */
+.highlight .gd { color: #A00000 } /* Generic.Deleted */
+.highlight .ge { font-style: italic } /* Generic.Emph */
+.highlight .gr { color: #FF0000 } /* Generic.Error */
+.highlight .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #00A000 } /* Generic.Inserted */
+.highlight .go { color: #888888 } /* Generic.Output */
+.highlight .gp { color: #c65d09; font-weight: bold } /* Generic.Prompt */
+.highlight .gs { font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.highlight .gt { color: #0044DD } /* Generic.Traceback */
+.highlight .kc { color: #008800; font-weight: bold } /* Keyword.Constant */
+.highlight .kd { color: #008800; font-weight: bold } /* Keyword.Declaration */
+.highlight .kn { color: #008800; font-weight: bold } /* Keyword.Namespace */
+.highlight .kp { color: #003388; font-weight: bold } /* Keyword.Pseudo */
+.highlight .kr { color: #008800; font-weight: bold } /* Keyword.Reserved */
+.highlight .kt { color: #333399; font-weight: bold } /* Keyword.Type */
+.highlight .m { color: #6600EE; font-weight: bold } /* Literal.Number */
+.highlight .s { background-color: #fff0f0 } /* Literal.String */
+.highlight .na { color: #0000CC } /* Name.Attribute */
+.highlight .nb { color: #007020 } /* Name.Builtin */
+.highlight .nc { color: #BB0066; font-weight: bold } /* Name.Class */
+.highlight .no { color: #003366; font-weight: bold } /* Name.Constant */
+.highlight .nd { color: #555555; font-weight: bold } /* Name.Decorator */
+.highlight .ni { color: #880000; font-weight: bold } /* Name.Entity */
+.highlight .ne { color: #FF0000; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #0066BB; font-weight: bold } /* Name.Function */
+.highlight .nl { color: #997700; font-weight: bold } /* Name.Label */
+.highlight .nn { color: #0e84b5; font-weight: bold } /* Name.Namespace */
+.highlight .nt { color: #007700 } /* Name.Tag */
+.highlight .nv { color: #996633 } /* Name.Variable */
+.highlight .ow { color: #000000; font-weight: bold } /* Operator.Word */
+.highlight .w { color: #bbbbbb } /* Text.Whitespace */
+.highlight .mb { color: #6600EE; font-weight: bold } /* Literal.Number.Bin */
+.highlight .mf { color: #6600EE; font-weight: bold } /* Literal.Number.Float */
+.highlight .mh { color: #005588; font-weight: bold } /* Literal.Number.Hex */
+.highlight .mi { color: #0000DD; font-weight: bold } /* Literal.Number.Integer */
+.highlight .mo { color: #4400EE; font-weight: bold } /* Literal.Number.Oct */
+.highlight .sb { background-color: #fff0f0 } /* Literal.String.Backtick */
+.highlight .sc { color: #0044DD } /* Literal.String.Char */
+.highlight .sd { color: #DD4422 } /* Literal.String.Doc */
+.highlight .s2 { background-color: #fff0f0 } /* Literal.String.Double */
+.highlight .se { color: #666666; font-weight: bold; background-color: #fff0f0 } /* Literal.String.Escape */
+.highlight .sh { background-color: #fff0f0 } /* Literal.String.Heredoc */
+.highlight .si { background-color: #eeeeee } /* Literal.String.Interpol */
+.highlight .sx { color: #DD2200; background-color: #fff0f0 } /* Literal.String.Other */
+.highlight .sr { color: #000000; background-color: #fff0ff } /* Literal.String.Regex */
+.highlight .s1 { background-color: #fff0f0 } /* Literal.String.Single */
+.highlight .ss { color: #AA6600 } /* Literal.String.Symbol */
+.highlight .bp { color: #007020 } /* Name.Builtin.Pseudo */
+.highlight .vc { color: #336699 } /* Name.Variable.Class */
+.highlight .vg { color: #dd7700; font-weight: bold } /* Name.Variable.Global */
+.highlight .vi { color: #3333BB } /* Name.Variable.Instance */
+.highlight .il { color: #0000DD; font-weight: bold } /* Literal.Number.Integer.Long */
+'''
 
 
 def options(opt):
@@ -236,8 +550,11 @@ def postfun(bld):
 	:param bld: Build context from the *waf* build environment.
 	:type bld: waflib.Build.BuildContext
 	'''
-	for entry in bld.catalog:
-		print(entry)
+	root = str(bld.env.CPPCHECK_PATH).replace('\\', '/')
+	index = Index(bld, root, bld.catalog)
+	index.save_css()
+	index.save_index_html()
+	index.report()
 	
 
 @TaskGen.feature('c')
@@ -267,21 +584,66 @@ def cppcheck_execute(self):
 	if bld.options.cppcheck_err_resume:
 		fatals = []
 
-	index = '%s/%s/%s/index.html' % (bld.path.abspath(), root, self.path.relpath())
-	severities = CppCheck(self, root, fatals).execute()
-	bld.catalog.append( (self.get_name(), index.replace('\\', '/'), severities) )
+	(index, severity) = CppCheck(self, root, fatals).execute()
+	bld.catalog.append( (self.get_name(), index.replace('\\', '/'), severity) )
 
 
 class Defect(object):
-	def __init__(self, id, severity, msg='', verbose='', file='', line=0):
-		self.id = id
+	def __init__(self, url, type, severity, description, verbose, file, line):
+		self.url = url
+		self.type = type
 		self.severity = severity
-		self.msg = msg
+		self.description = description
 		self.verbose = verbose
 		self.file = file
 		self.line = line
 
+
+class Component(object):
+	def __init__(self, name, url, severity):
+		self.name = name
+		self.url = '"%s"' % url
+		self.severity = ', '.join(severity)
+
+
+class Index(object):
+	def __init__(self, bld, root, catalog):
+		self.bld = bld
+		self.root = root
+		self.home = '%s/%s/index.html' % (bld.path.abspath().replace('\\', '/'), root)
+		self.components = []
+		for (name, url, severity) in catalog:
+			self.components.append(Component(name, url, severity))
+
+	def save(self, fname, content):
+		fname = '%s/%s' % (self.root, fname)
+		path = os.path.dirname(fname)
+		if not os.path.exists(path):
+			os.makedirs(path)
+		node = self.bld.path.make_node(fname)
+		node.write(content)
+		return node.abspath().replace('\\', '/')
+
+	def save_css(self):
+		return self.save('style.css', CPPCHECK_STYLE_CSS)
 	
+	def save_index_html(self):
+		template = Template(CPPCHECK_TOP_HTML)
+		context = {}
+		name = '%s %s' % (getattr(Context.g_module, Context.APPNAME), getattr(Context.g_module, Context.VERSION))
+		context['title'] = name
+		context['header'] = name
+		context['components'] = self.components
+		fname = self.save('index.html', template.render(context))
+		Logs.info('html index created: file:///%s' % fname)
+		return fname
+	
+	def report(self):
+		Logs.pprint('PINK', '\ncppcheck complete, html report can be found at:')
+		Logs.pprint('PINK', '\tfile:///%s\n' % self.home)
+		
+		
+		
 class CppCheck(object):
 	'''Class used for creating colorfull HTML reports based on the source code 
 	check results from **cppcheck**.
@@ -306,6 +668,8 @@ class CppCheck(object):
 		self.tgen = tgen
 		self.bld = tgen.bld
 		self.root = root
+		self.home = str('%s/%s/index.html' % (tgen.bld.path.abspath(), root)).replace('\\', '/')
+		self.index = str('%s/%s/%s/index.html' % (tgen.bld.path.abspath(), root, tgen.path.relpath())).replace('\\', '/')
 		self.fatals = fatals
 		self.warnings = CPPCHECK_WARNINGS
 
@@ -325,40 +689,83 @@ class CppCheck(object):
 		s = ElementTree.tostring(root)
 		return self.save(fname, s.decode('utf-8'))
 
-	def defects(self, stderr):
+	def save_css(self):
+		return self.save('style.css', CPPCHECK_STYLE_CSS)
+	
+	def save_index_html(self, defects):
+		template = Template(CPPCHECK_INDEX_HTML)
+		context = {}
+		context['title'] = self.tgen.get_name()
+		context['header'] = self.tgen.get_name()
+		context['home'] = '"%s"' % self.home
+		context['defects'] = defects
+		fname = self.save('index.html', template.render(context))
+		Logs.info('html index created: file:///%s' % fname)
+		return fname
+	
+	
+	def save_html(self, url, defects, source):
+		hl_lines = [d.line for d in defects if d.file!='']
+		formatter = CppCheckFormatter(linenos=True, style='colorful', hl_lines=hl_lines, lineanchors='line')
+		formatter.errors = [d for d in defects if d.file!='']
+		css_style_defs = formatter.get_style_defs('.highlight')
+		lexer = pygments.lexers.guess_lexer_for_filename(source, "")
+		node = self.bld.root.find_node(source)
+		template = Template(CPPCHECK_HTML)
+		context = {}
+		context['title'] = self.tgen.get_name()
+		context['header'] = self.tgen.get_name()
+		context['home'] = '"%s"' % self.home
+		context['back'] = '"%s"' % self.index
+		context['table'] = pygments.highlight(node.read(), lexer, formatter)
+		content = template.render(context)
+		fname = self.save(url, content)
+		Logs.info('html report created: file:///%s' % fname)
+		return fname
+
+	def defects(self, stderr, url):
 		defects = []
 		for error in ElementTree.fromstring(stderr).iter('error'):
-			defect = Defect(error.get('id'), error.get('severity'))
-			defect.msg = str(error.get('msg')).replace('<','&lt;')
-			defect.verbose = error.get('verbose')
+			file = ''
+			line = 0
 			for location in error.findall('location'):
-				defect.file = location.get('file')
-				defect.line = str(int(location.get('line')))
-			defects.append(defect)
+				file = location.get('file')
+				line = str(int(location.get('line')))
+			loc = '%s%s' % (url, '#%s' % line if line!=0 else '')
+			type = error.get('id')
+			description = str(error.get('msg')).replace('<','&lt;')
+			severity = error.get('severity')
+			verbose = error.get('verbose')
+			defects.append(Defect(loc, type, severity, description, verbose, file, line))
 		return defects
-		
+	
 	def report(self, bld, tgen, fatals, defects):
 		name = tgen.get_name()
-		url = '%s/%s/%s/index.html' % (bld.path.abspath(), self.root, tgen.path.relpath())
-		Logs.pprint('PINK', '%s:' % name)
 		for d in defects:
 			if d.severity == 'error': color = 'RED'
 			else: color = 'YELLOW' if d.severity in self.warnings else 'GREEN'
 			if d.file != '':
 				Logs.pprint(color, '\tfile:///%s (line:%s)' % (d.file, d.line))
-			Logs.pprint(color, '\t%s %s %s' % (d.id, d.severity, d.msg))
+			Logs.pprint(color, '\t%s %s %s' % (d.type, d.severity, d.description))
 			if d.severity in fatals:
 				bld.fatal('%s: fatal error(%s) detected' % (name, d.severity))
 
 	def execute(self):
 		severity = []
-		for (name, cmd) in self.commands():
+		summary = []
+		self.save_css()
+		Logs.pprint('PINK', 'cppcheck: %s' % self.tgen.get_name())		
+		for (name, source, cmd) in self.commands():
 			stderr = self.bld.cmd_and_log(cmd.split(), quiet=Context.BOTH, output=Context.STDERR)
-			xml = self.save_xml(name, stderr, cmd)
-			defects = self.defects(stderr)
+			xml = self.save_xml('%s.xml' % name, stderr, cmd)
+			url = xml.replace('.xml', '.html')
+			defects = self.defects(stderr, url)
+			self.save_html(os.path.basename(url), defects, source)
 			self.report(self.bld, self.tgen, self.fatals, defects)
 			severity.extend([defect.severity for defect in defects])
-		return severity
+			summary.extend(defects)
+		index = self.save_index_html(summary)
+		return (index, list(set(severity)))
 
 	def commands(self):
 		'''returns a list of the commands to be executed, one per source file'''
@@ -392,7 +799,30 @@ class CppCheck(object):
 			inc += ' -I%r' % i
 
 		for src in gen.to_list(gen.source):
-			fname = '%s.xml' % os.path.splitext(str(src))[0]
-			commands.append((fname, '%s %r %s' % (cmd, src, inc)))
+			name = os.path.splitext(str(src))[0]
+			commands.append((name, src.abspath().replace('\\', '/'), '%s %r %s' % (cmd, src, inc)))
 		return commands
 
+
+class CppCheckFormatter(HtmlFormatter):
+	'''Formatter used for adding error messages to HTML report containing
+	syntax highlighted source code.
+	'''
+	errors = []
+	'''List of error messages. Contains the error message and line number.'''
+	
+	_fmt = '<span style="background: #ffaaaa;padding: 3px;">&lt;--- %s</span>\n'
+
+	def wrap(self, source, outfile):
+		'''Adds the error messages to the highlighted source code at the correct
+		location.
+		'''
+		line_no = 1
+		for i, t in super(CppCheckFormatter, self).wrap(source, outfile):
+			# If this is a source code line we want to add a span tag at the end.
+			if i == 1:
+				for error in self.errors:
+					if int(error.line) == line_no:
+						t = t.replace('\n', self._fmt % error.description)
+				line_no = line_no + 1
+			yield i, t
