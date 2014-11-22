@@ -48,7 +48,7 @@ except ImportError:
 	from urllib2 import urlopen
 
 
-WAF_VERSION = "1.8.2"
+WAF_VERSION = "1.8.4"
 WAF_TOOLS = None
 
 HOME = os.path.expanduser('~')
