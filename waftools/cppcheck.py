@@ -156,6 +156,7 @@ import os
 import sys
 import xml.etree.ElementTree as ElementTree
 from jinja2 import Template
+import chardet
 import pygments
 from pygments import formatters, lexers
 from pygments.formatters import HtmlFormatter
@@ -232,7 +233,8 @@ CPPCHECK_INDEX_HTML = \
 			<div id="content">
 				<table>
 					<tr>
-						<th colspan="5">Location</th>
+						<th colspan="5">File</th>
+						<th>Line</th>
 						<th>Type</th>
 						<th>Severity</th>
 						<th>Description</th>
@@ -240,7 +242,8 @@ CPPCHECK_INDEX_HTML = \
 					{% for defect in defects %}
 					<tr>
 						<td colspan="5"><a href={{ defect.url }}>{{ defect.file }}</a></td>
-						<td>{{ defect.type }}</td>
+						<td><a href={{ defect.url }}#{{ defect.line }}>{{ defect.line }}</a></td>
+						<td>{{ defect.kind }}</td>
 						<td>{{ defect.severity }}</td>
 						<td>{{ defect.description }}</td>
 					</tr>
@@ -589,9 +592,9 @@ def cppcheck_execute(self):
 
 
 class Defect(object):
-	def __init__(self, url, type, severity, description, verbose, file, line):
+	def __init__(self, url, kind, severity, description, verbose, file, line):
 		self.url = url
-		self.type = type
+		self.kind = kind
 		self.severity = severity
 		self.description = description
 		self.verbose = verbose
@@ -640,10 +643,9 @@ class Index(object):
 	
 	def report(self):
 		Logs.pprint('PINK', '\ncppcheck complete, html report can be found at:')
-		Logs.pprint('PINK', '\tfile:///%s\n' % self.home)
-		
-		
-		
+		Logs.pprint('PINK', '\tfile://%s\n' % self.home)
+
+
 class CppCheck(object):
 	'''Class used for creating colorfull HTML reports based on the source code 
 	check results from **cppcheck**.
@@ -673,13 +675,13 @@ class CppCheck(object):
 		self.fatals = fatals
 		self.warnings = CPPCHECK_WARNINGS
 
-	def save(self, fname, content):
+	def save(self, fname, content, encoding='utf-8'):
 		fname = '%s/%s/%s' % (self.root, self.tgen.path.relpath(), fname)
 		path = os.path.dirname(fname)
 		if not os.path.exists(path):
 			os.makedirs(path)
 		node = self.bld.path.make_node(fname)
-		node.write(content)
+		node.write(content.encode(encoding))
 		return node.abspath().replace('\\', '/')
 
 	def save_xml(self, fname, stderr, cmd):
@@ -699,29 +701,26 @@ class CppCheck(object):
 		context['header'] = self.tgen.get_name()
 		context['home'] = '"%s"' % self.home
 		context['defects'] = defects
-		fname = self.save('index.html', template.render(context))
-		Logs.info('html index created: file:///%s' % fname)
-		return fname
-	
-	
-	def save_html(self, url, defects, source):
+		return self.save('index.html', template.render(context))
+
+	def save_html(self, url, source, defects):
 		hl_lines = [d.line for d in defects if d.file!='']
 		formatter = CppCheckFormatter(linenos=True, style='colorful', hl_lines=hl_lines, lineanchors='line')
 		formatter.errors = [d for d in defects if d.file!='']
 		css_style_defs = formatter.get_style_defs('.highlight')
 		lexer = pygments.lexers.guess_lexer_for_filename(source, "")
 		node = self.bld.root.find_node(source)
+		s = node.read()
+		encoding = chardet.detect(s)['encoding']
 		template = Template(CPPCHECK_HTML)
 		context = {}
 		context['title'] = self.tgen.get_name()
 		context['header'] = self.tgen.get_name()
 		context['home'] = '"%s"' % self.home
 		context['back'] = '"%s"' % self.index
-		context['table'] = pygments.highlight(node.read(), lexer, formatter)
+		context['table'] = pygments.highlight(s.decode(encoding), lexer, formatter)
 		content = template.render(context)
-		fname = self.save(url, content)
-		Logs.info('html report created: file:///%s' % fname)
-		return fname
+		return self.save(url, content, encoding)
 
 	def defects(self, stderr, url):
 		defects = []
@@ -729,26 +728,29 @@ class CppCheck(object):
 			file = ''
 			line = 0
 			for location in error.findall('location'):
-				file = location.get('file')
+				file = os.path.basename(location.get('file'))
 				line = str(int(location.get('line')))
-			loc = '%s%s' % (url, '#%s' % line if line!=0 else '')
-			type = error.get('id')
+			kind = error.get('id')
 			description = str(error.get('msg')).replace('<','&lt;')
 			severity = error.get('severity')
 			verbose = error.get('verbose')
-			defects.append(Defect(loc, type, severity, description, verbose, file, line))
+			defects.append(Defect(url, kind, severity, description, verbose, file, line))
 		return defects
 	
-	def report(self, bld, tgen, fatals, defects):
-		name = tgen.get_name()
+	def report(self, url, source, defects):
+		name = self.tgen.get_name()
+		log = "\ndetected (possible) problem(s) in task '%s', see report for details:\n\tfile://%s\n" % (name, url)
+		clog = 'GREEN'
+		Logs.info(os.path.basename(source))
 		for d in defects:
 			if d.severity == 'error': color = 'RED'
-			else: color = 'YELLOW' if d.severity in self.warnings else 'GREEN'
-			if d.file != '':
-				Logs.pprint(color, '\tfile:///%s (line:%s)' % (d.file, d.line))
-			Logs.pprint(color, '\t%s %s %s' % (d.type, d.severity, d.description))
-			if d.severity in fatals:
-				bld.fatal('%s: fatal error(%s) detected' % (name, d.severity))
+			elif d.severity in self.warnings: clog = color = 'YELLOW'
+			else: color = 'GREEN'
+			Logs.pprint(color, '\t%s %s %s %s' % (d.line, d.severity, d.kind, d.description))
+			if d.severity in self.fatals:
+				self.bld.fatal(log)
+		if len(defects):
+			Logs.pprint(clog, log)
 
 	def execute(self):
 		severity = []
@@ -760,8 +762,8 @@ class CppCheck(object):
 			xml = self.save_xml('%s.xml' % name, stderr, cmd)
 			url = xml.replace('.xml', '.html')
 			defects = self.defects(stderr, url)
-			self.save_html(os.path.basename(url), defects, source)
-			self.report(self.bld, self.tgen, self.fatals, defects)
+			self.save_html(os.path.basename(url), source, defects)
+			self.report(url, source, defects)
 			severity.extend([defect.severity for defect in defects])
 			summary.extend(defects)
 		index = self.save_index_html(summary)
