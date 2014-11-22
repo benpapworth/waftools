@@ -4,10 +4,10 @@
    contain the root `toctree` directive.
 
 
-Waftools 0.3.9 documentation
+Waftools 0.4.1 documentation
 ============================
 Welcome! This is the documentation for the *waftools* package, last updated 
-November 16\ :sup:`th`\  2014.
+November 22\ :sup:`nd`\  2014.
 
 
 Overview
@@ -365,5 +365,5 @@ meta build system.
 
 
 .. _waf: https://code.google.com/p/waf/
-.. _wafbook: http://docs.waf.googlecode.com/git/book_17/single.html
+.. _wafbook: http://docs.waf.googlecode.com/git/book_18/single.html
 
