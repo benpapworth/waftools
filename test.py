@@ -37,10 +37,10 @@ def create_env(dest, python):
 	exe(cmd)
 	
 
-def waftools_clone(tmp, devel):
+def waftools_setup(tmp, devel):
+	cmd = 'git clone https://bitbucket.org/Moo7/waftools/waftools.git waftools'
+	subprocess.check_call(cmd.split())
 	if devel:
-		cmd = 'git clone https://bitbucket.org/Moo7/waftools/waftools.git waftools'
-		subprocess.check_call(cmd.split())
 		top = os.getcwd()
 		try:
 			cd('%s/waftools' % tmp)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 	home = os.getcwd()
 	try:
 		cd(tmp)
-		waftools_clone(tmp, devel)
+		waftools_setup(tmp, devel)
 		waftools_test(tmp)		
 	finally:
 		cd(home)
