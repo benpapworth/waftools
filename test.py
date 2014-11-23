@@ -75,6 +75,12 @@ def waftools_test(tmp):
 		'waf configure --debug --prefix=%s' % tmp,
 		'waf install --all',
 		'waf uninstall --all',
+		'waf distclean',
+		'waf makefile',
+		'make all',
+		'make install',
+		'make uninstall',
+		'make clean',
 	]
 
 	top = os.getcwd()
