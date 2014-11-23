@@ -242,7 +242,7 @@ CPPCHECK_INDEX_HTML = \
 					{% for defect in defects %}
 					<tr>
 						<td colspan="5"><a href={{ defect.url }}>{{ defect.file }}</a></td>
-						<td><a href={{ defect.url }}#{{ defect.line }}>{{ defect.line }}</a></td>
+						<td><a href={{ defect.url }}#line-{{ defect.line }}>{{ defect.line }}</a></td>
 						<td>{{ defect.kind }}</td>
 						<td>{{ defect.severity }}</td>
 						<td>{{ defect.description }}</td>
