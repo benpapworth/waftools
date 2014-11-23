@@ -40,6 +40,7 @@ setup(
 	keywords = ["waf", "c", "c++", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "msdev", "doxygen", "GNU indent"],
 	platforms = 'any',
 	data_files = [(data_dir, ['waftools/msdev.sln', 'waftools/doxy.config'])],
+	include_package_data = True,
 	entry_points = {
 		'console_scripts': [
 			'wafinstall = waftools.wafinstall:main',
