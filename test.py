@@ -37,7 +37,7 @@ def create_env(dest, python):
 	exe(cmd)
 	
 
-def waftools_setup(tmp, devel):
+def waftools_setup(tmp, devel, version):
 	cmd = 'git clone https://bitbucket.org/Moo7/waftools/waftools.git waftools'
 	subprocess.check_call(cmd.split())
 	if devel:
@@ -48,7 +48,10 @@ def waftools_setup(tmp, devel):
 		finally:
 			cd(top)
 	else:
-		exe('pip install waftools')
+		cmd = 'pip install waftools'
+		if version:
+			cmd += '==%s' % version	
+		exe(cmd)
 
 
 def waftools_test(tmp):
@@ -113,22 +116,25 @@ if __name__ == "__main__":
 
 	python='python'
 	devel=False
+	version=None
 
-	opts, args = getopt.getopt(sys.argv[1:], 'hp:r', ['help', 'python=', 'devel'])
+	opts, args = getopt.getopt(sys.argv[1:], 'hp:rv:', ['help', 'python=', 'devel', 'version='])
 	for opt, arg in opts:
 		if opt in ('-h', '--help'):
 			sys.exit()
 		elif opt in ('-p', '--python'):
 			python = arg
 		elif opt in ('-d', '--devel'):
-			devel = True			
+			devel = True		
+		elif opt in ('-v', '--version'):
+			version = arg
 
 	tmp = tempfile.mkdtemp()
 	create_env(tmp, python)
 	home = os.getcwd()
 	try:
 		cd(tmp)
-		waftools_setup(tmp, devel)
+		waftools_setup(tmp, devel, version)
 		waftools_test(tmp)		
 	finally:
 		cd(home)
