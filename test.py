@@ -48,7 +48,7 @@ def waftools_setup(tmp, devel, version):
 		finally:
 			cd(top)
 	else:
-		cmd = 'pip install waftools'
+		cmd = '%s/bin/pip install waftools' % tmp
 		if version:
 			cmd += '==%s' % version	
 		exe(cmd)
