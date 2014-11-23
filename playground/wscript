@@ -20,10 +20,12 @@ APPNAME = 'waftools-test'
 def options(opt):
 	opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
 	opt.load('ccross', tooldir=waftools.location)
+	opt.load('msdev', tooldir=waftools.location)
 
 
 def configure(conf):
 	conf.load('ccross')
+	conf.load('msdev')
 
 
 def build(bld):
