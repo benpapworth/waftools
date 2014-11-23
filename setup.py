@@ -35,7 +35,7 @@ setup(
 	description = "Handy tools for the WAF meta build environment",
 	long_description = long_description,
 	packages = ["waftools"],
-	install_requires = ["pygments", "chardet"],
+	install_requires = ["pygments", "chardet", "jinja2"],
 	license = 'MIT',
 	keywords = ["waf", "c", "c++", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "msdev", "doxygen", "GNU indent"],
 	platforms = 'any',
