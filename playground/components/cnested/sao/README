@@ -1,0 +1,9 @@
+Combination:
+	program -> lib.so -> lib.a -> objects
+
+Can't get this to work for:
+	- cmake
+	- eclipse
+
+Need to find out if this can work period.
+

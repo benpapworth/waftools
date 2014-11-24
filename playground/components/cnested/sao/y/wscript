@@ -8,6 +8,7 @@ def build(bld):
 		includes=['./include'],
 		export_includes=['./include'],
 		use=['saoz'],
-		cflags=['-fPIC'],
+		cmake_skipme=True,
+		eclipse_skipme=True,
 	)
 

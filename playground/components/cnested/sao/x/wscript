@@ -8,5 +8,7 @@ def build(bld):
 		includes=['./include'],
 		export_includes=['./include'],
 		use=['saoy'],
+		cmake_skipme=True,
+		eclipse_skipme=True,
 	)
 

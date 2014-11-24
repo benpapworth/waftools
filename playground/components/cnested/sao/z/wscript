@@ -7,6 +7,7 @@ def build(bld):
 		source=bld.path.ant_glob('src/*.c'),
 		includes=['./include'],
 		export_includes=['./include'],
-		cflags=['-fPIC'],
+		cmake_skipme=True,
+		eclipse_skipme=True,
 	)
 

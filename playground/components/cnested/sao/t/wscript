@@ -6,5 +6,7 @@ def build(bld):
 		target='saot',
 		source=bld.path.ant_glob('src/*.c'),
 		use=['saox'],
+		cmake_skipme=True,
+		eclipse_skipme=True,
 	)
 
