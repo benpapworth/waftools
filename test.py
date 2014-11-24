@@ -23,10 +23,10 @@ def rm(path):
 		logging.debug("rm -rf %s" % (path))
 		shutil.rmtree(path)
 
-def exe(cmd):
+def exe(cmd, args=[]):
 	'''executes the given commands using subprocess.check_call.'''
-	logging.debug(cmd)
-	subprocess.check_call(cmd.split())
+	logging.debug('%s %s' % (cmd, ' '.join(args)))
+	subprocess.check_call(cmd.split() + args)
 
 
 def rm(path):
@@ -77,7 +77,7 @@ def waftools_cmake(tmp):
 		exe('waf cmake')
 		mkdirs('%s/ctest' % tmp)
 		cd('%s/ctest' % tmp)
-		exe('cmake %s/waftools/playground -G "Unix Makefiles"' % tmp)
+		exe('cmake %s/waftools/playground' % tmp, args=['-G', 'Unix Makefiles'])
 		exe('make all')
 		exe('make clean')
 		cd('%s/waftools/playground' % tmp)
