@@ -2,12 +2,17 @@
 # -*- encoding: utf-8 -*-
 
 def build(bld):
+	cflags = []
+	if bld.env.CC_NAME == 'gcc':
+		cflags.append('-fPIC')
+
 	bld.objects(
 		target='saoy',
 		source=bld.path.ant_glob('src/*.c'),
 		includes=['./include'],
 		export_includes=['./include'],
 		use=['saoz'],
+		cflags=cflags,
 		cmake_skipme=True,
 		eclipse_skipme=True,
 	)
