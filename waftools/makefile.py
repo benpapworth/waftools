@@ -686,11 +686,15 @@ class MakeChild(Make):
 			s = self._get_cprogram_content()
 		elif 'cstlib' in self.gen.features:
 			s = self._get_cstlib_content()
+		elif set(('c', 'objects')).issubset(set(self.gen.features)):
+			s = self._get_cstlib_content()
 		elif 'cshlib' in self.gen.features:
 			s = self._get_cshlib_content()
 		elif 'cxxprogram' in self.gen.features:
 			s = self._get_cxxprogram_content()
 		elif 'cxxstlib' in self.gen.features:
+			s = self._get_cxxstlib_content()
+		elif set(('cxx', 'objects')).issubset(set(self.gen.features)):
 			s = self._get_cxxstlib_content()
 		elif 'cxxshlib' in self.gen.features:
 			s = self._get_cxxshlib_content()
@@ -717,7 +721,7 @@ class MakeChild(Make):
 		self.lib['shared'] = { 'name' : [], 'path' : [] }
 		for use in Utils.to_list(getattr(self.gen, 'use', [])):
 			tg = self.bld.get_tgen_by_name(use)
-			if len(set(tg.features) & set(['cstlib', 'cxxstlib'])):
+			if len(set(tg.features) & set(['cstlib', 'cxxstlib', 'objects'])):
 				self.lib['static']['name'].append(tg.get_name())
 				self.lib['static']['path'].append(tg.path.relpath().replace('\\','/'))
 			if len(set(tg.features) & set(['cshlib', 'cxxshlib'])):
