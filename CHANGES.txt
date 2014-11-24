@@ -2,16 +2,24 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.2**, 2014-11-25:
+
+- issue11_; *cmake*, treat bld.objects() as stlib.
+
+
 **v0.4.1**, 2014-11-23:
+
 - *ccross*; added support for msvc
 - *ccross*; use gcc as default host compiler, use --cchost to use default platform compiler
 - *ccross*; added option for specifying compiler postfix in ccross.ini file
 - *cppcheck*; reimplemented using JinJa2
 
 **v0.4.0**, 2014-11-17:
+
 - *waftools*; moved get_deps() and get_targets() to module *deps*
 
 **v0.3.9**, 2014-11-16:
+
 - *waftools*; return unique list of deps in *waftools.get_deps()*
 - *eclipse*; [bug fix] use general compiler flags and includes
 - *eclipse*; [bug fix] export *bld.objects()* as static library
@@ -19,6 +27,7 @@ Following lists the changes per released version.
 
 
 **v0.3.8**, 2014-11-13:
+
 - issue9_; add *-pthread* option by default in gnucc and use it for export(*eclipse*, *makefiles*, *codeblocks*)
 - *eclipse*; [bug fix] added shared system libs
 - *eclipse*; added *eclipse_skipme* task generator option
@@ -29,6 +38,7 @@ Following lists the changes per released version.
 
 
 **v0.3.7**, 2014-11-12:
+
 - *general*; added package dependency to *chardet*
 - *ccross*; fix when using multiple cross compilers
 - *cppcheck*; detect character encoding when parsing on source failed.
@@ -170,4 +180,6 @@ Following lists the changes per released version.
 .. _issue5: https://bitbucket.org/Moo7/waftools/issue/5/detecting-cross-compiler-fails
 .. _issue8: https://bitbucket.org/Moo7/waftools/issue/8/module-crosspy-fails-in-v035
 .. _issue9: https://bitbucket.org/Moo7/waftools/issue/9/eclipse-missing-pthread
+.. _issue11: https://bitbucket.org/Moo7/waftools/issue/11/cmake-export-fails-when-using-bldobjects
+
 
