@@ -29,6 +29,20 @@ def exe(cmd):
 	subprocess.check_call(cmd.split())
 
 
+def rm(path):
+	'''delete directory, including sub-directories and files it contains.'''
+	if os.path.exists(path):
+		logging.debug("rm -rf %s" % (path))
+		shutil.rmtree(path)
+
+
+def mkdirs(path):
+	'''create directory including missing parent directories.'''
+	if not os.path.exists(path):
+		logging.debug("mkdirs -p %s" % (path))
+		os.makedirs(path)
+
+
 def create_env(dest, python):
 	'''create a virtual test environment.'''
 	cmd = 'virtualenv %s --no-site-packages' % dest
@@ -54,7 +68,28 @@ def waftools_setup(tmp, devel, version):
 		exe(cmd)
 
 
+def waftools_cmake(tmp):
+	'''test generated cmake files.'''
+	top = os.getcwd()
+	try:
+		cd('%s/waftools/playground' % tmp)
+		exe('waf configure --debug --prefix=%s' % tmp)
+		exe('waf cmake')
+		mkdirs('%s/ctest' % tmp)
+		cd('%s/ctest' % tmp)
+		exe('cmake %s/waftools/playground -G "Unix Makefiles"' % tmp)
+		exe('make all')
+		exe('make clean')
+		cd('%s/waftools/playground' % tmp)
+		rm('%s/ctest' % tmp)
+		exe('waf cmake --clean')
+		exe('waf distclean')
+	finally:
+		cd(top)
+
+
 def waftools_test(tmp):
+	'''perform test operations on waftools package.'''
 	commands = [
 		'waf configure --debug --prefix=%s' % tmp,
 		'waf build --all --cppcheck-err-resume',
@@ -90,16 +125,6 @@ def waftools_test(tmp):
 		#'make clean',
 		#'waf makefile --clean',
 		#'waf distclean',
-
-		# TODO: fix build with cmake generated makefiles
-		#       when using bld.objects()
-		#'waf configure --debug --prefix=%s' % tmp,
-		#'waf cmake',
-		#'cmake -G "Unix Makefiles"',
-		#'make all',
-		#'make clean',
-		#'waf cmake --clean',
-		#'waf distclean',
 	]
 
 	top = os.getcwd()
@@ -107,6 +132,7 @@ def waftools_test(tmp):
 		cd('%s/waftools/playground' % tmp)
 		for cmd in commands:
 			exe(cmd)
+		waftools_cmake(tmp)
 	finally:
 		cd(top)
 
