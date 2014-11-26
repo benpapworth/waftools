@@ -10,8 +10,6 @@ import tempfile
 import logging
 import shutil
 
-exe = '.exe' if sys.platform=='win32' else ''
-
 
 def cd(path):
 	'''changes current working directory.'''
@@ -143,7 +141,7 @@ def waftools_test(tmp):
 if __name__ == "__main__":
 	logging.basicConfig(level=logging.DEBUG, format=' %(message)s')
 
-	python='python'
+	python=None
 	devel=False
 	version=None
 
