@@ -10,6 +10,8 @@ import tempfile
 import logging
 import shutil
 
+exe = '.exe' if sys.platform=='win32' else ''
+
 
 def cd(path):
 	'''changes current working directory.'''
@@ -45,7 +47,7 @@ def mkdirs(path):
 
 def create_env(dest, python):
 	'''create a virtual test environment.'''
-	cmd = 'virtualenv %s --no-site-packages' % dest
+	cmd = 'virtualenv%s %s --no-site-packages' % (exe, dest)
 	if python:
 		cmd += ' --python=%s' % python
 	exe(cmd)
