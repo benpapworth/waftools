@@ -28,7 +28,7 @@ def rm(path):
 def exe(cmd, args=[]):
 	'''executes the given commands using subprocess.check_call.'''
 	logging.debug('%s %s' % (cmd, ' '.join(args)))
-	subprocess.check_call(cmd.split() + args)
+	subprocess.check_call(cmd.split() + args, env=os.environ)
 
 
 def rm(path):
@@ -47,7 +47,11 @@ def mkdirs(path):
 
 def create_env(dest, python):
 	'''create a virtual test environment.'''
-	cmd = 'virtualenv%s %s --no-site-packages' % (exe, dest)
+	if sys.platform=='win32':
+		cmd = '%s/Scripts/virtualenv.exe' % (sys.prefix.replace('\\','/'))
+	else:
+		cmd = 'virtualenv'
+	cmd += ' %s --no-site-packages' % (dest)
 	if python:
 		cmd += ' --python=%s' % python
 	exe(cmd)
