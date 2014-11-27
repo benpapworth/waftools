@@ -716,9 +716,9 @@ class CppCheck(object):
 		css_style_defs = formatter.get_style_defs('.highlight')
 		lexer = pygments.lexers.guess_lexer_for_filename(source, "")
 		node = self.bld.root.find_node(source)
-		with open(node.abspath()) as f:
-			s = f.read()
-		#s = node.read()
+		s = node.read()
+		if sys.version_info[0] > 2:
+			s = s.encode()
 		encoding = chardet.detect(s)['encoding']
 		template = Template(CPPCHECK_HTML)
 		context = {}
