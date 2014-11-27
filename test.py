@@ -62,8 +62,9 @@ def create_env(top, python):
 	libdir = '%s/Lib' % (top) # TODO for linux
 	python = '%s/python%s' % (bindir, '.exe' if win32 else '')
 	pip = '%s/pip%s' % (bindir, '.exe' if win32 else '')
+	waf = '%s -x %s/waf' % (python, bindir)
 	wafinstall = '%s/wafinstall%s' % (bindir, '.exe' if win32 else '')
-	return (python, pip, wafinstall)
+	return (python, pip, waf, wafinstall)
 
 
 def waftools_setup(python, pip, git, wafinstall, devel, version):
@@ -83,10 +84,6 @@ def waftools_setup(python, pip, git, wafinstall, devel, version):
 	else:
 		exe(pip, args=['install', 'waftools==%s' % (version) if version else 'waftools'])
 		exe(wafinstall, args=['--local', '--tools=unity,batched_cc'])
-
-	exe(python, args=['-c', 'import sys; print(sys.prefix);'])	
-	exe(pip, args=['list'])
-	exe(python, args=['-c', 'import waftools; print(waftools.version);'])	
 
 
 def waftools_cmake(env):
@@ -109,48 +106,48 @@ def waftools_cmake(env):
 		cd(top)
 
 
-def waftools_test(env):
+def waftools_test(waf):
 	'''perform test operations on waftools package.'''
 	commands = [
-		'waf configure --debug --prefix=.',
-		'waf build --all --cppcheck-err-resume',
-		'waf clean --all',
-		'waf codeblocks',
-		'waf codeblocks --clean',
-		'waf eclipse',
-		'waf eclipse --clean',		
-		'waf msdev',
-		'waf msdev --clean',
-		'waf cmake',
-		'waf cmake --clean',
-		'waf makefile',
-		'waf makefile --clean',
-		'waf doxygen',
-		'waf indent',
-		'waf tree',
-		'waf list',
-		'waf dist',
-		'waf distclean',
-		'waf configure --debug --prefix=.',
-		'waf install --all',
-		'waf uninstall --all',
-		'waf distclean',
-		'waf configure --debug --prefix=.',
-		'waf makefile',
+		'%s configure --debug --prefix=.' % waf,
+		'%s build --all --cppcheck-err-resume' % waf,
+		'%s clean --all' % waf,
+		'%s codeblocks' % waf,
+		'%s codeblocks --clean' % waf,
+		'%s eclipse' % waf,
+		'%s eclipse --clean' % waf,		
+		'%s msdev' % waf,
+		'%s msdev --clean' % waf,
+		'%s cmake' % waf,
+		'%s cmake --clean' % waf,
+		'%s makefile' % waf,
+		'%s makefile --clean' % waf,
+		'%s doxygen' % waf,
+		'%s indent' % waf,
+		'%s tree' % waf,
+		'%s list' % waf,
+		'%s dist' % waf,
+		'%s distclean' % waf,
+		'%s configure --debug --prefix=.' % waf,
+		'%s install --all' % waf,
+		'%s uninstall --all' % waf,
+		'%s distclean' % waf,
+		'%s configure --debug --prefix=.' % waf,
+		'%s makefile' % waf,
 		'make all',
 		'make install',
 		'make uninstall',
 		'make clean',
-		'waf makefile --clean',
-		'waf distclean',
+		'%s makefile --clean' % waf,
+		'%s distclean' % waf,
 	]
 
 	top = os.getcwd()
 	try:
 		cd('%s/waftools/playground' % top)
 		for cmd in commands:
-			exe(cmd, env=env)
-		waftools_cmake(env)
+			exe(cmd)
+		#waftools_cmake(env)
 	finally:
 		cd(top)
 
@@ -181,12 +178,12 @@ if __name__ == "__main__":
 	git = git.replace('\\', '/')
 		
 	top = tempfile.mkdtemp().replace('\\', '/')
-	(python, pip, wafinstall) = create_env(top, python)
+	(python, pip, waf, wafinstall) = create_env(top, python)
 	home = os.getcwd()
 	try:
 		cd(top)
 		waftools_setup(python, pip, git, wafinstall, devel, version)
-		#waftools_test(env)		
+		waftools_test(waf)		
 	finally:
 		cd(home)
 	#rm(top)
