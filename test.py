@@ -4,6 +4,7 @@
 
 import os
 import sys
+import stat
 import getopt
 import subprocess
 import tempfile
@@ -33,7 +34,7 @@ def exe(cmd, args=[]):
 def rm(path):
 	'''delete directory, including sub-directories and files it contains.'''
 	def onerror(function, path, excinfo):
-		os.chmod(path, stat.stat.S_IWRITE | stat.S_IREAD)
+		os.chmod(path, stat.S_IWRITE | stat.S_IREAD)
 		if function == os.remove:
 			os.remove(path)
 		if function == os.rmdir:
