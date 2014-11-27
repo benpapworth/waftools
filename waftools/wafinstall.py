@@ -28,6 +28,9 @@ Available options:
 
     -t | --tools    comma seperated list of waf tools to be used
                     default=None
+					
+    -l | --local    local installation; don't add waf to environment
+					paths
 '''
 
 import os
@@ -123,7 +126,7 @@ def install_waflib(waf, extras=[], libdir=LIBDIR):
 		os.chdir(top)
 
 
-def install(release, bindir, libdir, tools):
+def install(release, bindir, libdir, tools, local):
 	'''installs waf at the given location.'''
 	mkdirs(bindir)
 	dst = os.path.join(bindir, 'waf').replace('~', HOME)
@@ -133,8 +136,9 @@ def install(release, bindir, libdir, tools):
 	install_waflib(release, libdir=libdir, extras=tools.split(',') if tools else [])
 	if sys.platform == "win32":
 		cp("%s.bat" % src, "%s.bat" % dst)
-	env_set('PATH', bindir, extend=True)
-	env_set('WAFDIR', libdir)
+	if not local:
+		env_set('PATH', bindir, extend=True)
+		env_set('WAFDIR', libdir)
 
 
 def env_set(variable, value, extend=False):
@@ -208,28 +212,32 @@ def linux_env_set(variable, value, extend=False):
 
 def getopts(argv):
 	'''returns command line options as tuple.'''
+	local = False
 	version = WAF_VERSION
 	tools = WAF_TOOLS
 	bindir = BINDIR
 	libdir = LIBDIR
 	
-	opts, args = getopt.getopt(argv[1:], 'hv:u:t:', ['help', 'version=', 'tools='])
+	opts, args = getopt.getopt(argv[1:], 'hlv:u:t:', ['help', 'local', 'version=', 'tools='])
 	for opt, arg in opts:
 		if opt in ('-h', '--help'):
 			usage()
 			sys.exit()
+		elif opt in ('-l', '--local'):
+			local = True
 		elif opt in ('-v', '--version'):
 			version = arg
 		elif opt in ('-t', '--tools'):
 			tools = arg
-	return (version, tools, bindir, libdir)
+	
+	return (version, tools, bindir, libdir, local)
 
 
 def main(argv=sys.argv, level=logging.DEBUG):
 	'''downloads, unpacks, creates and installs waf package.'''
 	logging.basicConfig(level=level, format=' %(message)s')
 	try:
-		(version, tools, bindir, libdir) = getopts(argv)
+		(version, tools, bindir, libdir, local) = getopts(argv)
 	except getopt.GetoptError as err:
 		print(str(err))
 		usage()
@@ -247,7 +255,7 @@ def main(argv=sys.argv, level=logging.DEBUG):
 		download(url, package)
 		deflate(package)
 		create(release, tools)
-		install(release, bindir, libdir, tools)
+		install(release, bindir, libdir, tools, local)
 	finally:
 		cd(top)
 		rm(tmp)
