@@ -329,6 +329,8 @@ class MsDevSolution(MsDev):
 	def export(self):
 		'''Exports a **Visual Studio** solution.'''
 		src = '%s/msdev.sln' % os.path.dirname(__file__)
+		if not os.path.exists(src):
+			self.bld.fatal("file not found: '%s'" % src)
 		dst = self._get_fname()
 		shutil.copyfile(src, dst)
 
