@@ -58,6 +58,11 @@ HOME = os.path.expanduser('~')
 if sys.platform == "win32":
 	BINDIR = os.path.join(sys.prefix, 'Scripts')
 	LIBDIR = distutils.sysconfig.get_python_lib()
+
+elif :
+	BINDIR = '%s/bin' % (sys.prefix)
+	LIBDIR = distutils.sysconfig.get_python_lib()
+
 else:
 	BINDIR = "~/.local/bin"
 	LIBDIR = site.getusersitepackages()
