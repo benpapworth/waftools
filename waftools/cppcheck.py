@@ -680,9 +680,13 @@ class CppCheck(object):
 		path = os.path.dirname(fname)
 		if not os.path.exists(path):
 			os.makedirs(path)
-		if isinstance(content, str):
-			content = content.encode(encoding)
+
 		node = self.bld.path.make_node(fname)
+		if sys.version_info[0] > 2:
+			if isinstance(content, bytes):
+				content = content.decode(encoding)
+		else:
+			content = content.encode(encoding)
 		node.write(content)
 		return node.abspath().replace('\\', '/')
 
