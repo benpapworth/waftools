@@ -165,7 +165,7 @@ if __name__ == "__main__":
 		if opt in ('-h', '--help'):
 			sys.exit()
 		elif opt in ('-g', '--git'):
-			python = arg
+			git = arg
 		elif opt in ('-p', '--python'):
 			python = arg
 		elif opt in ('-d', '--devel'):
