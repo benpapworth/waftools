@@ -23,10 +23,10 @@ def rm(path):
 		logging.debug("rm -rf %s" % (path))
 		shutil.rmtree(path)
 
-def exe(cmd, args=[]):
+def exe(cmd, args=[], env=os.environ):
 	'''executes the given commands using subprocess.check_call.'''
 	logging.debug('%s %s' % (cmd, ' '.join(args)))
-	subprocess.check_call(cmd.split() + args, env=os.environ)
+	subprocess.check_call(cmd.split() + args, env=env)
 
 
 def rm(path):
@@ -44,58 +44,72 @@ def mkdirs(path):
 
 
 def create_env(dest, python):
-	'''create a virtual test environment.'''
-	if sys.platform=='win32':
-		cmd = '%s/Scripts/virtualenv.exe' % (sys.prefix.replace('\\','/'))
-	else:
-		cmd = 'virtualenv'
-	cmd += ' %s --no-site-packages' % (dest)
+	'''create a virtual test environment and return environment settings.'''
+	win32 = sys.platform=='win32'
+	
+	cmd = 'pip install virtualenv'
+	if not win32:
+		cmd += ' --user'
+	exe(cmd)
+
+	cmd = 'virtualenv %s --no-site-packages' % (dest)
 	if python:
 		cmd += ' --python=%s' % python
 	exe(cmd)
 	
+	bindir = '%s/%s' % (dest, 'Scripts' if win32 else 'bin')
+	wafdir = '%s/Lib/site-packages' % (dest) # TODO for linux
+	
+	env = os.environ.copy()
+	env['PYTHONHOME'] = ''
+	env['WAFDIR'] = wafdir
+	env['PATH'] = '%s%s%s' % (bindir, ';' if win32 else ':', env['PATH']
+	return env
 
-def waftools_setup(tmp, devel, version):
-	cmd = 'git clone https://bitbucket.org/Moo7/waftools/waftools.git waftools'
-	subprocess.check_call(cmd.split())
+
+def waftools_setup(env, git, devel, version):
+	'''setup waftools test environment.
+	'''
+	exe('%s clone https://bitbucket.org/Moo7/waftools/waftools.git waftools' % git)
+	
 	if devel:
 		top = os.getcwd()
 		try:
-			cd('%s/waftools' % tmp)
-			exe('%s/bin/python setup.py sdist install' % tmp)
+			cd('waftools')
+			exe('python setup.py sdist install', env=env)
 		finally:
 			cd(top)
 	else:
-		cmd = '%s/bin/pip install waftools' % tmp
+		cmd = 'pip install waftools'
 		if version:
 			cmd += '==%s' % version	
-		exe(cmd)
+		exe(cmd, env=env)
 
 
-def waftools_cmake(tmp):
+def waftools_cmake(env):
 	'''test generated cmake files.'''
 	top = os.getcwd()
 	try:
-		cd('%s/waftools/playground' % tmp)
-		exe('waf configure --debug --prefix=%s' % tmp)
-		exe('waf cmake')
-		mkdirs('%s/ctest' % tmp)
-		cd('%s/ctest' % tmp)
-		exe('cmake %s/waftools/playground' % tmp, args=['-G', 'Unix Makefiles'])
-		exe('make all')
-		exe('make clean')
-		cd('%s/waftools/playground' % tmp)
-		rm('%s/ctest' % tmp)
-		exe('waf cmake --clean')
-		exe('waf distclean')
+		cd('%s/waftools/playground' % top)
+		exe('waf configure --debug --prefix=.', env=env)
+		exe('waf cmake', env=env)
+		mkdirs('%s/cbuild' % top)
+		cd('%s/cbuild' % top)
+		exe('cmake %s/waftools/playground' % top, args=['-G', 'Unix Makefiles'], env=env)
+		exe('make all', env=env)
+		exe('make clean', env=env)
+		cd('%s/waftools/playground' % top)
+		rm('%s/ctest' % top)
+		exe('waf cmake --clean', env=env)
+		exe('waf distclean', env=env)
 	finally:
 		cd(top)
 
 
-def waftools_test(tmp):
+def waftools_test(env):
 	'''perform test operations on waftools package.'''
 	commands = [
-		'waf configure --debug --prefix=%s' % tmp,
+		'waf configure --debug --prefix=.',
 		'waf build --all --cppcheck-err-resume',
 		'waf clean --all',
 		'waf codeblocks',
@@ -114,11 +128,11 @@ def waftools_test(tmp):
 		'waf list',
 		'waf dist',
 		'waf distclean',
-		'waf configure --debug --prefix=%s' % tmp,
+		'waf configure --debug --prefix=.',
 		'waf install --all',
 		'waf uninstall --all',
 		'waf distclean',
-		'waf configure --debug --prefix=%s' % tmp,
+		'waf configure --debug --prefix=.',
 		'waf makefile',
 		'make all',
 		'make install',
@@ -130,10 +144,10 @@ def waftools_test(tmp):
 
 	top = os.getcwd()
 	try:
-		cd('%s/waftools/playground' % tmp)
+		cd('%s/waftools/playground' % top)
 		for cmd in commands:
-			exe(cmd)
-		waftools_cmake(tmp)
+			exe(cmd, env=env)
+		waftools_cmake(env)
 	finally:
 		cd(top)
 
@@ -142,13 +156,16 @@ if __name__ == "__main__":
 	logging.basicConfig(level=logging.DEBUG, format=' %(message)s')
 
 	python=None
+	git=None
 	devel=False
 	version=None
 
-	opts, args = getopt.getopt(sys.argv[1:], 'hp:rv:', ['help', 'python=', 'devel', 'version='])
+	opts, args = getopt.getopt(sys.argv[1:], 'hg:p:rv:', ['help', 'git=', 'python=', 'devel', 'version='])
 	for opt, arg in opts:
 		if opt in ('-h', '--help'):
 			sys.exit()
+		elif opt in ('-g', '--git'):
+			python = arg
 		elif opt in ('-p', '--python'):
 			python = arg
 		elif opt in ('-d', '--devel'):
@@ -156,15 +173,19 @@ if __name__ == "__main__":
 		elif opt in ('-v', '--version'):
 			version = arg
 
+	if not git:
+		git = 'git'
+	git = git.replace('\\', '/')
+		
 	tmp = tempfile.mkdtemp()
-	create_env(tmp, python)
-	home = os.getcwd()
+	env = create_env(tmp, python)
+	top = os.getcwd()
 	try:
 		cd(tmp)
-		waftools_setup(tmp, devel, version)
-		waftools_test(tmp)		
+		waftools_setup(env, git, devel, version)
+		waftools_test(env)		
 	finally:
-		cd(home)
+		cd(top)
 	rm(tmp)
 
 
