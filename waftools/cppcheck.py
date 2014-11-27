@@ -680,8 +680,10 @@ class CppCheck(object):
 		path = os.path.dirname(fname)
 		if not os.path.exists(path):
 			os.makedirs(path)
+		if isinstance(content, str):
+			content = content.encode(encoding)
 		node = self.bld.path.make_node(fname)
-		node.write(content.encode(encoding))
+		node.write(content)
 		return node.abspath().replace('\\', '/')
 
 	def save_xml(self, fname, stderr, cmd):

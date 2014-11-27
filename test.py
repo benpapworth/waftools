@@ -33,13 +33,11 @@ def exe(cmd, args=[]):
 def rm(path):
 	'''delete directory, including sub-directories and files it contains.'''
 	def onerror(function, path, excinfo):
-		if isinstance(excinfo, PermissionError):
-			print('==========================================')
-			print(function)
-			print(path)
-			print(excinfo)
-			print(os.stat(path))
-			print('==========================================')
+		os.chmod(path, stat.stat.S_IWRITE | stat.S_IREAD)
+		if function == os.remove:
+			os.remove(path)
+		if function == os.rmdir:
+			os.rmdir(path)
 	
 	if os.path.exists(path):
 		logging.info("rm -rf %s" % (path))
@@ -87,30 +85,30 @@ def waftools_setup(python, pip, git, wafinstall, devel, version):
 			cd('waftools')
 			exe(python, args=['setup.py', 'sdist', 'install'])
 			cd('waftools')
-			exe(python, args=['wafinstall.py', '--local']) ##, '--tools=unity,batched_cc'])
+			exe(python, args=['wafinstall.py', '--local'])
 		finally:
 			cd(top)
 	else:
 		exe(pip, args=['install', 'waftools==%s' % (version) if version else 'waftools'])
-		exe(wafinstall, args=['--local', '--tools=unity,batched_cc'])
+		exe(wafinstall, args=['--local'])
 
 
-def waftools_cmake(env):
+def waftools_cmake():
 	'''test generated cmake files.'''
 	top = os.getcwd()
 	try:
 		cd('%s/waftools/playground' % top)
-		exe('waf configure --debug --prefix=.', env=env)
-		exe('waf cmake', env=env)
+		exe('waf configure --debug --prefix=.')
+		exe('waf cmake')
 		mkdirs('%s/cbuild' % top)
 		cd('%s/cbuild' % top)
-		exe('cmake %s/waftools/playground' % top, args=['-G', 'Unix Makefiles'], env=env)
-		exe('make all', env=env)
-		exe('make clean', env=env)
+		exe('cmake %s/waftools/playground' % top, args=['-G', 'Unix Makefiles'])
+		exe('make all')
+		exe('make clean')
 		cd('%s/waftools/playground' % top)
 		rm('%s/ctest' % top)
-		exe('waf cmake --clean', env=env)
-		exe('waf distclean', env=env)
+		exe('waf cmake --clean')
+		exe('waf distclean')
 	finally:
 		cd(top)
 
@@ -156,7 +154,7 @@ def waftools_test(waf):
 		cd('%s/waftools/playground' % top)
 		for cmd in commands:
 			exe(cmd)
-		waftools_cmake(env)
+		waftools_cmake()
 	finally:
 		cd(top)
 
