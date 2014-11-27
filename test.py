@@ -63,7 +63,7 @@ def create_env(dest, python):
 	env = os.environ.copy()
 	env['PYTHONHOME'] = ''
 	env['WAFDIR'] = wafdir
-	env['PATH'] = '%s%s%s' % (bindir, ';' if win32 else ':', env['PATH']
+	env['PATH'] = '%s%s%s' % (bindir, ';' if win32 else ':', env['PATH'])
 	return env
 
 
