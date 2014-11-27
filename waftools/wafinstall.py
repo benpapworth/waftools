@@ -59,7 +59,7 @@ if sys.platform == "win32":
 	BINDIR = os.path.join(sys.prefix, 'Scripts')
 	LIBDIR = distutils.sysconfig.get_python_lib()
 
-elif :
+elif hasattr(sys, 'real_prefix'):
 	BINDIR = '%s/bin' % (sys.prefix)
 	LIBDIR = distutils.sysconfig.get_python_lib()
 
