@@ -13,37 +13,38 @@ import shutil
 
 def cd(path):
 	'''changes current working directory.'''
-	logging.debug("cd %s" % path)
+	logging.info("cd %s" % path)
 	os.chdir(path)
 
 
 def rm(path):
 	'''delete directory, including sub-directories and files it contains.'''
 	if os.path.exists(path):
-		logging.debug("rm -rf %s" % (path))
+		logging.info("rm -rf %s" % (path))
 		shutil.rmtree(path)
 
-def exe(cmd, args=[], env=os.environ):
+def exe(cmd, args=[]):
 	'''executes the given commands using subprocess.check_call.'''
-	logging.debug('%s %s' % (cmd, ' '.join(args)))
-	subprocess.check_call(cmd.split() + args, env=env)
+	args = cmd.split() + args
+	logging.info('%s' % (' '.join(args)))
+	subprocess.check_call(args)
 
 
 def rm(path):
 	'''delete directory, including sub-directories and files it contains.'''
 	if os.path.exists(path):
-		logging.debug("rm -rf %s" % (path))
+		logging.info("rm -rf %s" % (path))
 		shutil.rmtree(path)
 
 
 def mkdirs(path):
 	'''create directory including missing parent directories.'''
 	if not os.path.exists(path):
-		logging.debug("mkdirs -p %s" % (path))
+		logging.info("mkdirs -p %s" % (path))
 		os.makedirs(path)
 
 
-def create_env(dest, python):
+def create_env(top, python):
 	'''create a virtual test environment and return environment settings.'''
 	win32 = sys.platform=='win32'
 	
@@ -52,38 +53,40 @@ def create_env(dest, python):
 		cmd += ' --user'
 	exe(cmd)
 
-	cmd = 'virtualenv %s --no-site-packages' % (dest)
+	cmd = 'virtualenv %s --no-site-packages' % (top)
 	if python:
 		cmd += ' --python=%s' % python
 	exe(cmd)
 	
-	bindir = '%s/%s' % (dest, 'Scripts' if win32 else 'bin')
-	wafdir = '%s/Lib/site-packages' % (dest) # TODO for linux
-	
-	env = os.environ.copy()
-	env['PYTHONHOME'] = ''
-	env['WAFDIR'] = wafdir
-	env['PATH'] = '%s%s%s' % (bindir, ';' if win32 else ':', env['PATH'])
-	return env
+	bindir = '%s/%s' % (top, 'Scripts' if win32 else 'bin')
+	libdir = '%s/Lib' % (top) # TODO for linux
+	python = '%s/python%s' % (bindir, '.exe' if win32 else '')
+	pip = '%s/pip%s' % (bindir, '.exe' if win32 else '')
+	wafinstall = '%s/wafinstall%s' % (bindir, '.exe' if win32 else '')
+	return (python, pip, wafinstall)
 
 
-def waftools_setup(env, git, devel, version):
+def waftools_setup(python, pip, git, wafinstall, devel, version):
 	'''setup waftools test environment.
 	'''
 	exe('%s clone https://bitbucket.org/Moo7/waftools/waftools.git waftools' % git)
-	
+		
 	if devel:
 		top = os.getcwd()
 		try:
 			cd('waftools')
-			exe('python setup.py sdist install', env=env)
+			exe(python, args=['setup.py', 'sdist', 'install'])
+			cd('waftools')
+			exe(python, args=['wafinstall.py', '--local', '--tools=unity,batched_cc'])
 		finally:
 			cd(top)
 	else:
-		cmd = 'pip install waftools'
-		if version:
-			cmd += '==%s' % version	
-		exe(cmd, env=env)
+		exe(pip, args=['install', 'waftools==%s' % (version) if version else 'waftools'])
+		exe(wafinstall, args=['--local', '--tools=unity,batched_cc'])
+
+	exe(python, args=['-c', 'import sys; print(sys.prefix);'])	
+	exe(pip, args=['list'])
+	exe(python, args=['-c', 'import waftools; print(waftools.version);'])	
 
 
 def waftools_cmake(env):
@@ -177,15 +180,15 @@ if __name__ == "__main__":
 		git = 'git'
 	git = git.replace('\\', '/')
 		
-	tmp = tempfile.mkdtemp()
-	env = create_env(tmp, python)
-	top = os.getcwd()
+	top = tempfile.mkdtemp().replace('\\', '/')
+	(python, pip, wafinstall) = create_env(top, python)
+	home = os.getcwd()
 	try:
-		cd(tmp)
-		waftools_setup(env, git, devel, version)
-		waftools_test(env)		
-	finally:
 		cd(top)
-	rm(tmp)
+		waftools_setup(python, pip, git, wafinstall, devel, version)
+		#waftools_test(env)		
+	finally:
+		cd(home)
+	#rm(top)
 
 
