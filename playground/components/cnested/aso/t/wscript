@@ -3,8 +3,8 @@
 
 def build(bld):
 	bld.program(
-		target='aost',
+		target='asot',
 		source=bld.path.ant_glob('src/*.c'),
-		use=['aosx'],
+		use=['asox'],
 	)
 

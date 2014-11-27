@@ -2,10 +2,11 @@
 # -*- encoding: utf-8 -*-
 
 def build(bld):
-	bld.shlib(
-		target='aosz',
+	bld.objects(
+		target='asoz',
 		source=bld.path.ant_glob('src/*.c'),
 		includes=['./include'],
 		export_includes=['./include'],
+		cflags=['-fPIC'],
 	)
 

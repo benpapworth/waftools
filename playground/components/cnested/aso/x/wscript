@@ -3,10 +3,10 @@
 
 def build(bld):
 	bld.stlib(
-		target='aosx',
+		target='asox',
 		source=bld.path.ant_glob('src/*.c'),
 		includes=['./include'],
 		export_includes=['./include'],
-		use=['aosy'],
+		use=['asoy'],
 	)
 
