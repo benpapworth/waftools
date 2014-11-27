@@ -682,21 +682,22 @@ class MakeChild(Make):
 		return name.replace('\\', '/')
 
 	def _get_content(self):
-		if 'cprogram' in self.gen.features:
+		tg = self.gen
+		if 'cprogram' in tg.features:
 			s = self._get_cprogram_content()
-		elif 'cstlib' in self.gen.features:
+		elif 'cstlib' in tg.features:
 			s = self._get_cstlib_content()
-		elif set(('c', 'objects')).issubset(set(self.gen.features)):
+		elif set(tg.features) & set(['c', 'objects']):
 			s = self._get_cstlib_content()
-		elif 'cshlib' in self.gen.features:
+		elif 'cshlib' in tg.features:
 			s = self._get_cshlib_content()
-		elif 'cxxprogram' in self.gen.features:
+		elif 'cxxprogram' in tg.features:
 			s = self._get_cxxprogram_content()
-		elif 'cxxstlib' in self.gen.features:
+		elif 'cxxstlib' in tg.features:
 			s = self._get_cxxstlib_content()
-		elif set(('cxx', 'objects')).issubset(set(self.gen.features)):
+		elif set(tg.features) & set(['cxx', 'objects']):
 			s = self._get_cxxstlib_content()
-		elif 'cxxshlib' in self.gen.features:
+		elif 'cxxshlib' in tg.features:
 			s = self._get_cxxshlib_content()
 		else:
 			s = MAKEFILE_CHILD
@@ -714,23 +715,57 @@ class MakeChild(Make):
 		makefile = self._get_name()
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		return (name, makefile, deps)
-		
+	
+	def _get_libs(self, target, nest):
+		'''returns library information for this target and any target it depends on
+
+		returns a list of tuples;
+			(nest, name, paths, kind)
+
+			nest: nesting level (int)
+			name: library name (str)
+			paths: list of search paths or None
+			kind: library type ('shared' OR 'static')
+		'''
+		try:
+			tg = self.bld.get_tgen_by_name(target)
+		except Errors.WafError:
+			return []
+		name = tg.get_name()
+		features = Utils.to_list(getattr(tg, 'features', []))
+		if 'fake_lib' in features:
+			paths = [p.replace('\\', '/') for p in tg.lib_paths]
+			return [(nest, name, paths, 'shared')]
+		if not set(('c','cxx')) & set(features):
+			return []
+		paths = [tg.path.relpath().replace('\\','/')]
+		if set(('cshlib', 'cxxshlib')) & set(features):
+			return [(nest, name, paths, 'shared')]
+		libs = [(nest, name, paths, 'static')]
+		for lib in Utils.to_list(getattr(tg, 'lib', [])):
+			libs.append((nest, lib, None, 'shared'))
+		for use in getattr(tg, 'use', []):
+			libs.extend(self._get_libs(use, nest+1))
+		return libs
+
 	def _process(self):
 		self.lib = {}
 		self.lib['static'] = { 'name' : [], 'path' : [] }
 		self.lib['shared'] = { 'name' : [], 'path' : [] }
+
+		# construct list of (lib) dependencies and sort by task
+		# with highest nesting
+		uses = []
 		for use in Utils.to_list(getattr(self.gen, 'use', [])):
-			tg = self.bld.get_tgen_by_name(use)
-			if len(set(tg.features) & set(['cstlib', 'cxxstlib', 'objects'])):
-				self.lib['static']['name'].append(tg.get_name())
-				self.lib['static']['path'].append(tg.path.relpath().replace('\\','/'))
-			if len(set(tg.features) & set(['cshlib', 'cxxshlib'])):
-				self.lib['shared']['name'].append(tg.get_name())
-				self.lib['shared']['path'].append(tg.path.relpath().replace('\\','/'))
-			if len(set(tg.features) & set(['fake_lib'])):
-				self.lib['shared']['name'].append(tg.get_name())
-				self.lib['shared']['path'].extend([p.replace('\\', '/') for p in tg.lib_paths])
-				
+			uses.extend(self._get_libs(use, 0))
+		uses = sorted(uses, key=lambda use: use[0])
+		uses = uses[::-1]
+
+		# insert tasks at start of list, lowest nesting at start
+		for (_, lib, paths, kind) in uses:
+			self.lib[kind]['name'].insert(0, lib)
+			if paths:
+				self.lib[kind]['path'].extend(paths)
 		for lib in Utils.to_list(getattr(self.gen, 'lib', [])):
 			self.lib['shared']['name'].append(lib)
 
