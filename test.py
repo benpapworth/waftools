@@ -18,12 +18,6 @@ def cd(path):
 	os.chdir(path)
 
 
-def rm(path):
-	'''delete directory, including sub-directories and files it contains.'''
-	if os.path.exists(path):
-		logging.info("rm -rf %s" % (path))
-		shutil.rmtree(path)
-
 def exe(cmd, args=[]):
 	'''executes the given commands using subprocess.check_call.'''
 	args = cmd.split() + args
@@ -65,13 +59,33 @@ def create_env(top, python):
 	if python:
 		cmd += ' --python=%s' % python
 	exe(cmd)
-	
-	bindir = '%s/%s' % (top, 'Scripts' if win32 else 'bin')
-	libdir = '%s/Lib' % (top) # TODO for linux
-	python = '%s/python%s' % (bindir, '.exe' if win32 else '')
-	pip = '%s/pip%s' % (bindir, '.exe' if win32 else '')
-	waf = '%s -x %s/waf' % (python, bindir)
+
+	if python:
+		version = subprocess.check_output([python, '--version'], stderr=subprocess.STDOUT)
+		version = version.split()[1].split('.')
+	else:
+		version = sys.version_info
+
+	if win32:
+		bindir = '%s/Scripts' % (top)
+		libdir = '%s/Lib' % (top)
+		python = '%s/python.exe' % (bindir)
+		pip = '%s/pip.exe' % (bindir)
+		waf = '%s -x %s/waf' % (python, bindir)
+
+	else:
+		bindir = '%s/bin' % (top)
+		libdir = '%s/lib/python%s.%s' % (top, version[0], version[1])
+		python = 'python'
+		pip = 'pip'
+		waf = 'waf'
+
 	wafinstall = '%s/wafinstall%s' % (bindir, '.exe' if win32 else '')
+	
+	os.environ['WAFDIR'] = "%s/site-packages" % libdir
+	os.environ['PYTHONHOME'] = top
+	os.environ['PYTHONPATH'] = libdir
+	os.environ['PATH'] = '%s%s%s' % (bindir, ';' if win32 else ':', os.environ['PATH'])
 	return (python, pip, waf, wafinstall)
 
 
@@ -79,7 +93,7 @@ def waftools_setup(python, pip, git, wafinstall, devel, version):
 	'''setup waftools test environment.
 	'''
 	exe('%s clone https://bitbucket.org/Moo7/waftools/waftools.git waftools' % git)
-		
+	
 	if devel:
 		top = os.getcwd()
 		try:
