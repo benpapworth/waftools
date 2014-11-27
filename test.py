@@ -32,9 +32,18 @@ def exe(cmd, args=[]):
 
 def rm(path):
 	'''delete directory, including sub-directories and files it contains.'''
+	def onerror(function, path, excinfo):
+		if isinstance(excinfo, PermissionError):
+			print('==========================================')
+			print(function)
+			print(path)
+			print(excinfo)
+			print(os.stat(path))
+			print('==========================================')
+	
 	if os.path.exists(path):
 		logging.info("rm -rf %s" % (path))
-		shutil.rmtree(path)
+		shutil.rmtree(path, onerror=onerror)
 
 
 def mkdirs(path):
@@ -78,7 +87,7 @@ def waftools_setup(python, pip, git, wafinstall, devel, version):
 			cd('waftools')
 			exe(python, args=['setup.py', 'sdist', 'install'])
 			cd('waftools')
-			exe(python, args=['wafinstall.py', '--local', '--tools=unity,batched_cc'])
+			exe(python, args=['wafinstall.py', '--local']) ##, '--tools=unity,batched_cc'])
 		finally:
 			cd(top)
 	else:
@@ -147,7 +156,7 @@ def waftools_test(waf):
 		cd('%s/waftools/playground' % top)
 		for cmd in commands:
 			exe(cmd)
-		#waftools_cmake(env)
+		waftools_cmake(env)
 	finally:
 		cd(top)
 
@@ -178,14 +187,13 @@ if __name__ == "__main__":
 	git = git.replace('\\', '/')
 		
 	top = tempfile.mkdtemp().replace('\\', '/')
-	(python, pip, waf, wafinstall) = create_env(top, python)
 	home = os.getcwd()
 	try:
+		(python, pip, waf, wafinstall) = create_env(top, python)
 		cd(top)
 		waftools_setup(python, pip, git, wafinstall, devel, version)
 		waftools_test(waf)		
 	finally:
 		cd(home)
-	#rm(top)
-
+		rm(top)
 
