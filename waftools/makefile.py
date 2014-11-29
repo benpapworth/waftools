@@ -627,6 +627,7 @@ class MakeRoot(Make):
 		s = re.sub('CFLAGS:=', 'CFLAGS:=%s' % ' '.join(bld.env.CFLAGS), s)
 		s = re.sub('CXXFLAGS:=', 'CXXFLAGS:=%s' % ' '.join(bld.env.CXXFLAGS), s)
 		s = re.sub('DEFINES:=', 'DEFINES:=%s' % ' '.join(bld.env.DEFINES), s)
+		s = re.sub('INCLUDES:=', 'INCLUDES:=%s' % ' '.join(bld.env.INCLUDES), s)
 		s = re.sub('==MODULES==', self.get_modules(), s)
 		s = re.sub('==MODPATHS==', self.get_modpaths(), s)
 		s = re.sub('==MODDEPS==', self.get_moddeps(), s)
@@ -991,6 +992,7 @@ export DEFINES:=
 export RPATH:=
 export BINDIR:=
 export LIBDIR:=
+export INCLUDES:=
 
 SEARCHPATH=components/
 SEARCHFILE=Makefile
