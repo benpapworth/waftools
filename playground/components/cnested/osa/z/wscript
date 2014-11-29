@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 def build(bld):
-	bld.shlib(
+	bld.stlib(
 		target='osaz',
 		source=bld.path.ant_glob('src/*.c'),
 		includes=['./include'],
