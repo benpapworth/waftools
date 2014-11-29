@@ -189,18 +189,18 @@ class CMake(object):
 		self.tgens = []
 
 	def export(self):
-		content = self._get_content()
+		content = self.get_content()
 		if not content:
 			return
 
-		node = self._make_node()
+		node = self.make_node()
 		if not node:
 			return
 		node.write(content)
 		Logs.pprint('YELLOW', 'exported: %s' % node.abspath())
 
 	def cleanup(self):
-		node = self._find_node()
+		node = self.find_node()
 		if node:
 			node.delete()
 			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
@@ -214,23 +214,23 @@ class CMake(object):
 	def get_location(self):
 		return self.location
 
-	def _get_fname(self):
+	def get_fname(self):
 		name = '%s/CMakeLists.txt' % (self.location)
 		return name
 
-	def _find_node(self):
-		name = self._get_fname()
+	def find_node(self):
+		name = self.get_fname()
 		if not name:
 			return None    
 		return self.bld.srcnode.find_node(name)
 
-	def _make_node(self):
-		name = self._get_fname()
+	def make_node(self):
+		name = self.get_fname()
 		if not name:
 			return None    
 		return self.bld.srcnode.make_node(name)
 
-	def _get_content(self):
+	def get_content(self):
 		is_top = (self.location == self.bld.path.relpath())
 
 		content = ''
@@ -256,7 +256,7 @@ class CMake(object):
 		if len(self.tgens):
 			content += '\n'
 			for tgen in self.tgens:
-				content += self._get_tgen_content(tgen)
+				content += self.get_tgen_content(tgen)
 
 		if len(self.cmakes):
 			content += '\n'
@@ -265,7 +265,7 @@ class CMake(object):
 
 		return content
 
-	def _get_tgen_content(self, tgen):
+	def get_tgen_content(self, tgen):
 		content = ''
 		name = tgen.get_name()
 
@@ -274,7 +274,8 @@ class CMake(object):
 			content += '\n    %s' % (src.path_from(tgen.path).replace('\\','/'))
 		content += ')\n\n'
 
-		includes = self._get_genlist(tgen, 'includes')
+		includes = self.get_genlist(tgen, 'includes')
+		includes.extend(tgen.env.INCLUDES)
 		if len(includes):
 			content += 'set(%s_INCLUDES' % (name)
 			for include in includes:
@@ -283,7 +284,7 @@ class CMake(object):
 			content += 'include_directories(${%s_INCLUDES})\n' % (name)
 			content += '\n'
 
-		defines = self._get_genlist(tgen, 'defines')
+		defines = self.get_genlist(tgen, 'defines')
 		if len(defines):
 			content += 'add_definitions(-D%s)\n' % (' -D'.join(defines))
 			content += '\n'
@@ -306,7 +307,7 @@ class CMake(object):
 
 		return content
 
-	def _get_genlist(self, tgen, name):
+	def get_genlist(self, tgen, name):
 		lst = Utils.to_list(getattr(tgen, name, []))
 		lst = [str(l.path_from(tgen.path)) if hasattr(l, 'path_from') else l for l in lst]
 		return [l.replace('\\', '/') for l in lst]
