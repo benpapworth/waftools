@@ -28,6 +28,7 @@ def configure(conf):
 	conf.load('ccross')
 	conf.load('msdev')
 	conf.load('cmake')
+	conf.env.append_unique('INCLUDES', conf.path.find_node('include').abspath().replace('\\', '/'))
 
 
 def build(bld):
