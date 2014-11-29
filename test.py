@@ -108,13 +108,13 @@ def waftools_setup(python, pip, git, wafinstall, devel, version):
 		exe(wafinstall, args=['--local'])
 
 
-def waftools_cmake():
+def waftools_cmake(waf):
 	'''test generated cmake files.'''
 	top = os.getcwd()
 	try:
 		cd('%s/waftools/playground' % top)
-		exe('waf configure --debug --prefix=.')
-		exe('waf cmake')
+		exe('%s configure --debug --prefix=.' % waf)
+		exe('%s cmake' % waf)
 		mkdirs('%s/cbuild' % top)
 		cd('%s/cbuild' % top)
 		exe('cmake %s/waftools/playground' % top, args=['-G', 'Unix Makefiles'])
@@ -122,8 +122,8 @@ def waftools_cmake():
 		exe('make clean')
 		cd('%s/waftools/playground' % top)
 		rm('%s/ctest' % top)
-		exe('waf cmake --clean')
-		exe('waf distclean')
+		exe('%s cmake --clean' % waf)
+		exe('%s distclean' % waf)
 	finally:
 		cd(top)
 
@@ -137,7 +137,7 @@ def waftools_test(waf):
 		'%s codeblocks' % waf,
 		'%s codeblocks --clean' % waf,
 		'%s eclipse' % waf,
-		'%s eclipse --clean' % waf,		
+		'%s eclipse --clean' % waf,
 		'%s msdev' % waf,
 		'%s msdev --clean' % waf,
 		'%s cmake' % waf,
@@ -169,7 +169,6 @@ def waftools_test(waf):
 		cd('%s/waftools/playground' % top)
 		for cmd in commands:
 			exe(cmd)
-		waftools_cmake()
 	finally:
 		cd(top)
 
@@ -191,7 +190,7 @@ if __name__ == "__main__":
 		elif opt in ('-p', '--python'):
 			python = arg
 		elif opt in ('-d', '--devel'):
-			devel = True		
+			devel = True
 		elif opt in ('-v', '--version'):
 			version = arg
 
@@ -205,7 +204,8 @@ if __name__ == "__main__":
 		(python, pip, waf, wafinstall) = create_env(top, python)
 		cd(top)
 		waftools_setup(python, pip, git, wafinstall, devel, version)
-		waftools_test(waf)		
+		waftools_test(waf)
+		waftools_cmake(waf)
 	finally:
 		cd(home)
 		rm(top)

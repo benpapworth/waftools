@@ -2,8 +2,10 @@ History
 -------
 Following lists the changes per released version.
 
-**v0.4.2**, 2014-11-25:
+**v0.4.2**, 2014-11-30:
 
+- issue12_; *makefile*, treat bld.objects() as stlib.
+- *makefile*; improved detection and handling of nested libraries.
 - issue11_; *cmake*, treat bld.objects() as stlib.
 
 
@@ -181,5 +183,6 @@ Following lists the changes per released version.
 .. _issue8: https://bitbucket.org/Moo7/waftools/issue/8/module-crosspy-fails-in-v035
 .. _issue9: https://bitbucket.org/Moo7/waftools/issue/9/eclipse-missing-pthread
 .. _issue11: https://bitbucket.org/Moo7/waftools/issue/11/cmake-export-fails-when-using-bldobjects
+.. _issue12: https://bitbucket.org/Moo7/waftools/issue/12/makefile-export-fails-when-using
 
 
