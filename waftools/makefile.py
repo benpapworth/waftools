@@ -529,29 +529,29 @@ class Make(object):
 		self.bld = bld
 
 	def export(self):
-		content = self._get_content()
+		content = self.get_content()
 		if not content:
 			return
-		node = self._make_node()
+		node = self.make_node()
 		if not node:
 			return
 		node.write(content)
 		Logs.pprint('YELLOW', 'exported: %s' % node.abspath())
 			
 	def cleanup(self):
-		node = self._find_node()
+		node = self.find_node()
 		if node:
 			node.delete()
 			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 
-	def _find_node(self):
-		name = self._get_name()
+	def find_node(self):
+		name = self.get_name()
 		if not name:
 			return None
 		return self.bld.srcnode.find_node(name)
 
-	def _make_node(self):
-		name = self._get_name()
+	def make_node(self):
+		name = self.get_name()
 		if not name:
 			return None
 		return self.bld.srcnode.make_node(name)
@@ -562,11 +562,11 @@ class Make(object):
 		s = re.sub('==VERSION==', waftools.version, s)
 		return s
 
-	def _get_name(self):
+	def get_name(self):
 		'''abstract operation to be defined in child'''
 		return None
 
-	def _get_content(self):
+	def get_content(self):
 		'''abstract operation to be defined in child'''
 		return None
 
@@ -576,7 +576,7 @@ class MakeRoot(Make):
 		super(MakeRoot, self).__init__(bld)
 		self.childs = []
 
-	def _get_name(self):
+	def get_name(self):
 		name = self.bld.path.relpath().replace('\\', '/')
 		if self.bld.variant:
 			name += '/makefile_%s.mk' % (self.bld.variant)
@@ -584,7 +584,7 @@ class MakeRoot(Make):
 			name += '/Makefile'
 		return name
 
-	def _get_content(self):
+	def get_content(self):
 		bld = self.bld
 		cwd = str(os.getcwd()).replace('\\', '/')
 		prefix = str(os.path.abspath(bld.env.PREFIX)).replace('\\', '/')
@@ -627,9 +627,9 @@ class MakeRoot(Make):
 		s = re.sub('CFLAGS:=', 'CFLAGS:=%s' % ' '.join(bld.env.CFLAGS), s)
 		s = re.sub('CXXFLAGS:=', 'CXXFLAGS:=%s' % ' '.join(bld.env.CXXFLAGS), s)
 		s = re.sub('DEFINES:=', 'DEFINES:=%s' % ' '.join(bld.env.DEFINES), s)
-		s = re.sub('==MODULES==', self._get_modules(), s)
-		s = re.sub('==MODPATHS==', self._get_modpaths(), s)
-		s = re.sub('==MODDEPS==', self._get_moddeps(), s)
+		s = re.sub('==MODULES==', self.get_modules(), s)
+		s = re.sub('==MODPATHS==', self.get_modpaths(), s)
+		s = re.sub('==MODDEPS==', self.get_moddeps(), s)
 		s = re.sub('==VARIANT==', '_%s' % var if var else '', s)
 		s = re.sub(bld.env.PREFIX, '$(PREFIX)', s)
 		s = re.sub('PREFIX:=', 'PREFIX:=%s' % prefix, s)
@@ -638,14 +638,14 @@ class MakeRoot(Make):
 	def add_child(self, child):
 		self.childs.append(child)
 	
-	def _get_modules(self):
+	def get_modules(self):
 		d = []
 		for (name, _, _) in self.childs:
 			d.append(name)
 		s = ' \\\n\t'.join(d)
 		return s
 
-	def _get_modpaths(self):
+	def get_modpaths(self):
 		d = []
 		for (name, makefile, _) in self.childs:
 			s = '%s;%s' %(name, os.path.dirname(makefile))
@@ -653,7 +653,7 @@ class MakeRoot(Make):
 		s = ' \\\n\t'.join(d)
 		return s
 
-	def _get_moddeps(self):
+	def get_moddeps(self):
 		d = []
 		names = [c[0] for c in self.childs]
 		for (name, _, deps) in self.childs:
@@ -671,9 +671,9 @@ class MakeChild(Make):
 		super(MakeChild, self).__init__(bld)
 		self.gen = gen
 		self.targets = targets
-		self._process()
+		self.process()
 
-	def _get_name(self):
+	def get_name(self):
 		gen = self.gen
 		if self.bld.variant:
 			name = '%s/%s_%s.mk' % (gen.path.relpath(), gen.get_name(), self.bld.variant)
@@ -681,27 +681,22 @@ class MakeChild(Make):
 			name = '%s/%s.mk' % (gen.path.relpath(), gen.get_name())
 		return name.replace('\\', '/')
 
-	def _get_content(self):
-		tg = self.gen
-		if 'cprogram' in tg.features:
-			s = self._get_cprogram_content()
-		elif 'cstlib' in tg.features:
-			s = self._get_cstlib_content()
-		elif set(tg.features) & set(['c', 'objects']):
-			s = self._get_cstlib_content()
-		elif 'cshlib' in tg.features:
-			s = self._get_cshlib_content()
-		elif 'cxxprogram' in tg.features:
-			s = self._get_cxxprogram_content()
-		elif 'cxxstlib' in tg.features:
-			s = self._get_cxxstlib_content()
-		elif set(tg.features) & set(['cxx', 'objects']):
-			s = self._get_cxxstlib_content()
-		elif 'cxxshlib' in tg.features:
-			s = self._get_cxxshlib_content()
-		else:
-			s = MAKEFILE_CHILD
-			s = super(MakeChild, self).populate(s)
+	def get_content(self):
+		features = list(self.gen.features)
+		if features == ['cxx']:
+			features.append('cxxstlib')
+		elif features == ['c']:
+			features.append('cstlib')
+
+		s = ''
+		for feature in features:
+			if hasattr(self, feature):
+				func = getattr(self, feature)
+				s += func(self.bld, self.gen)
+				break
+		
+		if s == '':
+			self.bld.fatal('FAILED(%s) features=%s' % (self.gen.get_name(), self.gen.features))
 
 		loc = 'build'
 		if self.bld.variant:
@@ -712,11 +707,11 @@ class MakeChild(Make):
 	def get_data(self):
 		gen = self.gen
 		name = gen.get_name()
-		makefile = self._get_name()
+		makefile = self.get_name()
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		return (name, makefile, deps)
 	
-	def _get_libs(self, target, nest):
+	def get_libs(self, target, nest):
 		'''returns library information for this target and any target it depends on
 
 		returns a list of tuples;
@@ -745,10 +740,10 @@ class MakeChild(Make):
 		for lib in Utils.to_list(getattr(tg, 'lib', [])):
 			libs.append((nest, lib, None, 'shared'))
 		for use in getattr(tg, 'use', []):
-			libs.extend(self._get_libs(use, nest+1))
+			libs.extend(self.get_libs(use, nest+1))
 		return libs
 
-	def _process(self):
+	def process(self):
 		self.lib = {}
 		self.lib['static'] = { 'name' : [], 'path' : [] }
 		self.lib['shared'] = { 'name' : [], 'path' : [] }
@@ -757,7 +752,7 @@ class MakeChild(Make):
 		# with highest nesting
 		uses = []
 		for use in Utils.to_list(getattr(self.gen, 'use', [])):
-			uses.extend(self._get_libs(use, 0))
+			uses.extend(self.get_libs(use, 0))
 		uses = sorted(uses, key=lambda use: use[0])
 		uses = uses[::-1]
 
@@ -769,12 +764,12 @@ class MakeChild(Make):
 		for lib in Utils.to_list(getattr(self.gen, 'lib', [])):
 			self.lib['shared']['name'].append(lib)
 
-	def _get_cprogram_content(self):
-		bld = self.bld
-		gen = self.gen
-		source = self._get_genlist(gen, 'source')
-		includes = self._get_genlist(gen, 'includes')
-		defines = self._get_defines(gen)
+	def cprogram(self, bld, gen):
+		'''returns the makefile content for a C program.
+		'''
+		source = self.get_genlist(gen, 'source')
+		includes = self.get_genlist(gen, 'includes')
+		defines = self.get_defines(gen)
 		defines = [d for d in defines]
 		s = MAKEFILE_CPROGRAM
 		s = super(MakeChild, self).populate(s)
@@ -783,20 +778,20 @@ class MakeChild(Make):
 		s = re.sub('SOURCES=', 'SOURCES= \\\n\t%s' % ' \\\n\t'.join(source), s)
 		s = re.sub('INCLUDES\+=', 'INCLUDES+= \\\n\t%s' % ' \\\n\t'.join(includes),s)
 		s = re.sub('DEFINES\+=', 'DEFINES+=%s' % ' '.join(defines),s)
-		s = re.sub('CFLAGS\+=', 'CFLAGS+=%s' % self._get_cflags(gen),s)
-		s = re.sub('LINKFLAGS\+=', 'LINKFLAGS+=%s' % self._get_linkflags(gen),s)
-		s = re.sub('LIBPATH_ST\+=', 'LIBPATH_ST+=%s' % self._get_libpath('static'),s)
-		s = re.sub('LIB_ST\+=', 'LIB_ST+=%s' % self._get_lib('static'),s)
-		s = re.sub('LIBPATH_SH\+=', 'LIBPATH_SH+=%s' % self._get_libpath('shared'),s)
-		s = re.sub('LIB_SH\+=', 'LIB_SH+=%s' % self._get_lib('shared'),s)
+		s = re.sub('CFLAGS\+=', 'CFLAGS+=%s' % self.get_cflags(gen),s)
+		s = re.sub('LINKFLAGS\+=', 'LINKFLAGS+=%s' % self.get_linkflags(gen),s)
+		s = re.sub('LIBPATH_ST\+=', 'LIBPATH_ST+=%s' % self.get_libpath('static'),s)
+		s = re.sub('LIB_ST\+=', 'LIB_ST+=%s' % self.get_lib('static'),s)
+		s = re.sub('LIBPATH_SH\+=', 'LIBPATH_SH+=%s' % self.get_libpath('shared'),s)
+		s = re.sub('LIB_SH\+=', 'LIB_SH+=%s' % self.get_lib('shared'),s)
 		return s
 
-	def _get_cxxprogram_content(self):
-		bld = self.bld
-		gen = self.gen
-		source = self._get_genlist(gen, 'source')
-		includes = self._get_genlist(gen, 'includes')
-		defines = self._get_defines(gen)
+	def cxxprogram(self, bld, gen):
+		'''returns the makefile content for a C++ program.
+		'''
+		source = self.get_genlist(gen, 'source')
+		includes = self.get_genlist(gen, 'includes')
+		defines = self.get_defines(gen)
 		defines = [d for d in defines]
 		s = MAKEFILE_CXXPROGRAM
 		s = super(MakeChild, self).populate(s)
@@ -805,20 +800,20 @@ class MakeChild(Make):
 		s = re.sub('SOURCES=', 'SOURCES= \\\n\t%s' % ' \\\n\t'.join(source), s)
 		s = re.sub('INCLUDES\+=', 'INCLUDES+= \\\n\t%s' % ' \\\n\t'.join(includes),s)
 		s = re.sub('DEFINES\+=', 'DEFINES+=%s' % ' '.join(defines),s)
-		s = re.sub('CXXFLAGS\+=', 'CXXFLAGS+=%s' % self._get_cxxflags(gen),s)
-		s = re.sub('LINKFLAGS\+=', 'LINKFLAGS+=%s' % self._get_linkflags(gen),s)
-		s = re.sub('LIBPATH_ST\+=', 'LIBPATH_ST+=%s' % self._get_libpath('static'),s)
-		s = re.sub('LIB_ST\+=', 'LIB_ST+=%s' % self._get_lib('static'),s)
-		s = re.sub('LIBPATH_SH\+=', 'LIBPATH_SH+=%s' % self._get_libpath('shared'),s)
-		s = re.sub('LIB_SH\+=', 'LIB_SH+=%s' % self._get_lib('shared'),s)
+		s = re.sub('CXXFLAGS\+=', 'CXXFLAGS+=%s' % self.get_cxxflags(gen),s)
+		s = re.sub('LINKFLAGS\+=', 'LINKFLAGS+=%s' % self.get_linkflags(gen),s)
+		s = re.sub('LIBPATH_ST\+=', 'LIBPATH_ST+=%s' % self.get_libpath('static'),s)
+		s = re.sub('LIB_ST\+=', 'LIB_ST+=%s' % self.get_lib('static'),s)
+		s = re.sub('LIBPATH_SH\+=', 'LIBPATH_SH+=%s' % self.get_libpath('shared'),s)
+		s = re.sub('LIB_SH\+=', 'LIB_SH+=%s' % self.get_lib('shared'),s)
 		return s
 
-	def _get_cstlib_content(self):
-		bld = self.bld
-		gen = self.gen
-		source = self._get_genlist(gen, 'source')
-		includes = self._get_genlist(gen, 'includes')
-		defines = self._get_defines(gen)
+	def cstlib(self, bld, gen):
+		'''returns the makefile content for a C static library.
+		'''
+		source = self.get_genlist(gen, 'source')
+		includes = self.get_genlist(gen, 'includes')
+		defines = self.get_defines(gen)
 		defines = [d for d in defines]
 		s = MAKEFILE_CSTLIB
 		s = super(MakeChild, self).populate(s)
@@ -827,16 +822,16 @@ class MakeChild(Make):
 		s = re.sub('SOURCES=', 'SOURCES= \\\n\t%s' % ' \\\n\t'.join(source), s)
 		s = re.sub('INCLUDES\+=', 'INCLUDES+= \\\n\t%s' % ' \\\n\t'.join(includes),s)
 		s = re.sub('DEFINES\+=', 'DEFINES+=%s' % ' '.join(defines),s)
-		s = re.sub('CFLAGS\+=', 'CFLAGS+=%s' % self._get_cflags(gen),s)
-		s = re.sub('ARFLAGS=', 'ARFLAGS=%s' % self._get_arflags(gen), s)
+		s = re.sub('CFLAGS\+=', 'CFLAGS+=%s' % self.get_cflags(gen),s)
+		s = re.sub('ARFLAGS=', 'ARFLAGS=%s' % self.get_arflags(gen), s)
 		return s
 
-	def _get_cshlib_content(self):
-		bld = self.bld
-		gen = self.gen
-		source = self._get_genlist(gen, 'source')
-		includes = self._get_genlist(gen, 'includes')
-		defines = self._get_defines(gen)
+	def cshlib(self, bld, gen):
+		'''returns the makefile content for a C shared library.
+		'''
+		source = self.get_genlist(gen, 'source')
+		includes = self.get_genlist(gen, 'includes')
+		defines = self.get_defines(gen)
 		defines = [d for d in defines]
 		s = MAKEFILE_CSHLIB
 		s = super(MakeChild, self).populate(s)
@@ -847,20 +842,20 @@ class MakeChild(Make):
 		s = re.sub('SOURCES=', 'SOURCES= \\\n\t%s' % ' \\\n\t'.join(source), s)
 		s = re.sub('INCLUDES\+=', 'INCLUDES+= \\\n\t%s' % ' \\\n\t'.join(includes),s)
 		s = re.sub('DEFINES\+=', 'DEFINES+=%s' % ' '.join(defines),s)
-		s = re.sub('CFLAGS\+=', 'CFLAGS+=%s' % self._get_cflags(gen),s)
-		s = re.sub('LINKFLAGS\+=', 'LINKFLAGS+=%s' % self._get_linkflags(gen),s)
-		s = re.sub('LIBPATH_ST\+=', 'LIBPATH_ST+=%s' % self._get_libpath('static'),s)
-		s = re.sub('LIB_ST\+=', 'LIB_ST+=%s' % self._get_lib('static'),s)
-		s = re.sub('LIBPATH_SH\+=', 'LIBPATH_SH+=%s' % self._get_libpath('shared'),s)
-		s = re.sub('LIB_SH\+=', 'LIB_SH+=%s' % self._get_lib('shared'),s)
+		s = re.sub('CFLAGS\+=', 'CFLAGS+=%s' % self.get_cflags(gen),s)
+		s = re.sub('LINKFLAGS\+=', 'LINKFLAGS+=%s' % self.get_linkflags(gen),s)
+		s = re.sub('LIBPATH_ST\+=', 'LIBPATH_ST+=%s' % self.get_libpath('static'),s)
+		s = re.sub('LIB_ST\+=', 'LIB_ST+=%s' % self.get_lib('static'),s)
+		s = re.sub('LIBPATH_SH\+=', 'LIBPATH_SH+=%s' % self.get_libpath('shared'),s)
+		s = re.sub('LIB_SH\+=', 'LIB_SH+=%s' % self.get_lib('shared'),s)
 		return s
 
-	def _get_cxxstlib_content(self):
-		bld = self.bld
-		gen = self.gen
-		source = self._get_genlist(gen, 'source')
-		includes = self._get_genlist(gen, 'includes')
-		defines = self._get_defines(gen)
+	def cxxstlib(self, bld, gen):
+		'''returns the makefile content for a C++ static library.
+		'''
+		source = self.get_genlist(gen, 'source')
+		includes = self.get_genlist(gen, 'includes')
+		defines = self.get_defines(gen)
 		defines = [d for d in defines]
 		s = MAKEFILE_CXXSTLIB
 		s = super(MakeChild, self).populate(s)
@@ -869,16 +864,16 @@ class MakeChild(Make):
 		s = re.sub('SOURCES=', 'SOURCES= \\\n\t%s' % ' \\\n\t'.join(source), s)
 		s = re.sub('INCLUDES\+=', 'INCLUDES+= \\\n\t%s' % ' \\\n\t'.join(includes),s)
 		s = re.sub('DEFINES\+=', 'DEFINES+=%s' % ' '.join(defines),s)
-		s = re.sub('CXXFLAGS\+=', 'CXXFLAGS+=%s' % self._get_cxxflags(gen),s)
-		s = re.sub('ARFLAGS=', 'ARFLAGS=%s' % self._get_arflags(gen), s)
+		s = re.sub('CXXFLAGS\+=', 'CXXFLAGS+=%s' % self.get_cxxflags(gen),s)
+		s = re.sub('ARFLAGS=', 'ARFLAGS=%s' % self.get_arflags(gen), s)
 		return s
 
-	def _get_cxxshlib_content(self):
-		bld = self.bld
-		gen = self.gen
-		source = self._get_genlist(gen, 'source')
-		includes = self._get_genlist(gen, 'includes')
-		defines = self._get_defines(gen)
+	def cxxshlib(self, bld, gen):
+		'''returns the makefile content for a C++ shared library.
+		'''
+		source = self.get_genlist(gen, 'source')
+		includes = self.get_genlist(gen, 'includes')
+		defines = self.get_defines(gen)
 		defines = [d for d in defines]
 		s = MAKEFILE_CXXSHLIB
 		s = super(MakeChild, self).populate(s)
@@ -889,22 +884,22 @@ class MakeChild(Make):
 		s = re.sub('SOURCES=', 'SOURCES= \\\n\t%s' % ' \\\n\t'.join(source), s)
 		s = re.sub('INCLUDES\+=', 'INCLUDES+= \\\n\t%s' % ' \\\n\t'.join(includes),s)
 		s = re.sub('DEFINES\+=', 'DEFINES+=%s' % ' '.join(defines),s)
-		s = re.sub('CXXFLAGS\+=', 'CXXFLAGS+=%s' % self._get_cxxflags(gen),s)
-		s = re.sub('LINKFLAGS\+=', 'LINKFLAGS+=%s' % self._get_linkflags(gen),s)
-		s = re.sub('LIBPATH_ST\+=', 'LIBPATH_ST+=%s' % self._get_libpath('static'),s)
-		s = re.sub('LIB_ST\+=', 'LIB_ST+=%s' % self._get_lib('static'),s)
-		s = re.sub('LIBPATH_SH\+=', 'LIBPATH_SH+=%s' % self._get_libpath('shared'),s)
-		s = re.sub('LIB_SH\+=', 'LIB_SH+=%s' % self._get_lib('shared'),s)
+		s = re.sub('CXXFLAGS\+=', 'CXXFLAGS+=%s' % self.get_cxxflags(gen),s)
+		s = re.sub('LINKFLAGS\+=', 'LINKFLAGS+=%s' % self.get_linkflags(gen),s)
+		s = re.sub('LIBPATH_ST\+=', 'LIBPATH_ST+=%s' % self.get_libpath('static'),s)
+		s = re.sub('LIB_ST\+=', 'LIB_ST+=%s' % self.get_lib('static'),s)
+		s = re.sub('LIBPATH_SH\+=', 'LIBPATH_SH+=%s' % self.get_libpath('shared'),s)
+		s = re.sub('LIB_SH\+=', 'LIB_SH+=%s' % self.get_lib('shared'),s)
 		return s
 
-	def _get_genlist(self, gen, name):
+	def get_genlist(self, gen, name):
 		lst = Utils.to_list(getattr(gen, name, []))
 		lst = [str(l.path_from(gen.path)) if hasattr(l, 'path_from') else l for l in lst]
 		return [l.replace('\\', '/') for l in lst]
 
-	def _get_defines(self, gen):
+	def get_defines(self, gen):
 		defines = []
-		defs = self._get_genlist(gen, 'defines')
+		defs = self.get_genlist(gen, 'defines')
 		for d in defs:
 			if d.count('"') == 2:
 				(pre, val, post) = d.split('"')
@@ -912,7 +907,7 @@ class MakeChild(Make):
 			defines.append(d)
 		return defines
 
-	def _get_cflags(self, gen):
+	def get_cflags(self, gen):
 		cflags = getattr(gen, 'cflags', [])
 		if isinstance(cflags, str):
 			cflags = cflags.split()
@@ -920,7 +915,7 @@ class MakeChild(Make):
 			cflags.extend(self.bld.env.CFLAGS_cshlib)
 		return ' '.join(cflags)
 
-	def _get_cxxflags(self, gen):
+	def get_cxxflags(self, gen):
 		cxxflags = getattr(gen, 'cxxflags', [])
 		if isinstance(cxxflags, str):
 			cxxflags = cxxflags.split()
@@ -928,7 +923,7 @@ class MakeChild(Make):
 			cxxflags.extend(self.bld.env.CXXFLAGS_cxxshlib)
 		return ' '.join(cxxflags)
 
-	def _get_linkflags(self, gen):
+	def get_linkflags(self, gen):
 		linkflags = getattr(gen, 'linkflags', [])
 		if 'cshlib' in gen.features:
 			linkflags.extend(self.bld.env.LINKFLAGS_cshlib)
@@ -936,11 +931,11 @@ class MakeChild(Make):
 			linkflags.extend(self.bld.env.LINKFLAGS_cxxshlib)
 		return ' '.join(linkflags)
 
-	def _get_arflags(self, gen):
+	def get_arflags(self, gen):
 		flags = Utils.to_list(self.bld.env.ARFLAGS)
 		return ' '.join(flags)
 
-	def _get_libpath(self, kind):
+	def get_libpath(self, kind):
 		paths = self.lib[kind]['path']
 		top = self.bld.path.abspath().replace('\\', '/')
 		libpath = []
@@ -953,7 +948,7 @@ class MakeChild(Make):
 				libpath.append('$(TOP)/build/%s' % p)
 		return ' \\\n\t'.join(libpath)
 
-	def _get_lib(self, kind):
+	def get_lib(self, kind):
 		lib = self.lib[kind]['name']
 		return ' '.join(lib)
 
@@ -1124,13 +1119,13 @@ help:
 	@echo "commands:"
 	@echo "  all                                 builds all modules"
 	@echo "  build                               builds all modules"
-	@echo "  build$(csep)a                             builds module 'a' and it's dependencies"
+	@echo "  build$(csep)a                       builds module 'a' and it's dependencies"
 	@echo "  clean                               removes all build intermediates and outputs"
-	@echo "  clean$(csep)a                             cleans module 'a' and it's dependencies"
+	@echo "  clean$(csep)a                       cleans module 'a' and it's dependencies"
 	@echo "  install                             installs files in $(PREFIX)"
-	@echo "  install$(csep)a                           installs module 'a' and it's dependencies"
+	@echo "  install$(csep)a                     installs module 'a' and it's dependencies"
 	@echo "  uninstall                           removes all installed files from $(PREFIX)"
-	@echo "  uninstall$(csep)a                         removes module 'a' and it's dependencies"
+	@echo "  uninstall$(csep)a                   removes module 'a' and it's dependencies"
 	@echo "  list                                list available make commands (i.e. recipes)"
 	@echo "  modules                             list logical names of all modules"
 	@echo "  find [SEARCHPATH=] [SEARCHFILE=]    searches for files default(path=$(SEARCHPATH),file=$(SEARCHFILE))"
