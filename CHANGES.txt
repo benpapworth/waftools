@@ -2,6 +2,11 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.3**, 2014-12-xx:
+
+- *makefile*, *cmake*; use additional system includes (bld.env.INCLUDES)
+
+
 **v0.4.2**, 2014-11-30:
 
 - issue12_; *makefile*, treat bld.objects() as stlib.
