@@ -549,7 +549,7 @@ class MsDevProject(MsDev):
 			if pref == root:
 				node = bld.root.find_dir(include)
 				if node:
-					includes.append(node.path_from(gen.path).replace('\\', '/'))
+					includes.append(node.path_from(gen.path).replace('/', '\\'))
 		return includes
 		
 	def get_compiler_defines(self, gen):
