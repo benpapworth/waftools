@@ -569,7 +569,7 @@ class MsDevProject(MsDev):
 			except Errors.WafError:
 				pass
 			else:
-				if self.get_target_type() == :
+				if self.type == MsDev.STLIB:
 					libs.append(dep)
 		return libs
 	
