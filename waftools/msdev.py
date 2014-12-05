@@ -446,7 +446,7 @@ class MsDevProject(MsDev):
 				if name == 'VCCLCompilerTool':
 					tool.set('PreprocessorDefinitions', '%s' % self.get_compiler_defines(self.gen))
 					includes = []
-					for include in self.get_compiler_includes(self.gen):
+					for include in self.get_compiler_includes(self.bld, self.gen):
 						includes.append('%s' % include)
 					tool.set('AdditionalIncludeDirectories', ';'.join(includes))
 				if name == 'VCLinkerTool':
@@ -541,9 +541,17 @@ class MsDevProject(MsDev):
 				flags.extend(bld.env.CFLAGS_cshlib)
 		return list(set(flags))
 
-	def get_compiler_includes(self, gen):
-		return self.get_genlist(gen, 'includes')
-
+	def get_compiler_includes(self, bld, gen):
+		includes = self.get_genlist(gen, 'includes')
+		for include in bld.env['INCLUDES']:
+			root = bld.path.abspath().replace('\\', '/')
+			pref = os.path.commonprefix([root, include])
+			if pref == root:
+				node = bld.root.find_dir(include)
+				if node:
+					includes.append(node.path_from(gen.path).replace('\\', '/'))
+		return includes
+		
 	def get_compiler_defines(self, gen):
 		defines = self.get_genlist(gen, 'defines') + gen.bld.env.DEFINES
 		if 'win32' in sys.platform:
