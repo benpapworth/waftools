@@ -6,3 +6,8 @@ migrate:
 -- use build scripts from make|cmake and convert it into wscripts
 -- use project files from eclipse|msdev|codeblocks and convert it into wscripts
 
+msdev:
+- missing export of command line arguments
+- programs using shared libraries can't be started debugged (add to environment?)
+- export of complex examples (e.g. aost, oast) fails
+
