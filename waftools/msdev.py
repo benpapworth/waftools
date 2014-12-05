@@ -468,7 +468,7 @@ class MsDevProject(MsDev):
 		if len(includes) == 0:
 			filtr = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Header Files', 'Filter':'h;hpp;hxx;hm;inl;inc;xsd'})
 			filtr.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
-		for include in self.get_include_files(self.gen):
+		for include in self.get_include_files(self.bld, self.gen):
 			if include not in includes:
 				ElementTree.SubElement(filtr, 'File', attrib={'RelativePath':'%s' % include})
 
@@ -587,13 +587,23 @@ class MsDevProject(MsDev):
 					dirs.append(directory.replace('/', '\\'))
 		return dirs
 
-	def get_include_files(self, gen):
+	def get_include_files(self, bld, gen):
 		includes = []
 		for include in self.get_genlist(gen, 'includes'):
 			node = gen.path.find_dir(include)
 			if node:
-				for include in node.ant_glob('*.h*'):
-					includes.append(include.path_from(gen.path).replace('/', '\\'))
+				for header in node.ant_glob('*.h*'):
+					includes.append(header.path_from(gen.path).replace('/', '\\'))
+
+		for include in bld.env['INCLUDES']:
+			root = bld.path.abspath().replace('\\', '/')
+			pref = os.path.commonprefix([root, include])
+			if pref == root:
+				node = bld.root.find_dir(include)
+				if node:
+					for header in node.ant_glob('*.h*'):
+						includes.append(header.path_from(gen.path).replace('/', '\\'))
+
 		return includes
 
 
