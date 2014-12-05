@@ -2,10 +2,15 @@
 # -*- encoding: utf-8 -*-
 
 def build(bld):
+	if bld.env.CC_NAME == 'gcc':
+		libs = ['m']
+	else:
+		libs = []
+	
 	bld.program(
 		target='cmath',
 		source=bld.path.ant_glob('src/*.c'),
 		includes=['./include'],
-		lib=['m']
+		lib=libs
 	)
 
