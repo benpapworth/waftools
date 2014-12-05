@@ -73,7 +73,7 @@ def release(git):
 
 	# GIT: tag the new release
 	version = str(waftools.version)
-	subprocess.call('{0} tag -a v{0} -m "v{1}"'.format(git, version).split())
+	subprocess.call('{0} tag -a v{1} -m "v{1}"'.format(git, version).split())
 	subprocess.call('{0} push origin --tags'.format(git).split())
 
 	# PYPI: publish package
