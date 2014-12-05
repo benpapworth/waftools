@@ -8,6 +8,5 @@ migrate:
 
 msdev:
 - missing export of command line arguments
-- programs using shared libraries can't be started debugged (add to environment?)
-- export of complex examples (e.g. aost, oast) fails
-
+- programs using shared libraries can't be started/debugged (add to environment?)
+	Project Properties -> Configuration Properties -> Debugging -> Environment; PATH=path/containing/shared/library
