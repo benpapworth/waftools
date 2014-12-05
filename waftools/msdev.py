@@ -218,6 +218,9 @@ class MsDev(object):
 	'''Abstract base class used for exporting *waf* project data to 
 	**Visual Studio** projects and solutions.
 
+	REMARK:
+	bld.objects() taks generators are treated as static libraries.
+	
 	:param bld: Build context as used in *wscript* files of your *waf* build
 	            environment.
 	:type bld:  waflib.Build.BuildContext
@@ -226,27 +229,30 @@ class MsDev(object):
 	PROGRAM = '1'
 	'''Identifier for projects containing an executable'''
 
-	OBJECT  = '3'
-	'''Identifier for projects for building objects only'''
-
 	SHLIB   = '2'
 	'''Identifier for projects containing a shared library'''
 	
 	STLIB   = '4'
 	'''Identifier for projects containing a static library'''
 
+	C = 'c'
+	'''Identifier for projects using C language'''
+	
+	CXX = 'cxx'
+	'''Identifier for projects using C++ language'''
+	
 	def __init__(self, bld):
 		self.bld = bld
 
 	def export(self):
 		'''Exports a **Visual Studio** solution or project.'''
-		content = self._get_content()
+		content = self.get_content()
 		if not content:
 			return
-		if self._xml_clean:
-			content = self._xml_clean(content)
+		if self.xml_clean:
+			content = self.xml_clean(content)
 
-		node = self._make_node()
+		node = self.make_node()
 		if not node:
 			return
 		node.write(content)
@@ -256,7 +262,7 @@ class MsDev(object):
 		'''Deletes a **Visual Studio** solution or project file including 
 		associated files (e.g. *ncb).
 		'''
-		cwd = self._get_cwd()
+		cwd = self.get_cwd()
 		for node in cwd.ant_glob('*.user'):
 			node.delete()
 			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
@@ -269,38 +275,38 @@ class MsDev(object):
 		for node in cwd.ant_glob('*.sln'):
 			node.delete()
 			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
-		node = self._find_node()
+		node = self.find_node()
 		if node:
 			node.delete()
 			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
 
-	def _get_cwd(self):
-		cwd = os.path.dirname(self._get_fname())
+	def get_cwd(self):
+		cwd = os.path.dirname(self.get_fname())
 		if cwd == "":
 			cwd = "."
 		return self.bld.srcnode.find_node(cwd)
 
-	def _find_node(self):
-		name = self._get_fname()
+	def find_node(self):
+		name = self.get_fname()
 		if not name:
 			return None    
 		return self.bld.srcnode.find_node(name)
 
-	def _make_node(self):
-		name = self._get_fname()
+	def make_node(self):
+		name = self.get_fname()
 		if not name:
 			return None    
 		return self.bld.srcnode.make_node(name.lower())
 
-	def _get_fname(self):
+	def get_fname(self):
 		'''<abstract> Returns file name.'''
 		return None
 
-	def _get_content(self):
+	def get_content(self):
 		'''<abstract> Returns file content.'''
 		return None
 
-	def _xml_clean(self, content):
+	def xml_clean(self, content):
 		s = minidom.parseString(content).toprettyxml(indent="\t")
 		lines = [l for l in s.splitlines() if not l.isspace() and len(l)]
 		lines[0] = '<?xml version="1.0" encoding="UTF-8"?>'
@@ -320,9 +326,9 @@ class MsDevSolution(MsDev):
 	def __init__(self, bld):
 		super(MsDevSolution, self).__init__(bld)
 		self.projects = {}
-		self._xml_clean = None
+		self.xml_clean = None
 
-	def _get_fname(self):
+	def get_fname(self):
 		'''Returns the workspace's file name.'''
 		return '%s.sln' % getattr(Context.g_module, Context.APPNAME)
 
@@ -331,7 +337,7 @@ class MsDevSolution(MsDev):
 		src = '%s/msdev.sln' % os.path.dirname(__file__)
 		if not os.path.exists(src):
 			self.bld.fatal("file not found: '%s'" % src)
-		dst = self._get_fname()
+		dst = self.get_fname()
 		shutil.copyfile(src, dst)
 
 		with open(src, 'r') as f:
@@ -392,16 +398,32 @@ class MsDevProject(MsDev):
 		super(MsDevProject, self).__init__(bld)
 		self.gen = gen
 		self.id = str(uuid.uuid4()).upper()
+		self.type = self.get_type(gen)
+		self.language = self.get_language(gen)
+		self.buildpath = self.get_buildpath(bld, gen)
+		
+	def get_type(self, gen):
+		if set(('cprogram', 'cxxprogram')) & set(gen.features):
+			return MsDev.PROGRAM
+		elif set(('cshlib', 'cxxshlib')) & set(gen.features):
+			return MsDev.SHLIB
+		else:
+			return MsDev.STLIB
+			
+	def get_language(self, gen):
+		return MsDev.CXX if 'cxx' in gen.features else MsDev.C
+	
+	def get_buildpath(self, bld, gen):
+		pth = '%s/%s' % (bld.path.get_bld().path_from(gen.path), gen.path.relpath())
+		return pth.replace('/', '\\')	
 
-	def _get_fname(self):
+	def get_fname(self):
 		'''Returns the project's file name.'''
-		gen = self.gen
-		return '%s/%s.vcproj' % (gen.path.relpath().replace('\\', '/'), gen.get_name())
+		return '%s/%s.vcproj' % (self.gen.path.relpath().replace('\\', '/'), self.gen.get_name())
 
-	def _get_root(self):
-		'''Returns a document root, either from an existing file, or from template.
-		'''
-		fname = self._get_fname()
+	def get_root(self):
+		'''Returns a document root, either from an existing file, or from template.'''
+		fname = self.get_fname()
 		if os.path.exists(fname):
 			tree = ElementTree.parse(fname)
 			root = tree.getroot()
@@ -409,51 +431,33 @@ class MsDevProject(MsDev):
 			root = ElementTree.fromstring(MSDEV_PROJECT)
 		return root
 
-	def _get_target(self, project, toolchain):
-		'''Returns a targets for the requested toolchain name.
-
-		If the target doesn't exist in the project it will be added.
-		'''
-		build = project.find('Build')
-		for target in build.iter('Target'):
-			for option in target.iter('Option'):
-				if option.get('compiler') in [toolchain, 'XXX']:
-					return target
-
-		target = copy.deepcopy(build.find('Target'))
-		build.append(target)
-		return target
-
-	def _get_content(self):
+	def get_content(self):
 		'''Returns the content of a project file.'''
-		root = self._get_root()
+		root = self.get_root()
 		root.set('Name', self.gen.get_name())
 		root.set('ProjectGUID', '{%s}' % self.id)
 		configurations = root.find('Configurations')
 		for configuration in configurations.iter('Configuration'):
-			configuration.set('ConfigurationType', '%s' % self._get_target_type())
-			configuration.set('OutputDirectory', '%s\\msdev' % self._get_buildpath())
-			configuration.set('IntermediateDirectory', '%s\\msdev' % self._get_buildpath())
+			configuration.set('ConfigurationType', '%s' % self.type)
+			configuration.set('OutputDirectory', '%s\\msdev' % self.buildpath)
+			configuration.set('IntermediateDirectory', '%s\\msdev' % self.buildpath)
 			for tool in configuration.iter('Tool'):
 				name = tool.get('Name')
-			
 				if name == 'VCCLCompilerTool':
-					tool.set('PreprocessorDefinitions', '%s' % self._get_compiler_defines())
+					tool.set('PreprocessorDefinitions', '%s' % self.get_compiler_defines(self.gen))
 					includes = []
-					for include in self._get_compiler_includes():
+					for include in self.get_compiler_includes(self.gen):
 						includes.append('%s' % include)
 					tool.set('AdditionalIncludeDirectories', ';'.join(includes))
 				if name == 'VCLinkerTool':
-					self._update_link_deps(tool)
-					self._update_link_paths(tool)
-
+					self.update_link_deps(tool)
+					self.update_link_paths(tool)
 		files = root.find('Files')
-		self._update_includes(files)
-		self._update_sources(files)
-
+		self.update_includes(files)
+		self.update_sources(files)
 		return ElementTree.tostring(root)
 
-	def _update_includes(self, files):
+	def update_includes(self, files):
 		'''Add include files.'''
 		includes = []
 		for filtr in files.iter('Filter'):
@@ -464,12 +468,11 @@ class MsDevProject(MsDev):
 		if len(includes) == 0:
 			filtr = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Header Files', 'Filter':'h;hpp;hxx;hm;inl;inc;xsd'})
 			filtr.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
-		
-		for include in self._get_includes_files():
+		for include in self.get_include_files(self.gen):
 			if include not in includes:
 				ElementTree.SubElement(filtr, 'File', attrib={'RelativePath':'%s' % include})
 
-	def _update_sources(self, files):
+	def update_sources(self, files):
 		'''Add source files.'''
 		sources = []
 		for filtr in files.iter('Filter'):
@@ -480,19 +483,18 @@ class MsDevProject(MsDev):
 		if len(sources) == 0:
 			filtr = ElementTree.SubElement(files, 'Filter', attrib={'Name':'Source Files', 'Filter':'cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx'})
 			filtr.set('UniqueIdentifier', '{%s}' % str(uuid.uuid4()).upper())
-			
-		for source in self._get_genlist(self.gen, 'source'):
+		for source in self.get_genlist(self.gen, 'source'):
 			if source not in sources:
 				ElementTree.SubElement(filtr, 'File', attrib={'RelativePath':'%s' % source})
 
-	def _update_link_deps(self, tool):
+	def update_link_deps(self, tool):
 		'''Add libraries on which this project depends.'''
 		deps = tool.get('AdditionalDependencies')
 		if deps:
 			deps = deps.split(';')
 		else:
 			deps = []
-		libs = self._get_link_libs()
+		libs = self.get_link_libs(self.bld, self.gen)
 		for lib in libs:
 			dep = '%s.lib' % lib
 			if dep not in deps:
@@ -500,13 +502,13 @@ class MsDevProject(MsDev):
 		if len(deps):
 			tool.set('AdditionalDependencies', ';'.join(deps))
 
-	def _update_link_paths(self, tool):
+	def update_link_paths(self, tool):
 		deps = tool.get('AdditionalLibraryDirectories', '')
 		if deps:
 			deps = deps.split(';')
 		else:
 			deps = []
-		dirs = self._get_link_paths()
+		dirs = self.get_link_paths(self.bld, self.gen)
 		for dep in dirs:
 			if dep not in deps:
 				deps.append(dep)
@@ -517,96 +519,49 @@ class MsDevProject(MsDev):
 		'''Returns a tuple containing project information (name, file name and 
 		dependencies).
 		'''
-		gen = self.gen
-		name = gen.get_name()
-		fname = self._get_fname().replace('/', '\\')
-		deps = Utils.to_list(getattr(gen, 'use', []))
+		name = self.gen.get_name()
+		fname = self.get_fname().replace('/', '\\')
+		deps = Utils.to_list(getattr(self.gen, 'use', []))
 		return (name, fname, deps, self.id)
 
-	def _get_buildpath(self):
-		bld = self.bld
-		gen = self.gen
-		pth = '%s/%s' % (bld.path.get_bld().path_from(gen.path), gen.path.relpath())
-		return pth.replace('/', '\\')
-
-	def _get_output(self):
-		gen = self.gen
-		return '%s\\%s' % (self._get_buildpath(), gen.get_name())
-
-	def _get_object_output(self):
-		return self._get_buildpath()
-
-	def _get_working_directory(self):
-		gen = self.gen
-		bld = self.bld
-
-		sdir = gen.bld.env.BINDIR
-		if sdir.startswith(bld.path.abspath()):
-			sdir = os.path.relpath(sdir, gen.path.abspath())
-
-		return sdir.replace('/', '\\')
-
-	def _get_target_type(self):
-		gen = self.gen
-		if set(('cprogram', 'cxxprogram')) & set(gen.features):
-			return self.PROGRAM
-		elif set(('cstlib', 'cxxstlib')) & set(gen.features):
-			return self.STLIB
-		elif set(('cshlib', 'cxxshlib')) & set(gen.features):
-			return self.SHLIB
-		else:
-			return self.OBJECT
-
-	def _get_genlist(self, gen, name):
+	def get_genlist(self, gen, name):
 		lst = Utils.to_list(getattr(gen, name, []))
 		lst = [str(l.path_from(gen.path)) if hasattr(l, 'path_from') else l for l in lst]
 		return [l.replace('/', '\\') for l in lst]
 
-	def _get_compiler_options(self):
-		bld = self.bld
-		gen = self.gen
-		if 'cxx' in gen.features:
+	def get_compiler_options(self, bld, gen):
+		if self.language == MsDev.CXX:
 			flags = getattr(gen, 'cxxflags', []) + bld.env.CXXFLAGS
 		else:
 			flags = getattr(gen, 'cflags', []) + bld.env.CFLAGS
-
-		if 'cshlib' in gen.features:
-			flags.extend(bld.env.CFLAGS_cshlib)
-		elif 'cxxshlib' in gen.features:
-			flags.extend(bld.env.CXXFLAGS_cxxshlib)
+		if self.type == MsDev.SHLIB:
+			if self.language == MsDev.CXX:
+				flags.extend(bld.env.CXXFLAGS_cxxshlib)
+			else:
+				flags.extend(bld.env.CFLAGS_cshlib)
 		return list(set(flags))
 
-	def _get_compiler_includes(self):
-		gen = self.gen
-		includes = self._get_genlist(gen, 'includes')
-		return includes
+	def get_compiler_includes(self, gen):
+		return self.get_genlist(gen, 'includes')
 
-	def _get_compiler_defines(self):
-		gen = self.gen
-		defines = self._get_genlist(gen, 'defines') + gen.bld.env.DEFINES
+	def get_compiler_defines(self, gen):
+		defines = self.get_genlist(gen, 'defines') + gen.bld.env.DEFINES
 		if 'win32' in sys.platform:
 			defines = [d.replace('"', '\\"') for d in defines]
 		defines = ';'.join(defines)
 		return defines
 
-	def _get_link_options(self):
-		bld = self.bld
-		gen = self.gen
+	def get_link_options(self, bld, gen):
 		flags = getattr(gen, 'linkflags', []) + bld.env.LINKFLAGS
-
-		if 'cshlib' in gen.features:
-			flags.extend(bld.env.LINKFLAGS_cshlib)
-		elif 'cxxshlib' in gen.features:
-			flags.extend(bld.env.LINKFLAGS_cxxshlib)
+		if self.language == MsDev.CXX:
+			if self.type == MsDev.SHLIB:
+				flags.extend(bld.env.LINKFLAGS_cxxshlib)
+			else:
+				flags.extend(bld.env.LINKFLAGS_cshlib)
 		return list(set(flags))
 
-	def _get_link_libs(self):
-		bld = self.bld
-		gen = self.gen
+	def get_link_libs(self, bld, gen):
 		libs = Utils.to_list(getattr(gen, 'lib', []))
-		for l in ('m'): # remove posix libraries, that integrated in MVSCRT
-			if libs.count(l):
-				libs.remove(l)
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		for dep in deps:
 			try:
@@ -614,13 +569,11 @@ class MsDevProject(MsDev):
 			except Errors.WafError:
 				pass
 			else:
-				if set(('cstlib', 'cxxstlib')) & set(tgen.features):
+				if self.get_target_type() == :
 					libs.append(dep)
 		return libs
 	
-	def _get_link_paths(self):
-		bld = self.bld
-		gen = self.gen
+	def get_link_paths(self, bld, gen):
 		dirs = []
 		deps = Utils.to_list(getattr(gen, 'use', []))
 		for dep in deps:
@@ -629,15 +582,14 @@ class MsDevProject(MsDev):
 			except Errors.WafError:
 				pass
 			else:
-				if set(('cstlib', 'cshlib', 'cxxstlib', 'cxxshlib')) & set(tgen.features):
+				if self.type in (MsDev.STLIB, MsDev.SHLIB):
 					directory = '%s\\msdev' % tgen.path.get_bld().path_from(gen.path)
 					dirs.append(directory.replace('/', '\\'))
 		return dirs
 
-	def _get_includes_files(self):
-		gen = self.gen
+	def get_include_files(self, gen):
 		includes = []
-		for include in self._get_genlist(gen, 'includes'):
+		for include in self.get_genlist(gen, 'includes'):
 			node = gen.path.find_dir(include)
 			if node:
 				for include in node.ant_glob('*.h*'):
