@@ -730,8 +730,10 @@ class CppCheck(object):
 		content = template.render(context)
 		return self.save(url, content, encoding)
 
-	def defects(self, stderr, url):
+	def defects(self, source, stderr, url):
 		defects = []
+		defects.append(Defect(url, '', '', '', '', os.path.basename(source), 0))
+				
 		for error in ElementTree.fromstring(stderr).iter('error'):
 			file = ''
 			line = 0
@@ -769,7 +771,7 @@ class CppCheck(object):
 			stderr = self.bld.cmd_and_log(cmd.split(), quiet=Context.BOTH, output=Context.STDERR)
 			xml = self.save_xml('%s.xml' % name, stderr, cmd)
 			url = xml.replace('.xml', '.html')
-			defects = self.defects(stderr, url)
+			defects = self.defects(source, stderr, url)
 			self.save_html(os.path.basename(url), source, defects)
 			self.report(url, source, defects)
 			severity.extend([defect.severity for defect in defects])
