@@ -169,7 +169,7 @@ CPPCHECK_TOP_HTML = \
 '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
     <head>
-        <title>ocit2 0.0.2</title>
+        <title>{{ title }}</title>
         <link href="style.css" rel="stylesheet" type="text/css" />
 		<style type="text/css"></style>
     </head>
@@ -177,7 +177,7 @@ CPPCHECK_TOP_HTML = \
         <div id="page-header">&#160;</div>
         <div id="page">
             <div id="header">
-                <h1>ocit2 0.0.2</h1>
+                <h1>{{ header }}</h1>
             </div>
             <div id="menu">
                 <a href="index.html">Home</a>
