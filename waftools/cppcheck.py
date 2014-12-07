@@ -606,7 +606,7 @@ class Component(object):
 	def __init__(self, name, url, severity):
 		self.name = name
 		self.url = '"%s"' % url
-		self.severity = ', '.join(severity)
+		self.severity = ', '.join([s for s in severity if s!=''])
 
 
 class Index(object):

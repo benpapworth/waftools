@@ -2,6 +2,12 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.4**, 2014-12-07:
+
+- *cppcheck*; fixed static title and header in top index page
+- *cppcheck*; show highlighted source code for each file
+
+
 **v0.4.3**, 2014-12-05:
 
 - *makefile*, *cmake*, *msdev*; use additional system includes (bld.env.INCLUDES)
