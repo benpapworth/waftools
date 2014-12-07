@@ -571,6 +571,8 @@ def cppcheck_execute(self):
 	:type self: waflib.Task.TaskGen
 	'''
 	bld = self.bld
+	if not hasattr(bld, 'options'):
+		return	
 	check = bld.env.CPPCHECK_EXECUTE
 	root = str(bld.env.CPPCHECK_PATH).replace('\\', '/')
 	if not bool(check):

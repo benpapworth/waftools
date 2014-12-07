@@ -2,6 +2,11 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.5**, 2014-12-07:
+
+- *cppcheck*; fixed crash when used in conf.check(); i.e. there are no bld.options
+
+
 **v0.4.4**, 2014-12-07:
 
 - *cppcheck*; fixed static title and header in top index page
