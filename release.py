@@ -77,7 +77,7 @@ def release(git):
 	subprocess.call('{0} push origin --tags'.format(git).split())
 
 	# PYPI: publish package
-	subprocess.call('python twine upload dist/*'.split())
+	subprocess.call('twine upload dist/*'.split())
 
 
 if __name__ == "__main__":
