@@ -32,7 +32,7 @@ echo "--> installing required development packages..."
 sudo yum -y install \
 				python-pip python-virtualenv python-wheel \
 				python-chardet python-pygments python-jinja2 \
-				wget indent meld sphinx \
+				wget indent meld sphinx python-sphinx \
 				eclipse-pydev eclipse-pydev-mylyn
 
 sudo yum -y groupinstall "C Development Tools and Libraries"
