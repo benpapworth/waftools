@@ -2,6 +2,51 @@
 # -*- encoding: utf-8 -*-
 # Michel Mooij, michel.mooij7@gmail.com
 
+'''
+Summary
+-------
+Perform sanity test on waftools package in a virtual environment. Test can be performed
+on either a released package from PyPi or from a local a copy of the waftools package (i.e.
+obtained using git clone).
+
+
+Description
+-----------
+Creates a new clean temporary python virtual environment (no site packages) and install the
+waftools package including its dependencies and performs following test on the package:
+
+	- basic operations (e.g. configure, build, clean, dist)
+	- source code analysis using cppcheck
+	- create source code documentation using doxygen
+	- export projects to eclipse, msdev, codeblocks, make, cmake
+	- run make on exported makefiles
+	- run cmake on exported cmake files
+
+
+When succesfully completed the entire temporary virtual environment used during the test will 
+be deleted.
+
+
+Usage
+-----
+Start with:
+    python test.py [options]
+
+Available options:
+    -h | --help     prints this help message.
+
+    -g | --git      [optional] specify complete path to git
+
+    -p | --python   [optional] specify complete path to python interpreter
+
+    -d | --devel    [optional] use current directory as package source location.
+                    when not specified the latest (or a specific version) released
+                    waftools packge from PyPi will be used.
+
+    -v | --version  [optional] waftools pakage from PyPi to be used.
+
+'''
+
 import os
 import sys
 import stat
