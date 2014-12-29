@@ -2,9 +2,11 @@ History
 -------
 Following lists the changes per released version.
 
-**v0.4.6**, 2014-12-xx:
+**v0.4.6**, 2014-12-30:
 
 - issue13_; improved package installation
+- general; added description for test script
+- general; updated setup script for Fedora
 
 
 **v0.4.5**, 2014-12-07:
