@@ -42,10 +42,12 @@ echo "--> installing pypi tools..."
 pip install twine --user 
 
 
+echo "--> installing build environment tools..."
+sudo yum install -y cppcheck doxygen cmake
+
 if [ $ALL ]
 then
-	echo "--> installing build environment tools..."
-	for i in cppcheck doxygen eclipse-cdt codeblocks cmake;
+	for i in eclipse-cdt codeblocks;
 	do
 		sudo $YES yum install $i
 	done
