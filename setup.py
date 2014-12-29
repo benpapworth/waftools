@@ -2,26 +2,21 @@
 # -*- encoding: utf-8 -*-
 # Michel Mooij, michel.mooij7@gmail.com
 
-
+import os
 import sys
-import site
 from setuptools import setup
-import distutils.sysconfig
 import waftools
 
 
 url = "https://bitbucket.org/Moo7/waftools"
+here = os.path.abspath(os.path.dirname(__file__))
 
-with open('README.txt') as f:
-	long_description = f.read()
-with open('CHANGES.txt') as f:
-	long_description += f.read()
-	
 
-if "--user" in sys.argv and sys.platform != "win32":
-	data_dir = '%s/waftools' % site.getusersitepackages()
-else:
-	data_dir = '%s/waftools' % distutils.sysconfig.get_python_lib()
+with open(os.path.join(here,'README.txt')) as f:
+	README = f.read()
+with open(os.path.join(here,'CHANGES.txt')) as f:
+	CHANGES = f.read()
+
 
 setup(
 	name = "waftools",
@@ -33,21 +28,21 @@ setup(
 	url = url,
 	download_url = "%s/downloads/waftools-%s.tar.gz" % (url, waftools.version),
 	description = "Handy tools for the WAF meta build environment",
-	long_description = long_description,
+	long_description = '\n\n'.join([README, CHANGES]),
 	packages = ["waftools"],
 	install_requires = ["pygments", "chardet", "jinja2"],
 	license = 'MIT',
 	keywords = ["waf", "c", "c++", "cppcheck", "codeblocks", "eclipse", "make", "cmake", "msdev", "doxygen", "GNU indent"],
 	platforms = 'any',
-	data_files = [(data_dir, ['waftools/msdev.sln', 'waftools/doxy.config'])],
+	package_data = { '': ['waftools/msdev.sln', 'waftools/doxy.config'] },
 	include_package_data = True,
 	entry_points = {
 		'console_scripts': [
-			'wafinstall = waftools.wafinstall:main',
+			['wafinstall = waftools.wafinstall:main'],
 		],
 	},
 	classifiers = [
-		"Development Status :: 4 - Beta",		
+		"Development Status :: 4 - Beta",
 		"Environment :: Console",
 		"Intended Audience :: Developers",
 		"License :: OSI Approved :: MIT License",

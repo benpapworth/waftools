@@ -4,7 +4,7 @@
 
 import os
 
-version = "0.4.5"
+version = "0.4.6"
 location = os.path.abspath(os.path.dirname(__file__))
 
 

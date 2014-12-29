@@ -2,6 +2,11 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.6**, 2014-12-xx:
+
+- issue13_; improved package installation
+
+
 **v0.4.5**, 2014-12-07:
 
 - *cppcheck*; fixed crash when used in conf.check(); i.e. there are no bld.options
@@ -201,5 +206,5 @@ Following lists the changes per released version.
 .. _issue9: https://bitbucket.org/Moo7/waftools/issue/9/eclipse-missing-pthread
 .. _issue11: https://bitbucket.org/Moo7/waftools/issue/11/cmake-export-fails-when-using-bldobjects
 .. _issue12: https://bitbucket.org/Moo7/waftools/issue/12/makefile-export-fails-when-using
-
+.. _issue13: https://bitbucket.org/Moo7/waftools/issue/13/package-version-045-install-fails-on
 
