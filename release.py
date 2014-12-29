@@ -69,7 +69,7 @@ def release(git):
 
 
 	# BITBUCKET: create upload package
-	subprocess.call('python setup.py sdist --formats=gztar --dist-dir=.'.split())
+	subprocess.call('python setup.py sdist --formats=gztar'.split())
 
 	# GIT: tag the new release
 	version = str(waftools.version)
@@ -77,7 +77,7 @@ def release(git):
 	subprocess.call('{0} push origin --tags'.format(git).split())
 
 	# PYPI: publish package
-	subprocess.call('python setup.py sdist upload'.split())
+	subprocess.call('python twine upload dist/*'.split())
 
 
 if __name__ == "__main__":
