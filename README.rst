@@ -28,26 +28,25 @@ package:
 - Create installers using **NSIS**
 - Create C/C++ documentation using **DoxyGen**
 - List dependencies between build tasks
-- Use 'unity' and 'batched_cc' tools when available (waf-1.8.x)
 
 
 Installation
 ------------
 The package can be installed using pip::
 
-	pip install -I waftools
+    pip install -I waftools
 
 or by cloning the repository and using distutils::
 
-	cd ~
-	git clone https://bitbucket.org/Moo7/waftools.git waftools
-	cd waftools
-	python setup.py sdist install
+    cd ~
+    git clone https://bitbucket.org/Moo7/waftools.git waftools
+    cd waftools
+    python setup.py sdist install
 
 Contained within the *waftools* package is a special install script which can be used to 
 install the waf build system itself::
 
-	wafinstall [--version=version] [--tools=unity,batched_cc]
+    wafinstall [--version=version] [--tools=compat15]
 
 
 Usage
@@ -56,57 +55,59 @@ The code snippet below provides an example of how a complete build environment
 can be created allowing you to build, not only for the host system, but also 
 for one or more target platforms using a C/C++ cross compiler::
 
-	#!/usr/bin/env python
-	# -*- encoding: utf-8 -*-
+    #!/usr/bin/env python
+    # -*- encoding: utf-8 -*-
 
-	import os, waftools
-	from waftools import ccross
+    import os, waftools
+    from waftools import ccenv
 
-	top = '.'
-	out = 'build'
-	prefix = 'output'
-	ccrossini = os.path.abspath('ccross.ini').replace('\\', '/')
+    top = '.'
+    out = 'build'
+    ini = os.path.abspath('ccenv.ini').replace('\\', '/')
 
-	VERSION = '0.0.1'
-	APPNAME = 'cross-test'
+    VERSION = '0.0.1'
+    APPNAME = 'example'
 
-	def options(opt):
-		opt.add_option('--prefix', dest='prefix', default=prefix, 
-			help='installation prefix [default: %r]' % prefix)
-		opt.load('ccross', tooldir=waftools.location)
+    def options(opt):
+        opt.load('ccenv', tooldir=waftools.location)
 
-	def configure(conf):
-		conf.load('ccross')
+    def configure(conf):
+        conf.load('ccenv')
 
-	def build(bld):
-		ccross.build(bld, trees=['components'])
+    def build(bld):
+        ccenv.build(bld, trees=['components'])
 
-	for var in ccross.variants(ccrossini):
-		for ctx in ccross.contexts():
-			name = ctx.__name__.replace('Context','').lower()
-			class _t(ctx):
-				__doc__ = "%ss '%s'" % (name, var)
-				cmd = name + '_' + var
-				variant = var
+    for var in ccenv.variants(ini):
+        for ctx in ccenv.contexts():
+            name = ctx.__name__.replace('Context','').lower()
+            class _t(ctx):
+                __doc__ = "%ss '%s'" % (name, var)
+                cmd = name + '_' + var
+                variant = var
 
-When loading and configuring the *ccross* tool, as shown in the example above, all 
+When loading and configuring the *ccenv* tool, as shown in the example above, all 
 required C/C++ tools for each build environment variant (i.e. native or cross-
 compile) will be loaded and configured as well; e.g. compilers, makefile-, cmake-, 
 eclipse-, codeblocks- and msdev exporters, cppcheck source code checking, doxygen 
-documentation creation will be available for each build variant. Cross compile 
-build environments can be specified in a seperate .INI file (named ccross.ini 
+documentation creation will be available for each build variant. Additional (ccross)
+compile build environments can be specified in a seperate .INI file (named ccenv.ini 
 in the example above) using following syntax::
 
-	[arm]
-	prefix = arm-linux-gnueabihf
+    [arm]
+    prefix = arm-linux-gnueabihf
 
-The section name, *arm* in the example above, specifies the name of the cross-compile
-build environment variant. The prefix will be in used to create the concrete names of
-the cross compile toolchain binaries::
+    [msvc]
+    c = msvc
+    cxx = msvc
 
-	AR	= arm-linux-gnueabihf-ar
-	CC	= arm-linux-gnueabihf-gcc
-	CXX	= arm-linux-gnueabihf-g++
+The section name, *arm* in the example above, specifies the name of the compile
+build environment variant. The prefix combined with compiler type (c,cxx) will be 
+used in order to create the concrete names of the cross compile toolchain 
+binaries::
+
+    AR  = arm-linux-gnueabihf-ar
+    CC  = arm-linux-gnueabihf-gcc
+    CXX = arm-linux-gnueabihf-g++
 
 Concrete build scripts (i.e. wscript files) for components can be placed somewhere 
 within the *components* sub-directory. Any top level wscript file of a tree (being 
@@ -119,12 +120,12 @@ of that tree.
 Support
 -------
 Defects and/or feature requests can be reported at::
-	https://bitbucket.org/Moo7/waftools/issues
-	
+    https://bitbucket.org/Moo7/waftools/issues
+
 
 .. note::
-	the complete package documentation can be found at: 
-	http://pythonhosted.org/waftools/
+    the complete package documentation can be found at: 
+    http://pythonhosted.org/waftools/
 
 
 .. _waf: https://code.google.com/p/waf/

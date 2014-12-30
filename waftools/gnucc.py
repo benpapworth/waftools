@@ -5,6 +5,10 @@
 
 '''
 Configures common release and debug settings for C/C++ compilers.
+
+.. note::
+	This module has been marked as deprecated and will be removed in 
+	release version 0.5.0; use the *ccenv* module instead.
 '''
 
 

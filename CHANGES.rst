@@ -2,11 +2,19 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.7**, 2014-12-31:
+
+- *ccenv*; new module, replacement of ccross and gnucc modules
+- *ccross*, gnucc; marked as deprecated, use ccenv instead
+- *general*; dropped default support for batched_cc,unity, still too experimental
+- issue6_; added check for presence of C and C++ compilers in eclipse module  
+
+
 **v0.4.6**, 2014-12-30:
 
 - issue13_; improved package installation
-- general; added description for test script
-- general; updated setup script for Fedora
+- *general*; added description for test script
+- *general*; updated setup script for Fedora
 
 
 **v0.4.5**, 2014-12-07:
@@ -204,6 +212,7 @@ Following lists the changes per released version.
 .. _issue3: https://bitbucket.org/Moo7/waftools/issue/3/exception-when-exporting-to-msdev
 .. _issue4: https://bitbucket.org/Moo7/waftools/issue/4/msdevsln-not-included-in-the-latest
 .. _issue5: https://bitbucket.org/Moo7/waftools/issue/5/detecting-cross-compiler-fails
+.. _issue6: https://bitbucket.org/Moo7/waftools/issue/6/eclipse-tools-fail-when-not-using-c
 .. _issue8: https://bitbucket.org/Moo7/waftools/issue/8/module-crosspy-fails-in-v035
 .. _issue9: https://bitbucket.org/Moo7/waftools/issue/9/eclipse-missing-pthread
 .. _issue11: https://bitbucket.org/Moo7/waftools/issue/11/cmake-export-fails-when-using-bldobjects

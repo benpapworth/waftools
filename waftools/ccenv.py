@@ -6,8 +6,8 @@
 Summary
 -------
 Setup and configure multiple C/C++ build environments and configure
-common C/C++ tools used when cross-compiling. When using this module
-the following tools will be loaded and configured autmagically:
+common tools for C/C++ projects. When using this module the following
+tools will be loaded and configured autmagically:
 
 - cmake
 - codeblocks
@@ -26,7 +26,7 @@ Usage
 -----
 The code snippet below provides an example of how a complete build environment
 can be created allowing you to build, not only for the host system, but also 
-for one or more target platforms using a C/C++ cross compiler::
+for one or more target platforms using, for instance, a C/C++ cross compiler::
 
     #!/usr/bin/env python
     # -*- encoding: utf-8 -*-
@@ -36,9 +36,10 @@ for one or more target platforms using a C/C++ cross compiler::
 
     top = '.'
     out = 'build'
+    ini = os.path.abspath('ccenv.ini').replace('\\', '/')
 
     VERSION = '0.0.1'
-    APPNAME = 'ccenv'
+    APPNAME = 'example'
 
     def options(opt):
         opt.load('ccenv', tooldir=waftools.location)
@@ -49,7 +50,7 @@ for one or more target platforms using a C/C++ cross compiler::
     def build(bld):
         ccenv.build(bld, trees=['components'])
 
-    for var in ccenv.variants():
+    for var in ccenv.variants(ini):
         for ctx in ccenv.contexts():
             name = ctx.__name__.replace('Context','').lower()
             class _t(ctx):
@@ -119,12 +120,11 @@ def options(opt):
 	:param opt: options context 
 	:type opt: waflib.Options.OptionsContext
 	'''
-
 	opt.add_option('--debug', dest='debug', default=False, action='store_true',
 		help='build with debug information.')
 
 	opt.add_option('--all', dest='all', default=False, action='store_true',
-		help='execute command for cross-compile environments as well')
+		help='execute command for build environments (host and variants)')
 
 	opt.add_option('--cchost', dest='cchost', default=False, 
 		action='store_true',
@@ -148,11 +148,15 @@ def options(opt):
 
 
 def configure(conf):
+	'''Create and configure C/C++ build environment(s).
+	
+	:param conf: configuration context 
+	:type conf: waflib.Configure.ConfigurationContext
+	'''
 	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')
 	conf.env.PREFIX = str(conf.env.PREFIX).replace('\\', '/')
 	conf.env.CCENVINI = getattr(conf.options, CCENV_OPT)
-	conf.env.CCENV = get_ccross(conf.env.CCENVINI)
-
+	conf.env.CCENV = get_ccenv(conf.env.CCENVINI)
 	c = c_compiler.copy()
 	cxx = cxx_compiler.copy()
 	host = Utils.unversioned_sys_platform()
@@ -163,6 +167,17 @@ def configure(conf):
 
 
 def configure_host(conf, host, c, cxx):
+	'''Create and configure default C/C++ build environment.
+	
+	:param conf: configuration context 
+	:type conf: waflib.Configure.ConfigurationContext
+	:param host: name of the host machine (as used in waf)
+	:type host: str
+	:param c: contains default C compiler settings
+	:type c: dict
+	:param cxx: contains default C++ compiler settings
+	:type cxx: dict
+	'''
 	conf.setenv('')
 	conf.msg('Configure environment', '%s (host)' % host, color='PINK')
 	if conf.options.cchost:
@@ -171,7 +186,6 @@ def configure_host(conf, host, c, cxx):
 	else:
 		c_compiler[host] = ['gcc']
 		cxx_compiler[host] = ['g++']
-
 	configure_base(conf)
 	conf.load('cmake')
 	conf.load('doxygen')
@@ -180,10 +194,15 @@ def configure_host(conf, host, c, cxx):
 
 
 def configure_variants(conf, host):
-	'''create and configure variant C/C++ build environments.
+	'''Create and configure variant C/C++ build environments.
 	
 	uses the the configuration data as specified in the *.ini
 	file using configparser.ExtendedInterpolation syntax.
+
+	:param conf: configuration context 
+	:type conf: waflib.Configure.ConfigurationContext
+	:param host: name of the host machine (as used in waf)
+	:type host: str
 	'''
 	prefix = conf.env.PREFIX
 	ccenv = conf.env.CCENV
@@ -233,10 +252,19 @@ def configure_variants(conf, host):
 
 
 def configure_base(conf):
+	'''Generic tool and compiler configuration settings used
+	 for both host and variant build environments.
+	
+	:param conf: configuration context 
+	:type conf: waflib.Configure.ConfigurationContext
+	'''
 	conf.load('compiler_c')
 	conf.load('compiler_cxx')
 
-	## gnu_cc
+	if conf.env.CC_NAME is 'msvc':
+		configure_msvc(conf)
+	elif conf.env.CC_NAME is 'gcc':
+		configure_gcc(conf)
 
 	conf.load('cppcheck')
 	conf.load('codeblocks')
@@ -246,7 +274,64 @@ def configure_base(conf):
 	conf.load('tree')
 
 
+def configure_msvc(conf):
+	'''Configures general environment settings for MSVC compilers; e.g. set
+	default C/C++ compiler flags and defines based on the value of the 
+	command line --debug option.
+	
+	:param conf: configuration context 
+	:type conf: waflib.Configure.ConfigurationContext
+	'''
+	flags = ['/Wall']
+	
+	if conf.options.debug:
+		flags.extend(['/Od', '/Zi'])
+		defines = []
+	else:
+		flags.extend(['/Ox'])
+		defines = ['NDEBUG']
+
+	for cc in ('CFLAGS', 'CXXFLAGS'):
+		for flag in flags:
+			conf.env.append_unique(cc, flag)
+	for define in defines:
+		conf.env.append_unique('DEFINES', define)
+	
+
+def configure_gcc(conf):
+	'''Configures general environment settings for GNU compilers; e.g. set
+	default C/C++ compiler flags and defines based on the value of the 
+	command line --debug option.
+	
+	:param conf: configuration context 
+	:type conf: waflib.Configure.ConfigurationContext
+	'''
+	flags = ['-Wall', '-pthread']
+
+	if conf.options.debug:
+		flags.extend(['-g', '-ggdb'])
+		defines = []
+	else:
+		flags.extend(['-O3'])
+		defines = ['NDEBUG']
+
+	for cc in ('CFLAGS', 'CXXFLAGS'):
+		for flag in flags:
+			conf.env.append_unique(cc, flag)
+	for define in defines:
+		conf.env.append_unique('DEFINES', define)
+
+
 def build(bld, trees=[]):
+	'''Performs build context commands for one or more C/C++
+	build environments using the trees argument as list of source
+	directories.
+	
+	:param bld: build context 
+	:type bld: waflib.Build.BuildContext
+	:param trees: top level directories containing projects to build
+	:type trees: list
+	'''
 	if bld.variant:
 		libs = bld.env.CCENV[bld.variant]['shlib']
 		for lib in libs:
@@ -261,40 +346,40 @@ def build(bld, trees=[]):
 		for script in waftools.get_scripts(tree, 'wscript'):
 			bld.recurse(script)
 
-		
-def get_ccross(fname):
-	'''Returns dictionary of cross-compile build environments. Dictionary key name
-	depict the environment name (i.e. variant name).
 
+def get_ccenv(fname):
+	'''Returns dictionary of variant C/C++ build environments. In which the keys
+	are the name of the actual variant C/C++ build environments and its values the
+	settings for that variant build environment.
 	
-	:param fname: Complete path to the config.ini file
+	:param fname: Complete path to the configuration file.
 	:type fname: str
 	'''
 	if not os.path.exists(fname):
 		Logs.warn("CCENV: ini file '%s' not found!" % fname)
-	cross = {}
+	ccenv = {}
 	c = configparser.ConfigParser()
 	c.read(fname)
 	for s in c.sections():
-		cross[s] = {'prefix' : None, 'shlib' : [], 'env' : [], 'c': ['gcc'], 'cxx': ['g++']}
+		ccenv[s] = {'prefix' : None, 'shlib' : [], 'env' : [], 'c': ['gcc'], 'cxx': ['g++']}
 		if c.has_option(s, 'c'):
-			cross[s]['c'] = c.get(s,'c').split(',')
+			ccenv[s]['c'] = c.get(s,'c').split(',')
 		if c.has_option(s, 'cxx'):
-			cross[s]['cxx'] = c.get(s,'cxx').split(',')
+			ccenv[s]['cxx'] = c.get(s,'cxx').split(',')
 		if c.has_option(s, 'prefix'):
-			cross[s]['prefix'] = c.get(s,'prefix')
+			ccenv[s]['prefix'] = c.get(s,'prefix')
 		if c.has_option(s, 'shlib'):
-			cross[s]['shlib'] = [l for l in str(c.get(s,'shlib')).split(',') if len(l)]
+			ccenv[s]['shlib'] = [l for l in str(c.get(s,'shlib')).split(',') if len(l)]
 		if c.has_option(s, 'env'):
-			cross[s]['env'] = [l.split('\t') for l in c.get(s,'env').splitlines() if len(l)]
-	return cross
+			ccenv[s]['env'] = [l.split('\t') for l in c.get(s,'env').splitlines() if len(l)]
+	return ccenv
 
 
 def variants(fname=None):
 	'''Returns a list of variant names; i.e. a list of names for build environments 
-	that have been defined in the 'ccross.ini' configuration file.
+	that have been defined in the 'ccenv.ini' configuration file.
 	
-	:param fname: Complete path to the config.ini file
+	:param fname: Complete path to the configuration file
 	:type fname: str
 	'''
 	if not fname:
@@ -304,15 +389,13 @@ def variants(fname=None):
 			if a.startswith(opt):
 				fname = a.replace(opt, '')
 
-	cross = get_ccross(fname)
-	return list(cross.keys())
+	ccenv = get_ccenv(fname)
+	return list(ccenv.keys())
 
 
 def contexts():
-	'''Returns a list of cross-compile build contexts.
-	
-	:param name: Complete path to the config.ini file
-	:type name: list of waflib.Build.BuildContext
+	'''Returns a list of build contexts to be used for variant build 
+	environments.
 	'''
 	return [ BuildContext, CleanContext, InstallContext, UninstallContext, CodeblocksContext, MakeFileContext, EclipseContext ]
 

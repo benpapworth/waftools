@@ -229,6 +229,7 @@ if __name__ == "__main__":
 	opts, args = getopt.getopt(sys.argv[1:], 'hg:p:rv:', ['help', 'git=', 'python=', 'devel', 'version='])
 	for opt, arg in opts:
 		if opt in ('-h', '--help'):
+			print(__doc__)
 			sys.exit()
 		elif opt in ('-g', '--git'):
 			git = arg
