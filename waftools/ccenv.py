@@ -14,7 +14,6 @@ tools will be loaded and configured autmagically:
 - cppcheck
 - doxygen
 - eclipse
-- gnucc
 - indent
 - makefile
 - msdev
