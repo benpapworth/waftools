@@ -24,7 +24,7 @@ Available options:
     -h | --help     prints this help message.
 
     -v | --version  waf package version to install, e.g.
-                    -v1.8.2
+                    -v1.8.5
 
     -t | --tools    comma seperated list of waf tools to be used
                     default=None
@@ -32,6 +32,7 @@ Available options:
     -l | --local    local installation; don't add waf to environment
 					paths
 '''
+
 
 import os
 import sys
@@ -44,14 +45,13 @@ import tempfile
 import logging
 import site
 import distutils.sysconfig
-
 try:
 	from urllib.request import urlopen
 except ImportError:
 	from urllib2 import urlopen
 
 
-WAF_VERSION = "1.8.4"
+WAF_VERSION = "1.8.5"
 WAF_TOOLS = None
 
 HOME = os.path.expanduser('~')

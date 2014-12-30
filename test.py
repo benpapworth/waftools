@@ -47,6 +47,7 @@ Available options:
 
 '''
 
+
 import os
 import sys
 import stat
@@ -55,6 +56,10 @@ import subprocess
 import tempfile
 import logging
 import shutil
+
+
+def usage():
+	print(__doc__)
 
 
 def cd(path):
@@ -226,19 +231,24 @@ if __name__ == "__main__":
 	devel=False
 	version=None
 
-	opts, args = getopt.getopt(sys.argv[1:], 'hg:p:rv:', ['help', 'git=', 'python=', 'devel', 'version='])
-	for opt, arg in opts:
-		if opt in ('-h', '--help'):
-			print(__doc__)
-			sys.exit()
-		elif opt in ('-g', '--git'):
-			git = arg
-		elif opt in ('-p', '--python'):
-			python = arg
-		elif opt in ('-d', '--devel'):
-			devel = True
-		elif opt in ('-v', '--version'):
-			version = arg
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'hg:p:rv:', ['help', 'git=', 'python=', 'devel', 'version='])
+		for opt, arg in opts:
+			if opt in ('-h', '--help'):
+				usage()
+				sys.exit()
+			elif opt in ('-g', '--git'):
+				git = arg
+			elif opt in ('-p', '--python'):
+				python = arg
+			elif opt in ('-d', '--devel'):
+				devel = True
+			elif opt in ('-v', '--version'):
+				version = arg
+	except getopt.GetoptError as err:
+		print(str(err))
+		usage()
+		sys.exit(2)
 
 	if not git:
 		git = 'git'
