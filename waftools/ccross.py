@@ -22,7 +22,7 @@ the following tools will be loaded and configured autmatically as well:
 - tree
 
 
-.. note::
+.. warning::
 	This module has been marked as deprecated and will be removed in 
 	release version 0.5.0; use the *ccenv* module instead.
 
