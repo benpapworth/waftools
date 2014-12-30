@@ -4,6 +4,17 @@ Package waftools
     :members:
 
 
+.. _mod_ccenv:
+
+Module :mod:`ccenv`
+--------------------
+
+.. automodule:: waftools.ccenv
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 .. _mod_ccross:
 
 Module :mod:`ccross`
