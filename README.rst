@@ -30,6 +30,11 @@ package:
 - List dependencies between build tasks
 
 
+.. note:
+	the complete documentation for the package can be found at
+	http://pythonhosted.org/waftools
+
+
 Installation
 ------------
 The package can be installed using pip::
@@ -51,10 +56,10 @@ install the waf build system itself::
 
 Support
 -------
-Defects and/or feature requests can be reported at::
-    https://bitbucket.org/Moo7/waftools/issues
-
+Defects and/or feature requests can be reported at bitbucket_.
+    
 
 .. _waf: https://code.google.com/p/waf/
 .. _wafbook: http://docs.waf.googlecode.com/git/book_18/single.html
+.. _bitbucket: https://bitbucket.org/Moo7/waftools/issues
 
