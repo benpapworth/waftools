@@ -156,6 +156,7 @@ def configure(conf):
 	conf.env.PREFIX = str(conf.env.PREFIX).replace('\\', '/')
 	conf.env.CCENVINI = getattr(conf.options, CCENV_OPT)
 	conf.env.CCENV = get_ccenv(conf.env.CCENVINI)
+	conf.env.HOST = Utils.unversioned_sys_platform()
 	c = c_compiler.copy()
 	cxx = cxx_compiler.copy()
 	host = Utils.unversioned_sys_platform()
@@ -206,7 +207,10 @@ def configure_variants(conf, host):
 	prefix = conf.env.PREFIX
 	ccenv = conf.env.CCENV
 
-	for name, ini in ccenv.items(): # setup variant compile environment(s)
+	for name, ini in ccenv.items():
+		if 'host' in ini and ini['host'] != conf.env.HOST:
+			continue
+
 		conf.setenv(name)
 		conf.msg('Configure environment', '%s (variant)' % name, color='PINK')
 		conf.env.CCENV = ccenv
@@ -360,7 +364,7 @@ def get_ccenv(fname):
 	c = configparser.ConfigParser()
 	c.read(fname)
 	for s in c.sections():
-		ccenv[s] = {'prefix' : None, 'shlib' : [], 'env' : [], 'c': ['gcc'], 'cxx': ['g++']}
+		ccenv[s] = {'prefix' : None, 'shlib' : [], 'env' : [], 'c': ['gcc'], 'cxx': ['g++', 'cpp']}
 		if c.has_option(s, 'c'):
 			ccenv[s]['c'] = c.get(s,'c').split(',')
 		if c.has_option(s, 'cxx'):
