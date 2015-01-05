@@ -2,6 +2,12 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.8**, 2015-01-05:
+
+- *ccenv*; added configuration option *host* (e.g. host = linux); only create variant 
+           build environment when building the specified host.
+
+
 **v0.4.7**, 2014-12-31:
 
 - *ccenv*; new module, replacement of ccross and gnucc modules
