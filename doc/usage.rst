@@ -1,6 +1,12 @@
 
 Usage
 =====
+Following sub-sections provide some examples on what can be achieved using the waftools
+package.
+
+
+Cross compilation and multiple build environments
+-------------------------------------------------
 The code snippet below provides an example of how a complete build environment
 can be created allowing you to build, not only for the host system, but also 
 for one or more target platforms using, for instance, a C/C++ cross compiler::
@@ -48,17 +54,24 @@ in the example above) using following syntax::
     prefix = arm-linux-gnueabihf
 
     [msvc]
+    host = win32
     c = msvc
     cxx = msvc
 
-The section name, *arm* in the example above, specifies the name of the compile
-build environment variant. The prefix combined with compiler type (c,cxx) will be 
-used in order to create the concrete names of the cross compile toolchain 
-binaries::
+The section names *arm* and *msvc* specify the name of the compile build environment 
+variant. The prefix combined with compiler type (c,cxx) will be used in order to 
+create the concrete names of the (cross) compile toolchain binaries for that build
+environment. The actual compilers used for the *arm* build environment for instance
+will be::
 
     AR  = arm-linux-gnueabihf-ar
     CC  = arm-linux-gnueabihf-gcc
     CXX = arm-linux-gnueabihf-g++
+
+Note that for the *msvc* build environment no prefix is used, only the base 
+type of the compilers to be used for the environment are specified. Futhermore the
+host is defined as *win32*; as result the build environment *msvc* will be created
+when building on a *MS-Windows* build host.
 
 Concrete build scripts (i.e. wscript files) for components can be placed somewhere 
 within the *components* sub-directory. Any top level wscript file of a tree (being 
@@ -197,38 +210,6 @@ For more information please refer to the detailed description of the
 :ref:`msdev <mod_msdev>` modules.
 
 
-Packaging and installers
-------------------------
-For windows targets platforms installers can be created using the NullSoft
-Installable Scripting system (**NSIS**). If no user defined .nsi script is 
-provided a default one will be created in the top level directory of the 
-build system.
-
-The code snippet below presents a *wscript* that provides support for
-creating installers using **NSIS**::
-
-    import waftools
-
-    def options(opt):
-        opt.load('compiler_c')
-        opt.load('package', tooldir=waftools.location)
-
-    def configure(conf):
-        conf.load('compiler_c')
-        conf.load('package')
-
-    def build(bld):
-        bld.program(target='hello', source='hello.c')
-
-Using this code snippet, a Windows installer can be created using
-the following command::
-
-    waf package --formats=nsis
-
-For more information please refer to the detailed description of the 
-:ref:`package <mod_package>` module.
-
-
 Export to projects to other build systems
 -----------------------------------------
 When needed C/C++ build tasks (programs, static or shared libraries) can be
@@ -272,6 +253,38 @@ or dependency to the waf build system.
 
 For more information please refer to the detailed description of the 
 :ref:`cmake <mod_cmake>` and :ref:`makefile <mod_makefile>` modules.
+
+
+Packaging and installers
+------------------------
+For windows targets platforms installers can be created using the NullSoft
+Installable Scripting system (**NSIS**). If no user defined .nsi script is 
+provided a default one will be created in the top level directory of the 
+build system.
+
+The code snippet below presents a *wscript* that provides support for
+creating installers using **NSIS**::
+
+    import waftools
+
+    def options(opt):
+        opt.load('compiler_c')
+        opt.load('package', tooldir=waftools.location)
+
+    def configure(conf):
+        conf.load('compiler_c')
+        conf.load('package')
+
+    def build(bld):
+        bld.program(target='hello', source='hello.c')
+
+Using this code snippet, a Windows installer can be created using
+the following command::
+
+    waf package --formats=nsis
+
+For more information please refer to the detailed description of the 
+:ref:`package <mod_package>` module.
 
 
 .. _waf: https://code.google.com/p/waf/

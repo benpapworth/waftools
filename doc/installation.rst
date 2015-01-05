@@ -16,7 +16,7 @@ the package from it::
 Contained within the *waftools* package is a special install script which can be used to 
 install the waf build system itself::
 
-    wafinstall [--version=version] [--tools=unity,batched_cc]
+    wafinstall [--version=version] [--tools=compat15]
 
 Using the *--tools* command line option, the *waf* tools to be installed from 
 *waflib/Tools/extras* can be specified in a comma separated list. When omitted no 

@@ -49,83 +49,10 @@ install the waf build system itself::
     wafinstall [--version=version] [--tools=compat15]
 
 
-Usage
------
-The code snippet below provides an example of how a complete build environment
-can be created allowing you to build, not only for the host system, but also 
-for one or more target platforms using a C/C++ cross compiler::
-
-    #!/usr/bin/env python
-    # -*- encoding: utf-8 -*-
-
-    import os, waftools
-    from waftools import ccenv
-
-    top = '.'
-    out = 'build'
-    ini = os.path.abspath('ccenv.ini').replace('\\', '/')
-
-    VERSION = '0.0.1'
-    APPNAME = 'example'
-
-    def options(opt):
-        opt.load('ccenv', tooldir=waftools.location)
-
-    def configure(conf):
-        conf.load('ccenv')
-
-    def build(bld):
-        ccenv.build(bld, trees=['components'])
-
-    for var in ccenv.variants(ini):
-        for ctx in ccenv.contexts():
-            name = ctx.__name__.replace('Context','').lower()
-            class _t(ctx):
-                __doc__ = "%ss '%s'" % (name, var)
-                cmd = name + '_' + var
-                variant = var
-
-When loading and configuring the *ccenv* tool, as shown in the example above, all 
-required C/C++ tools for each build environment variant (i.e. native or cross-
-compile) will be loaded and configured as well; e.g. compilers, makefile-, cmake-, 
-eclipse-, codeblocks- and msdev exporters, cppcheck source code checking, doxygen 
-documentation creation will be available for each build variant. Additional (ccross)
-compile build environments can be specified in a seperate .INI file (named ccenv.ini 
-in the example above) using following syntax::
-
-    [arm]
-    prefix = arm-linux-gnueabihf
-
-    [msvc]
-    c = msvc
-    cxx = msvc
-
-The section name, *arm* in the example above, specifies the name of the compile
-build environment variant. The prefix combined with compiler type (c,cxx) will be 
-used in order to create the concrete names of the cross compile toolchain 
-binaries::
-
-    AR  = arm-linux-gnueabihf-ar
-    CC  = arm-linux-gnueabihf-gcc
-    CXX = arm-linux-gnueabihf-g++
-
-Concrete build scripts (i.e. wscript files) for components can be placed somewhere 
-within the *components* sub-directory. Any top level wscript file of a tree (being 
-*components* in this example) will be detected and incorporated within the build 
-environment. Any wscript files below those top level script files will have to be 
-included using the *bld.recurse('../somepath')* command from the top level script 
-of that tree.
-
-
 Support
 -------
 Defects and/or feature requests can be reported at::
     https://bitbucket.org/Moo7/waftools/issues
-
-
-.. note::
-    the complete package documentation can be found at: 
-    http://pythonhosted.org/waftools/
 
 
 .. _waf: https://code.google.com/p/waf/

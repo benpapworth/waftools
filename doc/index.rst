@@ -5,12 +5,13 @@ January 5\ :sup:`th`\  2015.
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    overview
    installation
    usage
    modules
+   support
    credits
 
 .. _waftools: https://pypi.python.org/pypi?:action=display&name=waftools
