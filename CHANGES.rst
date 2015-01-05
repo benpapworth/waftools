@@ -6,6 +6,7 @@ Following lists the changes per released version.
 
 - *ccenv*; added configuration option *host* (e.g. host = linux); only create variant 
            build environment when building the specified host.
+- *general*; updated documentation to use theme from 'Read the Docs'.
 
 
 **v0.4.7**, 2014-12-31:
