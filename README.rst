@@ -30,7 +30,7 @@ package:
 - List dependencies between build tasks
 
 
-.. note:
+.. note::
 	the complete documentation for the package can be found at
 	http://pythonhosted.org/waftools
 
