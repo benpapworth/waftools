@@ -209,6 +209,7 @@ def configure_variants(conf, host):
 
 	for name, ini in ccenv.items():
 		if 'host' in ini and ini['host'] != conf.env.HOST:
+			conf.msg('Skip variant build environment', '%s (host=%s)' % (name, conf.env.HOST), color='YELLOW')
 			continue
 
 		conf.setenv(name)
@@ -375,6 +376,8 @@ def get_ccenv(fname):
 			ccenv[s]['shlib'] = [l for l in str(c.get(s,'shlib')).split(',') if len(l)]
 		if c.has_option(s, 'env'):
 			ccenv[s]['env'] = [l.split('\t') for l in c.get(s,'env').splitlines() if len(l)]
+		if c.has_option(s, 'host'):
+			ccenv[s]['host'] = c.get(s,'host')
 	return ccenv
 
 
