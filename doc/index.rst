@@ -5,7 +5,7 @@ January 5\ :sup:`th`\  2015.
 
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
    overview
    installation

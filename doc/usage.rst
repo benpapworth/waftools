@@ -68,8 +68,8 @@ included using the *bld.recurse('../somepath')* command from the top level scrip
 of that tree.
 
 
-Code checking
--------------
+Source code analysis
+--------------------
 C/C++ source code can be checked using the **CppCheck** static source analysis 
 tool. Results of sources checked by **CppCheck** will be presented in a HTML
 based report. The report contains a single index file containing a summary of 
@@ -127,8 +127,8 @@ be generated using the following command::
 Once completed the HTML report can be found and at: **./reports/cppcheck/index.html**
 
 
-Code documentation
-------------------
+Create source code documentation
+--------------------------------
 For C/C++ build tasks source code documentation can be created using 
 **DoxyGen**. Once generated the documentation can be found at: 
 **./reports/doxygen/**.
@@ -158,8 +158,8 @@ For more information please refer to the detailed description of the
 :ref:`doxygen <mod_doxygen>` module.
 
 
-Export to IDE's
----------------
+Export projects to integrated development environments
+------------------------------------------------------
 C/C++ build tasks (i.e. programs, static and shared libraries) can
 be exported to project, workspace and/or solution files for either 
 **Code::Blocks**, **Eclipse** (using CDT) or **MSDev** (Microsoft
@@ -229,8 +229,8 @@ For more information please refer to the detailed description of the
 :ref:`package <mod_package>` module.
 
 
-Export to (c)make
------------------
+Export to projects to other build systems
+-----------------------------------------
 When needed C/C++ build tasks (programs, static or shared libraries) can be
 exported to other build system formats (e.g. make, cmake). When doing so the 
 definitions and settings as defined within the waf_ build environment will be
