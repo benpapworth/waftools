@@ -178,6 +178,23 @@ def waftools_cmake(waf):
 		cd(top)
 
 
+def waftools_bdist(waf):
+	'''test binary distributions.'''
+	if sys.platform == 'win32':
+		prefix = 'C:/waftools-test'
+	else:
+		prefix = '/usr'
+
+	top = os.getcwd()
+	try:
+		cd('%s/waftools/playground' % top)
+		exe('%s configure --prefix=%s' % (waf, prefix))
+		exe('%s bdist' % waf)
+		exe('%s distclean' % waf)
+	finally:
+		cd(top)
+
+
 def waftools_test(waf):
 	'''perform test operations on waftools package.'''
 	commands = [
@@ -262,6 +279,7 @@ if __name__ == "__main__":
 		waftools_setup(python, pip, git, wafinstall, devel, version)
 		waftools_test(waf)
 		waftools_cmake(waf)
+		waftools_bdist(waf)
 	finally:
 		cd(home)
 		rm(top)
