@@ -6,7 +6,8 @@ Following lists the changes per released version.
 
 - *bdist*; renamed module *package* into *bdist*; better reflects intended use 
            of the module.
-
+- *ccenv*; use a shallow environment copy; i.e. env.derive() for variant build
+           environments.
 
 **v0.4.8**, 2015-01-05:
 

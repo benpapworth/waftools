@@ -206,13 +206,14 @@ def configure_variants(conf, host):
 	'''
 	prefix = conf.env.PREFIX
 	ccenv = conf.env.CCENV
+	env = conf.env
 
 	for name, ini in ccenv.items():
 		if 'host' in ini and ini['host'] != conf.env.HOST:
 			conf.msg('Skip variant build environment', '%s (host=%s)' % (name, conf.env.HOST), color='YELLOW')
 			continue
 
-		conf.setenv(name)
+		conf.setenv(name, env.derive())
 		conf.msg('Configure environment', '%s (variant)' % name, color='PINK')
 		conf.env.CCENV = ccenv
 		conf.env.PREFIX = '%s/opt/%s' % (prefix, name)

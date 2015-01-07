@@ -23,8 +23,8 @@ def options(opt):
 
 
 def configure(conf):
-	conf.load('ccenv')
 	conf.env.append_unique('INCLUDES', conf.path.find_node('include').abspath().replace('\\', '/'))
+	conf.load('ccenv')
 
 
 def build(bld):
