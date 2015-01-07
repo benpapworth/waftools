@@ -23,6 +23,8 @@ release = '%s' % (RELEASE)
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'
 
+rst_epilog = '.. |pkg_version| replace:: %s' % (VERSION)
+
 
 #----------------------------------------------------------------
 html_title = "Waftools %s" % (VERSION)

@@ -1,6 +1,8 @@
 Support
 =======
-Defects and/or feature requests for the package can be reported at bitbucket_.
+If you have any suggestions for improvements and/or enhancements, please feel 
+free to drop me a note by creating an issue_ at the **waftools** projects 
+page.
 
-.. _bitbucket: https://bitbucket.org/Moo7/waftools/issues
+.. _issue: https://bitbucket.org/Moo7/waftools/issues
 
