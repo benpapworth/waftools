@@ -2,6 +2,12 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.9**, 2015-01-07:
+
+- *bdist*; renamed module *package* into *bdist*; better reflects intended use 
+           of the module.
+
+
 **v0.4.8**, 2015-01-05:
 
 - *ccenv*; added configuration option *host* (e.g. host = linux); only create variant 
