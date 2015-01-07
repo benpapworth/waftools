@@ -260,7 +260,7 @@ class MsDev(object):
 
 	def cleanup(self):
 		'''Deletes a **Visual Studio** solution or project file including 
-		associated files (e.g. *ncb).
+		associated files (e.g. *.ncb*).
 		'''
 		cwd = self.get_cwd()
 		for node in cwd.ant_glob('*.user'):

@@ -18,7 +18,7 @@ the following tools will be loaded and configured autmatically as well:
 - indent
 - makefile
 - msdev
-- package
+- bdist
 - tree
 
 
@@ -137,7 +137,7 @@ def options(opt):
 	opt.load('gnucc', tooldir=waftools.location)
 	opt.load('makefile', tooldir=waftools.location)
 	opt.load('msdev', tooldir=waftools.location)
-	opt.load('package', tooldir=waftools.location)
+	opt.load('bdist', tooldir=waftools.location)
 	opt.load('tree', tooldir=waftools.location)
 	opt.load('indent', tooldir=waftools.location)
 
@@ -170,14 +170,14 @@ def configure_host(conf, host, c, cxx):
 	configure_base(conf)
 	conf.load('cmake')
 	conf.load('doxygen')
-	conf.load('package')
+	conf.load('bdist')
 	conf.load('indent')
 
 
 def configure_cross(conf, host):
 	'''create and configure cross compile environments
 
- 	uses the the configuration data as specified in the *.ini
+ 	uses the the configuration data as specified in the *.ini*
 	file using configparser.ExtendedInterpolation syntax.
 	'''
 	prefix = conf.env.PREFIX

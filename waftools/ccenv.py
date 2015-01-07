@@ -17,7 +17,7 @@ tools will be loaded and configured autmagically:
 - indent
 - makefile
 - msdev
-- package
+- bdist
 - tree
 
 
@@ -141,7 +141,7 @@ def options(opt):
 	opt.load('eclipse', tooldir=waftools.location)
 	opt.load('makefile', tooldir=waftools.location)
 	opt.load('msdev', tooldir=waftools.location)
-	opt.load('package', tooldir=waftools.location)
+	opt.load('bdist', tooldir=waftools.location)
 	opt.load('tree', tooldir=waftools.location)
 	opt.load('indent', tooldir=waftools.location)
 
@@ -189,14 +189,14 @@ def configure_host(conf, host, c, cxx):
 	configure_base(conf)
 	conf.load('cmake')
 	conf.load('doxygen')
-	conf.load('package')
+	conf.load('bdist')
 	conf.load('indent')
 
 
 def configure_variants(conf, host):
 	'''Create and configure variant C/C++ build environments.
 	
-	uses the the configuration data as specified in the *.ini
+	uses the the configuration data as specified in the *.ini*
 	file using configparser.ExtendedInterpolation syntax.
 
 	:param conf: configuration context 
