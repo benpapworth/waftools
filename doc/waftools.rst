@@ -4,6 +4,17 @@ Package waftools
     :members:
 
 
+.. _mod_bdist:
+
+Module :mod:`bdist`
+---------------------
+
+.. automodule:: waftools.bdist
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 .. _mod_ccenv:
 
 Module :mod:`ccenv`
@@ -131,17 +142,6 @@ Module :mod:`msdev`
 -------------------
 
 .. automodule:: waftools.msdev
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-.. _mod_package:
-
-Module :mod:`package`
----------------------
-
-.. automodule:: waftools.package
     :members:
     :undoc-members:
     :show-inheritance:

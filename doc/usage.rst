@@ -255,8 +255,8 @@ For more information please refer to the detailed description of the
 :ref:`cmake <mod_cmake>` and :ref:`makefile <mod_makefile>` modules.
 
 
-Packaging and installers
-------------------------
+Binary distributions
+--------------------
 For windows targets platforms installers can be created using the NullSoft
 Installable Scripting system (**NSIS**). If no user defined .nsi script is 
 provided a default one will be created in the top level directory of the 
@@ -269,11 +269,11 @@ creating installers using **NSIS**::
 
     def options(opt):
         opt.load('compiler_c')
-        opt.load('package', tooldir=waftools.location)
+        opt.load('bdist', tooldir=waftools.location)
 
     def configure(conf):
         conf.load('compiler_c')
-        conf.load('package')
+        conf.load('bdist')
 
     def build(bld):
         bld.program(target='hello', source='hello.c')
@@ -281,10 +281,10 @@ creating installers using **NSIS**::
 Using this code snippet, a Windows installer can be created using
 the following command::
 
-    waf package --formats=nsis
+    waf bdist --formats=nsis
 
 For more information please refer to the detailed description of the 
-:ref:`package <mod_package>` module.
+:ref:`bdist <mod_bdist>` module.
 
 
 .. _waf: https://code.google.com/p/waf/

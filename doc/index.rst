@@ -1,7 +1,10 @@
-Waftools 0.4.8 documentation
-============================
-Welcome! This is the documentation for the waftools_ package, last updated 
-January 5\ :sup:`th`\  2015.
+Welcome
+=======
+Welcome! This is the documentation for version *0.4.9* of the **waftools**
+package.
+
+The package is currently being maintained at bitbucket_, released versions 
+can be found at pypi_.
 
 
 .. toctree::
@@ -14,5 +17,6 @@ January 5\ :sup:`th`\  2015.
    support
    credits
 
-.. _waftools: https://pypi.python.org/pypi?:action=display&name=waftools
+.. _bitbucket: https://butbucket.org/Moo7/waftools
+.. _pypi: https://pypi.python.org/pypi?:action=display&name=waftools
 

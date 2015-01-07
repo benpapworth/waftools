@@ -7,7 +7,7 @@ import sphinx_rtd_theme
 
 AUTHOR = 'Michel Mooij'
 YEAR = '2015'
-VERSION = '0.4.8'
+VERSION = '0.4.9'
 RELEASE = VERSION
 
 
@@ -25,6 +25,8 @@ pygments_style = 'sphinx'
 
 
 #----------------------------------------------------------------
+html_title = "Waftools %s" % (VERSION)
+html_short_title = "Waftools"
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_static_path = ['_static']
