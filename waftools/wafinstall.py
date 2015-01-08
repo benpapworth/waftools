@@ -215,6 +215,7 @@ def linux_env_set(variable, value, extend=False):
 
 def getopts(argv):
 	'''returns command line options as tuple.'''
+	user = False
 	set_env = True
 	version = WAF_VERSION
 	tools = WAF_TOOLS
