@@ -3,22 +3,7 @@ Summary
 This package contains a collection of tools for the waf_ build environment
 intended for both native- as well cross compilation of C/C++ based projects.
 
-
-Description
------------
-The waf_ framework provides a meta build system allowing users to create
-concrete build systems. Out of the box it provides support for building and 
-installation of programs for a myriad of programming languages (C, C++, Java, 
-Python, Fortran, Lua, ...), when needed new functions (e.g. source code 
-checking) can be added to a concrete build solution using waf_ *tools* 
-which can be imported and used in *wscript* build files. See the 
-wafbook_ for a detailed description of the waf_ meta build system structure
-and usage.
-
-The *waftools* package provides a collection of C/C++ *tools* which, once 
-installed, can be imported and used from any *wscript* build file on your 
-system. Following provides a non-exhausting list of functions provided by this 
-package:
+Following provides a non-exhausting list of functions provided:
 
 - Cross compile using several C/C++ cross compiler toolchains
 - C/C++ export to makefiles (e.g. **make**, **cmake**)
@@ -29,37 +14,36 @@ package:
 - Create C/C++ documentation using **DoxyGen**
 - List dependencies between build tasks
 
-
-.. note::
-	the complete documentation for the package can be found at
-	http://pythonhosted.org/waftools
+A detailed description of *waftools* can be found at: pythonhosted_.
 
 
 Installation
 ------------
-The package can be installed using pip::
+The *waftools* package can be installed using pip::
 
-    pip install -I waftools
+    pip install -I waftools [--user]
+    wafinstall [--user]
 
-or by cloning the repository and using distutils::
+Note that the last step will download and install the waf_ meta build system
+as well.
+As alternative you can also clone the repository and install the latest
+revision::
 
     cd ~
     git clone https://bitbucket.org/Moo7/waftools.git waftools
-    cd waftools
-    python setup.py sdist install
-
-Contained within the *waftools* package is a special install script which can be used to 
-install the waf build system itself::
-
-    wafinstall [--version=version] [--tools=compat15]
+    pip install -e ~/waftools [--user]
+    wafinstall [--user]
 
 
 Support
 -------
-Defects and/or feature requests can be reported at bitbucket_.
-    
+If you have any suggestions for improvements and/or enhancements, please feel 
+free to drop me a note by creating an issue_ at the **waftools** projects 
+page.
+
 
 .. _waf: https://code.google.com/p/waf/
 .. _wafbook: http://docs.waf.googlecode.com/git/book_18/single.html
-.. _bitbucket: https://bitbucket.org/Moo7/waftools/issues
+.. _issue: https://bitbucket.org/Moo7/waftools/issues
+.. _pythonhosted: https://pythonhosted.org/waftools
 
