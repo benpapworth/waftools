@@ -1,4 +1,4 @@
-include CHANGES.rst
+include CHANGES
 include LICENSE
 include waftools/msdev.sln
 include waftools/doxy.config
