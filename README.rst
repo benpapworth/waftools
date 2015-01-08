@@ -14,7 +14,7 @@ Following provides a non-exhausting list of functions provided:
 - Create C/C++ documentation using **DoxyGen**
 - List dependencies between build tasks
 
-A detailed description of *waftools* can be found at: pythonhosted_.
+A detailed description of *waftools* can be found at pythonhosted_.
 
 
 Installation
@@ -38,7 +38,7 @@ revision::
 Support
 -------
 If you have any suggestions for improvements and/or enhancements, please feel 
-free to drop me a note by creating an issue_ at the **waftools** projects 
+free to drop me a note by creating an issue_ at the waftools_ projects 
 page.
 
 
@@ -46,4 +46,5 @@ page.
 .. _wafbook: http://docs.waf.googlecode.com/git/book_18/single.html
 .. _issue: https://bitbucket.org/Moo7/waftools/issues
 .. _pythonhosted: https://pythonhosted.org/waftools
+.. _waftools: https://bitbucket.org/Moo7/waftools
 

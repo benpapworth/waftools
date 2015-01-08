@@ -11,6 +11,7 @@ package.
    usage
    modules
    support
+   history
    credits
 
 

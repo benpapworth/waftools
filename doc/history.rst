@@ -4,15 +4,12 @@ Following lists the changes per released version.
 
 **v0.4.9**, 2015-01-07:
 
-- *bdist*; renamed module *package* into *bdist*; better reflects intended use 
-           of the module.
-- *ccenv*; use a shallow environment copy; i.e. env.derive() for variant build
-           environments.
+- *bdist*; renamed module *package* into *bdist*, better reflects intended use of the module.
+- *ccenv*; use a shallow environment copy, i.e. use env.derive() for each variant build environment.
 
 **v0.4.8**, 2015-01-05:
 
-- *ccenv*; added configuration option *host* (e.g. host = linux); only create variant 
-           build environment when building the specified host.
+- *ccenv*; added configuration option *host* (e.g. host = linux), only create variant build environment when  building on the specified host.
 - *general*; updated documentation to use theme from 'Read the Docs'.
 
 
