@@ -28,9 +28,11 @@ Available options:
 
     -t | --tools    comma seperated list of waf tools to be used
                     default=None
+
+    -u | --user     install in user directory (i.e. $HOME)
 					
-    -l | --local    local installation; don't add waf to environment
-					paths
+    -s | --skip-env do not update environment variables (i.e. $PATH,
+					$WAFDIR)
 '''
 
 
@@ -59,13 +61,9 @@ if sys.platform == "win32":
 	BINDIR = os.path.join(sys.prefix, 'Scripts')
 	LIBDIR = distutils.sysconfig.get_python_lib()
 
-elif hasattr(sys, 'real_prefix'):
+else:
 	BINDIR = '%s/bin' % (sys.prefix)
 	LIBDIR = distutils.sysconfig.get_python_lib()
-
-else:
-	BINDIR = "~/.local/bin"
-	LIBDIR = site.getusersitepackages()
 
 
 def usage():
@@ -131,7 +129,7 @@ def install_waflib(waf, extras=[], libdir=LIBDIR):
 		os.chdir(top)
 
 
-def install(release, bindir, libdir, tools, local):
+def install(release, bindir, libdir, tools, set_env):
 	'''installs waf at the given location.'''
 	mkdirs(bindir)
 	dst = os.path.join(bindir, 'waf').replace('~', HOME)
@@ -141,7 +139,7 @@ def install(release, bindir, libdir, tools, local):
 	install_waflib(release, libdir=libdir, extras=tools.split(',') if tools else [])
 	if sys.platform == "win32":
 		cp("%s.bat" % src, "%s.bat" % dst)
-	if not local:
+	if set_env:
 		env_set('PATH', bindir, extend=True)
 		env_set('WAFDIR', libdir)
 
@@ -217,32 +215,40 @@ def linux_env_set(variable, value, extend=False):
 
 def getopts(argv):
 	'''returns command line options as tuple.'''
-	local = False
+	set_env = True
 	version = WAF_VERSION
 	tools = WAF_TOOLS
 	bindir = BINDIR
 	libdir = LIBDIR
-	
-	opts, args = getopt.getopt(argv[1:], 'hlv:u:t:', ['help', 'local', 'version=', 'tools='])
+
+	opts, args = getopt.getopt(argv[1:], 'hv:t:us', ['help', 'version=', 'tools=', 'user', 'skip-env'])
 	for opt, arg in opts:
 		if opt in ('-h', '--help'):
 			usage()
 			sys.exit()
-		elif opt in ('-l', '--local'):
-			local = True
 		elif opt in ('-v', '--version'):
 			version = arg
 		elif opt in ('-t', '--tools'):
 			tools = arg
+		elif opt in ('-u', '--user'):
+			user = True
+		elif opt in ('-s', '--skip-env'):
+			set_env = False
 	
-	return (version, tools, bindir, libdir, local)
+	if user:
+		# install in home directory but not on windows or virtualenv
+		if sys.platform != "win32" and not hasattr(sys, 'real_prefix'):
+			bindir = "~/.local/bin"
+			libdir = site.getusersitepackages()
+
+	return (version, tools, bindir, libdir, set_env)
 
 
 def main(argv=sys.argv, level=logging.DEBUG):
 	'''downloads, unpacks, creates and installs waf package.'''
 	logging.basicConfig(level=level, format=' %(message)s')
 	try:
-		(version, tools, bindir, libdir, local) = getopts(argv)
+		(version, tools, bindir, libdir, set_env) = getopts(argv)
 	except getopt.GetoptError as err:
 		print(str(err))
 		usage()
@@ -260,7 +266,7 @@ def main(argv=sys.argv, level=logging.DEBUG):
 		download(url, package)
 		deflate(package)
 		create(release, tools)
-		install(release, bindir, libdir, tools, local)
+		install(release, bindir, libdir, tools, set_env)
 	finally:
 		cd(top)
 		rm(tmp)

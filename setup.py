@@ -13,9 +13,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 with open(os.path.join(here,'README.rst')) as f:
-	README = f.read()
-with open(os.path.join(here,'CHANGES.rst')) as f:
-	CHANGES = f.read()
+	long_description = f.read()
 
 
 setup(
@@ -28,7 +26,7 @@ setup(
 	url = url,
 	download_url = "%s/downloads/waftools-%s.tar.gz" % (url, waftools.version),
 	description = "Handy tools for the WAF meta build environment",
-	long_description = '\n\n'.join([README, CHANGES]),
+	long_description = long_description,
 	packages = ["waftools"],
 	install_requires = ["pygments", "chardet", "jinja2"],
 	license = 'MIT',

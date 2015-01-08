@@ -150,12 +150,12 @@ def waftools_setup(python, pip, git, wafinstall, devel, version):
 			cd('waftools')
 			exe(python, args=['setup.py', 'sdist', 'install'])
 			cd('waftools')
-			exe(python, args=['wafinstall.py', '--local'])
+			exe(python, args=['wafinstall.py', '--skip-env'])
 		finally:
 			cd(top)
 	else:
 		exe(pip, args=['install', 'waftools==%s' % (version) if version else 'waftools'])
-		exe(wafinstall, args=['--local'])
+		exe(wafinstall, args=['--skip-env'])
 
 
 def waftools_cmake(waf):
