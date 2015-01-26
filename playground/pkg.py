@@ -51,6 +51,9 @@ def get_package_cache_dir(self):
 
 @conf
 def wget(self, cache, src, dst):
+	if self.variant:
+		dst = '%s/%s' % (self.variant, dst)
+
 	archive = cache.find_node(dst)
 	if archive:
 		return archive
@@ -103,16 +106,34 @@ def deflate(self, archive):
 def load_packages(self):
 	cache = self.get_package_cache_dir()
 
-	# read configuration from file
-
 	# repeat for all packages
-	name = 'syslog-win32'
-	src = 'http://skylink.dl.sourceforge.net/project/syslog-win32/syslog-win32/0.3/syslog-win32-0.3.tar.bz2'
-	dst = 'syslog-win32-0.3.tar.bz2'
-	archive = self.wget(cache, src, dst)
-	self.deflate(archive)
+	# read configuration from file
+	package = {}
+	package['libev'] = {
+		'name'		: 'libev',
+		'version'	: '4.19',
+		'top'		: 'libev-4.19',
+		'url'		: 'http://dist.schmorp.de/libev/libev-4.19.tar.gz'
+	}
 
-	# conditionals (do only if):
+
+
+	name = 'libev'
+	version = '4.19'
+	release = '%s-%s' % (name, version)
+	src = 'http://dist.schmorp.de/{0}/{0}-{1}.tar.gz'.format([name, version])
+	dst = '%s.tar.gz' % release
+	archive = self.wget(cache, src, dst)
+	patches = ['a.patch', 'b.patch']
+
+	# TODO: check if package is installed/available
+	self.deflate(archive)
+	self.patch(archive, release, patches)
+	self.configure(archive, release)
+	self.make_install(archive, release)
+
+
+	# TODO: conditionals (do only if):
 	#	- variant
 	#   - dest_os, dest_cpu
 	
