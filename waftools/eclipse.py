@@ -593,25 +593,36 @@ class CDTProject(EclipseProject):
 		folder.set('id','%s.' % (self.cdt['instance']))
 		self.cconfig_toolchain_update(folder)
 
+
+	def _external_settings_update(self, settings, name):
+		settings.set('containerId', '%s;' % name)
+		settings.set('factoryId', 'org.eclipse.cdt.core.cfg.export.settings.sipplier')
+		eset = ElementTree.SubElement(settings, 'externalSetting')
+		e = ElementTree.SubElement(eset, 'entry', {'flags':'VALUE_WORKSPACE_PATH', 'kind':'includePath'})
+		e.set('name', '/%s' % name)
+		e = ElementTree.SubElement(eset, 'entry', {'flags':'VALUE_WORKSPACE_PATH', 'kind':'libraryPath'})
+		e.set('name', '/%s/%s' % (name, self.cdt['name']))
+		e = ElementTree.SubElement(eset, 'entry', {'flags':'RESOLVED', 'kind':'libraryFile', 'srcPrefixMapping':'', 'srcRootPath': ''})
+		e.set('name', '%s' % name)
+	
 	def cconfig_external_settings_update(self, module):
-		name = self.tgen.get_name()
-		deps = waftools.deps.get_deps(self.bld, name)
+		deps = waftools.deps.get_deps(self.bld, self.tgen.get_name())
 		tgens = waftools.deps.get_tgens(self.bld, deps)
-		for settings in module.findall('externalSettings'):
-			cid = settings.get('containerId').rstrip(';')			
-			for tg in tgens:
-				if cid in tg.features:
-					eset = ElementTree.SubElement(settings, 'externalSetting')
-					e = ElementTree.SubElement(eset, 'entry', {'flags':'VALUE_WORKSPACE_PATH', 'kind':'includePath'})
-					e.set('name', '/%s' % tg.get_name())
-					e = ElementTree.SubElement(eset, 'entry', {'flags':'VALUE_WORKSPACE_PATH', 'kind':'libraryPath'})
-					e.set('name', '/%s/%s' % (tg.get_name(), self.cdt['name']))
-					e = ElementTree.SubElement(eset, 'entry', {'flags':'RESOLVED', 'kind':'libraryFile', 'srcPrefixMapping':'', 'srcRootPath': ''})
-					e.set('name', '%s' % tg.get_name())
-		for settings in module.findall('externalSettings'):
-			eset = settings.findall('externalSetting')
-			if not len(eset):
-				module.remove(settings)
+		for tg in tgens:
+			if not set(('c', 'cxx')) & set(tg.features):			
+				continue
+			if set(('cprogram', 'cxxprogram')) & set(tg.features):
+				continue
+			name = tg.get_name()
+			settings = None
+			for s in module.findall('externalSettings'):
+				cid = s.get('containerId').rstrip(';')
+				if cid == name:
+					settings = s
+					break
+			if not settings:
+				settings = ElementTree.SubElement(module, 'externalSettings')
+			self._external_settings_update(settings, name)
 
 	def cconfig_toolchain_update(self, folder):
 		toolchain = folder.find('toolChain')
@@ -1130,14 +1141,6 @@ ECLIPSE_CDT_CCONFIGURATION = '''
 		</configuration>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
-		<externalSettings containerId="cshlib;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
-		</externalSettings>
-		<externalSettings containerId="cstlib;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
-		</externalSettings>	
-		<externalSettings containerId="cxxshlib;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
-		</externalSettings>
-		<externalSettings containerId="cxxstlib;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
-		</externalSettings>
 	</storageModule>
 </cconfiguration>
 '''
