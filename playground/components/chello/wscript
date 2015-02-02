@@ -6,6 +6,7 @@ def build(bld):
 		target='chello',
 		source=bld.path.ant_glob('src/*.c'),
 		includes=['./include'],
-		defines=['HELLO_VERSION="1.2.3"']
+		defines=['HELLO_VERSION="1.2.3"'],
+		use=['dummy']
 	)
 

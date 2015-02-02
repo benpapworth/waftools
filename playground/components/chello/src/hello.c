@@ -9,6 +9,8 @@
 #endif
 
 #include <hello.h>
+#include <playground.h>
+#include <dummy.h>
 
 int main(int argc, char* argv[])
 {
@@ -17,6 +19,8 @@ int main(int argc, char* argv[])
 	say_hello();
 
 	printf("The current directory is: %s\n", getcwd(buf, sizeof(buf)));
+	printf("Playground: %s\n", PLAYGROUND);
+	printf("Dummy says: %s\n", DUMMY);
 	return EXIT_SUCCESS;
 }
 
