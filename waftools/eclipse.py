@@ -109,7 +109,6 @@ from xml.dom import minidom
 from waflib import Utils, Logs, Errors, Context
 from waflib.Build import BuildContext
 import waftools
-from waftools import deps
 
 def options(opt):
 	'''Adds command line options to the *waf* build environment 
@@ -557,7 +556,9 @@ class CDTProject(EclipseProject):
 			if storage.get('moduleId') == 'org.eclipse.cdt.core.settings':
 				self.cconfig_settings_update(storage)
 			if storage.get('moduleId') == 'cdtBuildSystem':
-				self.cconfig_buildsystem_update(storage)
+				self.cconfig_buildsystem_update(storage)				
+			if storage.get('moduleId') == 'org.eclipse.cdt.core.externalSettings':
+				self.cconfig_external_settings_update(storage)
 
 	def cconfig_settings_update(self, storage):
 		storage.set('name', self.cdt['name'])
@@ -591,6 +592,26 @@ class CDTProject(EclipseProject):
 		folder = config.find('folderInfo')
 		folder.set('id','%s.' % (self.cdt['instance']))
 		self.cconfig_toolchain_update(folder)
+
+	def cconfig_external_settings_update(self, module):
+		name = self.tgen.get_name()
+		deps = waftools.deps.get_deps(self.bld, name)
+		tgens = waftools.deps.get_tgens(self.bld, deps)
+		for settings in module.findall('externalSettings'):
+			cid = settings.get('containerId').rstrip(';')			
+			for tg in tgens:
+				if cid in tg.features:
+					eset = ElementTree.SubElement(settings, 'externalSetting')
+					e = ElementTree.SubElement(eset, 'entry', {'flags':'VALUE_WORKSPACE_PATH', 'kind':'includePath'})
+					e.set('name', '/%s' % tg.get_name())
+					e = ElementTree.SubElement(eset, 'entry', {'flags':'VALUE_WORKSPACE_PATH', 'kind':'libraryPath'})
+					e.set('name', '/%s/%s' % (tg.get_name(), self.cdt['name']))
+					e = ElementTree.SubElement(eset, 'entry', {'flags':'RESOLVED', 'kind':'libraryFile', 'srcPrefixMapping':'', 'srcRootPath': ''})
+					e.set('name', '%s' % tg.get_name())
+		for settings in module.findall('externalSettings'):
+			eset = settings.findall('externalSetting')
+			if not len(eset):
+				module.remove(settings)
 
 	def cconfig_toolchain_update(self, folder):
 		toolchain = folder.find('toolChain')
@@ -786,8 +807,9 @@ class CDTProject(EclipseProject):
 		for use in uses:
 			try:
 				tg = self.bld.get_tgen_by_name(use)
-			except Errors.WafError as e:
-				pass
+			except Errors.WafError:
+				top = tg.path.abspath().replace('\\', '/')
+				includes = ['%s/%s' % (top, i) for i in includes if len(i)]
 			else:
 				includes = Utils.to_list(getattr(tg, 'export_includes', []))
 				sources = Utils.to_list(getattr(tg, 'source', []))
@@ -911,7 +933,7 @@ class CDTProject(EclipseProject):
 		uses = uses[::-1]
 
 		# insert tasks at start of list
-        # lowest nesting at start
+		# lowest nesting at start
 		for (_, lib, name, paths) in uses:
 			if name:
 				entry = (lib, name, paths)
@@ -1019,16 +1041,11 @@ class CDTLaunch(Project):
 
 		attrib = root.find('mapAttribute')
 		
-		uses = waftools.deps.get_deps(self.bld, self.tgen.get_name())
-		for use in uses:
-			try:
-				tg = self.bld.get_tgen_by_name(use)
-			except Errors.WafError:
-				pass
-			else:
-				if set(('cshlib', 'cxxshlib')) & set(tg.features):
-					mapentry = ElementTree.SubElement(attrib, 'mapEntry', {'key':'PATH' if sys.platform=='win32' else 'LD_LIBRARY_PATH'})
-					mapentry.set('value', '${workspace_loc:/%s/%s}' % (tg.get_name(), self.build_dir))
+		deps = waftools.deps.get_deps(self.bld, self.tgen.get_name())
+		for tg in waftools.deps.get_tgens(self.bld, deps):
+			if set(('cshlib', 'cxxshlib')) & set(tg.features):
+				mapentry = ElementTree.SubElement(attrib, 'mapEntry', {'key':'PATH' if sys.platform=='win32' else 'LD_LIBRARY_PATH'})
+				mapentry.set('value', '${workspace_loc:/%s/%s}' % (tg.get_name(), self.build_dir))
 		return ElementTree.tostring(root)
 
 
@@ -1112,7 +1129,16 @@ ECLIPSE_CDT_CCONFIGURATION = '''
 			</folderInfo>
 		</configuration>
 	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+	<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
+		<externalSettings containerId="cshlib;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
+		</externalSettings>
+		<externalSettings containerId="cstlib;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
+		</externalSettings>	
+		<externalSettings containerId="cxxshlib;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
+		</externalSettings>
+		<externalSettings containerId="cxxstlib;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
+		</externalSettings>
+	</storageModule>
 </cconfiguration>
 '''
 
