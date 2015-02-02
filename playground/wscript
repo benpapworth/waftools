@@ -3,7 +3,6 @@
 # Michel Mooij, michel.mooij7@gmail.com
 
 
-import os
 import waftools
 from waftools import ccenv
 
@@ -20,11 +19,9 @@ APPNAME = 'waftools-test'
 def options(opt):
 	opt.add_option('--prefix', dest='prefix', default=prefix, help='installation prefix [default: %r]' % prefix)
 	opt.load('ccenv', tooldir=waftools.location)
-	#opt.load('pkg', tooldir='.')
 
 
 def configure(conf):
-	#conf.load_packages()
 	conf.env.append_unique('INCLUDES', conf.path.find_node('include').abspath().replace('\\', '/'))
 	conf.load('ccenv')
 
