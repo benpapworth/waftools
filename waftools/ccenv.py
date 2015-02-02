@@ -7,7 +7,7 @@ Summary
 -------
 Setup and configure multiple C/C++ build environments and configure
 common tools for C/C++ projects. When using this module the following
-tools will be loaded and configured autmagically:
+tools will be loaded and configured automatically:
 
 - cmake
 - codeblocks
