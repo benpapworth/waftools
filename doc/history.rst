@@ -2,10 +2,16 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.10**, 2015-02-03:
+
+- issue14_; set external path and symbol references.
+
+
 **v0.4.9**, 2015-01-07:
 
 - *bdist*; renamed module *package* into *bdist*, better reflects intended use of the module.
 - *ccenv*; use a shallow environment copy, i.e. use env.derive() for each variant build environment.
+
 
 **v0.4.8**, 2015-01-05:
 
@@ -229,4 +235,4 @@ Following lists the changes per released version.
 .. _issue11: https://bitbucket.org/Moo7/waftools/issue/11/cmake-export-fails-when-using-bldobjects
 .. _issue12: https://bitbucket.org/Moo7/waftools/issue/12/makefile-export-fails-when-using
 .. _issue13: https://bitbucket.org/Moo7/waftools/issue/13/package-version-045-install-fails-on
-
+.. _issue14: https://bitbucket.org/Moo7/waftools/issue/14/eclipse-generation-does-not-generate
