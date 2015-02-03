@@ -421,7 +421,7 @@ option::
 
 import os
 import re
-from waflib import Utils, Context, Logs
+from waflib import Utils, Context, Logs, Errors
 from waflib.Build import BuildContext
 import waftools
 from waftools import deps
