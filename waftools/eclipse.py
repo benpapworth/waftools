@@ -819,8 +819,7 @@ class CDTProject(EclipseProject):
 			try:
 				tg = self.bld.get_tgen_by_name(use)
 			except Errors.WafError:
-				top = tg.path.abspath().replace('\\', '/')
-				includes = ['%s/%s' % (top, i) for i in includes if len(i)]
+				includes = self.tgen.env['INCLUDES_%s' % use]
 			else:
 				includes = Utils.to_list(getattr(tg, 'export_includes', []))
 				sources = Utils.to_list(getattr(tg, 'source', []))
@@ -832,9 +831,9 @@ class CDTProject(EclipseProject):
 					includes = [i.lstrip('./') if i.startswith('./') else i for i in includes]
 					includes = ['"${workspace_loc:/%s/%s}"' % (use, i) for i in includes if len(i)]
 					
-				for include in includes:
-					listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
-					listoption.set('value', include)
+			for include in includes:
+				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+				listoption.set('value', include)
 
 	def compiler_add_defines(self, compiler, language):
 		if self.language != language:
