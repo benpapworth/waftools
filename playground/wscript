@@ -23,11 +23,12 @@ def options(opt):
 
 def configure(conf):
 	conf.env.append_unique('INCLUDES', conf.path.find_node('include').abspath().replace('\\', '/'))
-	conf.env.append_unique('INCLUDES_dummy', conf.path.find_node('ext/dummy/include').abspath().replace('\\', '/'))
+	conf.env.append_unique('INCLUDES_dummy', conf.path.find_node('ext/dummy').abspath().replace('\\', '/'))
 	conf.load('ccenv')
 
 
 def build(bld):
+	bld.read_shlib('m', paths=['/lib64', '/usr/lib64'])
 	ccenv.build(bld, trees=['components'])
 
 

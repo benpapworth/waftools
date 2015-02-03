@@ -11,6 +11,7 @@
 #include <hello.h>
 #include <playground.h>
 #include <dummy.h>
+#include <math.h>
 
 int main(int argc, char* argv[])
 {
@@ -20,7 +21,8 @@ int main(int argc, char* argv[])
 
 	printf("The current directory is: %s\n", getcwd(buf, sizeof(buf)));
 	printf("Playground: %s\n", PLAYGROUND);
-	printf("Dummy says: %s\n", DUMMY);
+	printf("Dummy: %s\n", DUMMY);
+	printf("sin: %f\n", sin(1.0));
 	return EXIT_SUCCESS;
 }
 
