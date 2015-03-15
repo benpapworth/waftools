@@ -68,7 +68,7 @@ as shown below::
 
 
 from waflib.Build import BuildContext
-from waflib import Utils, Logs, Context
+from waflib import Utils, Logs, Context, Errors
 import waftools
 from waftools import deps
 
@@ -274,7 +274,7 @@ class CMake(object):
 			content += '\n    %s' % (src.path_from(tgen.path).replace('\\','/'))
 		content += ')\n\n'
 
-		includes = self.get_genlist(tgen, 'includes')
+		includes = self.get_includes(tgen)
 		includes.extend(tgen.env.INCLUDES)
 		if len(includes):
 			content += 'set(%s_INCLUDES' % (name)
@@ -306,6 +306,23 @@ class CMake(object):
 			content += '\n'
 
 		return content
+
+
+	def get_includes(self, tgen):
+		'''returns the include paths for the given task generator.
+		'''
+		includes = self.get_genlist(tgen, 'includes')
+		for use in getattr(tgen, 'use', []):
+			key = 'INCLUDES_%s' % use
+			try:
+				tg = self.bld.get_tgen_by_name(use)
+				if 'fake_lib' in tg.features:
+					if key in tgen.env:
+						includes.extend(tgen.env[key])
+			except Errors.WafError:
+				if key in tgen.env:
+					includes.extend(tgen.env[key])
+		return includes
 
 	def get_genlist(self, tgen, name):
 		lst = Utils.to_list(getattr(tgen, name, []))

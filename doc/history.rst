@@ -5,19 +5,20 @@ Following lists the changes per released version.
 **v0.4.10**, 2015-03-15:
 
 - *general*; updated to waf version 1.8.7
-- issue14_; set external path and symbol references.
+- *cmake*, *makefile*; improved detection of include paths
+- issue14_; set external path and symbol references
 
 
 **v0.4.9**, 2015-01-07:
 
-- *bdist*; renamed module *package* into *bdist*, better reflects intended use of the module.
-- *ccenv*; use a shallow environment copy, i.e. use env.derive() for each variant build environment.
+- *bdist*; renamed module *package* into *bdist*, better reflects intended use of the module
+- *ccenv*; use a shallow environment copy, i.e. use env.derive() for each variant build environment
 
 
 **v0.4.8**, 2015-01-05:
 
-- *ccenv*; added configuration option *host* (e.g. host = linux), only create variant build environment when  building on the specified host.
-- *general*; updated documentation to use theme from 'Read the Docs'.
+- *ccenv*; added configuration option *host* (e.g. host = linux), only create variant build environment when  building on the specified host
+- *general*; updated documentation to use theme from 'Read the Docs'
 
 
 **v0.4.7**, 2014-12-31:
