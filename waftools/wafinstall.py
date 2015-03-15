@@ -73,6 +73,7 @@ def usage():
 def download(url, saveto):
 	'''downloads the waf package.'''
 	logging.info("wget %s" % url)
+	u = None
 	try:
 		u = urlopen(url)
 		with open(saveto, 'wb') as f: f.write(u.read())
@@ -102,6 +103,13 @@ def create(release, tools):
 		subprocess.call(cmd.split(), cwd="./" + release)
 	finally:
 		os.chdir(top)
+
+
+def remove_waf(bindir=BINDIR, libdir=LIBDIR):
+	'''removes existing waflib.'''
+	waf = os.path.join(bindir, 'waf').replace('~', HOME)
+	rm(waf)
+	rm(os.path.join(libdir, 'waflib'))
 
 
 def install_waflib(waf, extras=[], libdir=LIBDIR):
@@ -266,6 +274,7 @@ def main(argv=sys.argv, level=logging.DEBUG):
 		cd(tmp)
 		download(url, package)
 		deflate(package)
+		remove_waf(bindir, libdir)
 		create(release, tools)
 		install(release, bindir, libdir, tools, set_env)
 	finally:
@@ -284,7 +293,10 @@ def rm(path):
 	'''delete directory, including sub-directories and files it contains.'''
 	if os.path.exists(path):
 		logging.debug("rm -rf %s" % (path))
-		shutil.rmtree(path)
+		if os.path.isfile(path):
+			os.remove(path)
+		else:
+			shutil.rmtree(path)
 
 
 def mkdirs(path):
