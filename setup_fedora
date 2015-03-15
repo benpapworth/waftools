@@ -30,7 +30,8 @@ sudo yum -y install \
 				python-pip python-virtualenv python-wheel \
 				python-chardet python-pygments python-jinja2 \
 				wget indent meld sphinx python-sphinx \
-				eclipse-pydev eclipse-pydev-mylyn
+				eclipse-pydev eclipse-pydev-mylyn \
+				mingw64-gcc mingw64-gcc-g++ 
 
 sudo yum -y groupinstall "C Development Tools and Libraries"
 
