@@ -744,6 +744,22 @@ class MakeChild(Make):
 			libs.extend(self.get_libs(use, nest+1))
 		return libs
 
+	def get_includes(self, gen):
+		'''returns the include paths for the given task generator.
+		'''
+		includes = self.get_genlist(gen, 'includes')
+		for use in getattr(gen, 'use', []):
+			key = 'INCLUDES_%s' % use
+			try:
+				tg = self.bld.get_tgen_by_name(use)
+				if 'fake_lib' in tg.features:
+					if key in gen.env:
+						includes.extend(gen.env[key])
+			except Errors.WafError:
+				if key in gen.env:
+					includes.extend(gen.env[key])
+		return includes
+
 	def process(self):
 		self.lib = {}
 		self.lib['static'] = { 'name' : [], 'path' : [] }
@@ -769,7 +785,7 @@ class MakeChild(Make):
 		'''returns the makefile content for a C program.
 		'''
 		source = self.get_genlist(gen, 'source')
-		includes = self.get_genlist(gen, 'includes')
+		includes = self.get_includes(gen)
 		defines = self.get_defines(gen)
 		defines = [d for d in defines]
 		s = MAKEFILE_CPROGRAM
@@ -791,7 +807,7 @@ class MakeChild(Make):
 		'''returns the makefile content for a C++ program.
 		'''
 		source = self.get_genlist(gen, 'source')
-		includes = self.get_genlist(gen, 'includes')
+		includes = self.get_includes(gen)
 		defines = self.get_defines(gen)
 		defines = [d for d in defines]
 		s = MAKEFILE_CXXPROGRAM
