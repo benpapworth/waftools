@@ -53,7 +53,7 @@ except ImportError:
 	from urllib2 import urlopen
 
 
-WAF_VERSION = "1.8.5"
+WAF_VERSION = "1.8.7"
 WAF_TOOLS = None
 
 HOME = os.path.expanduser('~')
@@ -257,7 +257,7 @@ def main(argv=sys.argv, level=logging.DEBUG):
 
 	release = "waf-%s" % version
 	package = "%s.tar.bz2" % release
-	url = "http://ftp.waf.io/pub/release/%s" % package
+	url = "http://www.freehackers.org/~tnagy/release/%s" % package
 	logging.info("WAF version=%s, tools=%s, url=%s, bin=%s, lib=%s" % (version, tools, url, bindir, libdir))
 
 	top = os.getcwd()

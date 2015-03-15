@@ -2,8 +2,9 @@ History
 -------
 Following lists the changes per released version.
 
-**v0.4.10**, 2015-02-03:
+**v0.4.10**, 2015-03-15:
 
+- *general*; updated to waf version 1.8.7
 - issue14_; set external path and symbol references.
 
 
