@@ -1,8 +1,5 @@
 #!/usr/bin/sh
-#
-# Setup a development environment for waftools.
-#
-
+set -e
 
 ALL=
 YES=
@@ -53,6 +50,22 @@ then
 		sudo $YES yum install $i
 	done
 fi
+
+echo "--> install openwrt mips cross-compiler..."
+url="http://downloads.openwrt.org/barrier_breaker/14.07/ar71xx/mikrotik"
+release="OpenWrt-Toolchain-ar71xx-for-mips_34kc-gcc-4.8-linaro_uClibc-0.9.33.2"
+package=$release.tar.bz2
+tmp=`mktemp -d`
+dst=$HOME/.local/share/openwrt
+cd $tmp
+wget $url/$package
+tar jxvf $package
+mkdir $HOME/.local/share/openwrt
+mv $release/* $dst
+cd $HOME
+rm -rf $tmp
+echo 'export PATH=$PATH:~/.local/share/openwrt/toolchain-mips_34kc_gcc-4.8-linaro_uClibc-0.9.33.2/bin' >> $HOME/.bashrc
+
 
 
 
