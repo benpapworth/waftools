@@ -87,7 +87,7 @@ def release(git):
 			exe('pip install', args=[package,user])
 
 	# WAFTOOLS: install latest (required for Sphinx documentation)
-	exe('pip -I --user install %s' % os.path.dirname(__file__), args=[user])
+	exe('pip install -I --user %s' % os.path.dirname(__file__), args=[user])
 
 	# WAF: install waflib (required for Sphinx documentation)
 	exe('wafinstall', args=[user])
