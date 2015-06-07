@@ -152,7 +152,7 @@ def configure(conf):
 	:param conf: configuration context 
 	:type conf: waflib.Configure.ConfigurationContext
 	'''
-	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')
+	conf.check_waf_version(mini='1.7.6', maxi='1.9.0')
 	conf.env.PREFIX = str(conf.env.PREFIX).replace('\\', '/')
 	conf.env.CCENVINI = getattr(conf.options, CCENV_OPT)
 	conf.env.CCENV = get_ccenv(conf.env.CCENVINI)
