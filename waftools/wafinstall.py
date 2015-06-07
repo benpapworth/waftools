@@ -99,18 +99,14 @@ def create(release, tools):
 	if tools:
 		cmd += ' --tools=%s' % tools
 	top = os.getcwd()
+	cwd = os.path.join(".", release)
+	env = os.environ.copy()
+	env['WAFDIR'] = os.path.abspath(cwd)
 	try:
 		logging.info(cmd)
-		subprocess.call(cmd.split(), cwd="./" + release)
+		subprocess.call(cmd.split(), cwd=cwd, env=env)
 	finally:
 		os.chdir(top)
-
-
-def remove_waf(bindir=BINDIR, libdir=LIBDIR):
-	'''removes existing waflib.'''
-	waf = os.path.join(bindir, 'waf').replace('~', HOME)
-	rm(waf)
-	rm(os.path.join(libdir, 'waflib'))
 
 
 def install_waflib(waf, extras=[], libdir=LIBDIR):
@@ -264,8 +260,8 @@ def main(argv=sys.argv, level=logging.DEBUG):
 		usage()
 		sys.exit(2)
 
-	release = "waf-%s" % version
-	package = "%s.tar.gz" % release
+	release = "waf-waf-%s" % version
+	package = "waf-%s.tar.gz" % version
 	url = "%s/%s" % (WAF_URL, package)
 	logging.info("WAF version=%s, tools=%s, url=%s, bin=%s, lib=%s" % (version, tools, url, bindir, libdir))
 
@@ -275,7 +271,6 @@ def main(argv=sys.argv, level=logging.DEBUG):
 		cd(tmp)
 		download(url, package)
 		deflate(package)
-		remove_waf(bindir, libdir)
 		create(release, tools)
 		install(release, bindir, libdir, tools, set_env)
 	finally:
@@ -314,6 +309,6 @@ def cd(path):
 
 
 if __name__ == "__main__":
-	code = main(argv=sys.argv, level=logging.DEBUG)
-	sys.exit(code)
+	main(argv=sys.argv, level=logging.DEBUG)
+
 
