@@ -266,7 +266,7 @@ def main(argv=sys.argv, level=logging.DEBUG):
 
 	release = "waf-%s" % version
 	package = "%s.tar.gz" % release
-	url = WAF_URL % package
+	url = "%s/%s" % (WAF_URL, package)
 	logging.info("WAF version=%s, tools=%s, url=%s, bin=%s, lib=%s" % (version, tools, url, bindir, libdir))
 
 	top = os.getcwd()
