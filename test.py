@@ -43,7 +43,7 @@ Available options:
                     when not specified the latest (or a specific version) released
                     waftools packge from PyPi will be used.
 
-    -v | --version  [optional] waftools pakage from PyPi to be used.
+    -v | --version  [optional] waftools package from PyPi to be used.
 
 '''
 
