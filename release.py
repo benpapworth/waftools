@@ -86,11 +86,11 @@ def release(git):
 		if package not in packages:
 			exe('pip install', args=[package,user])
 
-	# WAF: install waflib (required for Sphinx documentation)
-	exe('python waftools/wafinstall.py', args=[user])
-
 	# WAFTOOLS: install latest (required for Sphinx documentation)
-	exe('python setup.py install', args=[user])
+	exe('pip -I --user install %s' % os.path.dirname(__file__), args=[user])
+
+	# WAF: install waflib (required for Sphinx documentation)
+	exe('wafinstall', args=[user])
 
 	# DOC: create html documentation using Sphinx
 	top = os.getcwd()
@@ -99,7 +99,6 @@ def release(git):
 		exe('make html')
 	finally:
 		cd(top)
-
 
 	# ZIP: create zip containing html documentation
 	top = os.getcwd()
@@ -112,7 +111,6 @@ def release(git):
 					zip.write('%s/%s' % (root, file))
 	finally:
 		cd(top)
-
 
 	# BITBUCKET: create upload package
 	cp('doc/history.rst', 'CHANGES')
