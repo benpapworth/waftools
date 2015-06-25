@@ -620,7 +620,7 @@ class CDTProject(EclipseProject):
 				if cid == name:
 					settings = s
 					break
-			if not settings:
+			if settings is None:
 				settings = ElementTree.SubElement(module, 'externalSettings')
 			self._external_settings_update(settings, name)
 
@@ -854,7 +854,7 @@ class CDTProject(EclipseProject):
 
 		for define in defines:
 			listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
-			listoption.set('value', '\'%s\'' % define)
+			listoption.set('value', '%s' % define)
 
 	def compiler_add_input(self, compiler, language):
 		if self.language != language:
