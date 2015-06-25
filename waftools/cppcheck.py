@@ -538,7 +538,7 @@ def configure(conf):
 	conf.env.CPPCHECK_MAX_CONFIGS = conf.options.cppcheck_max_configs
 	conf.env.CPPCHECK_BIN_ENABLE = conf.options.cppcheck_bin_enable
 	conf.env.CPPCHECK_LIB_ENABLE = conf.options.cppcheck_lib_enable
-	conf.find_program('cppcheck', var='CPPCHECK')
+	conf.find_program('cppcheck', var='CPPCHECK', mandatory=False)
 
 
 def postfun(bld):
@@ -571,8 +571,8 @@ def cppcheck_execute(self):
 	:type self: waflib.Task.TaskGen
 	'''
 	bld = self.bld
-	if not hasattr(bld, 'options'):
-		return	
+	if not hasattr(bld, 'options') or bld.env.CPPCHECK == []:
+		return
 	check = bld.env.CPPCHECK_EXECUTE
 	root = str(bld.env.CPPCHECK_PATH).replace('\\', '/')
 	if not bool(check):

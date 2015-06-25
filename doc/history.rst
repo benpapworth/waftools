@@ -7,6 +7,7 @@ Following lists the changes per released version.
 - *general*; updated to waf version 1.8.10
 - *ccenv*; add */DEBUG* link option; used for exporting debug program database
 - *ccenv*; add */Fd<appname>.pdb* CL link option; specifies debug program database name
+- *cppcheck*; presence is now optional, source code checking will be skipped durinig build when not available
 
 
 **v0.4.10**, 2015-03-15:
