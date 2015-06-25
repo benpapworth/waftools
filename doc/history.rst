@@ -8,6 +8,7 @@ Following lists the changes per released version.
 - *ccenv*; add */DEBUG* link option; used for exporting debug program database
 - *ccenv*; add */Fd<appname>.pdb* CL link option; specifies debug program database name
 - *cppcheck*; presence is now optional, source code checking will be skipped durinig build when not available
+- issue17_; removed redundant quotes around preprocessor defines
 
 
 **v0.4.10**, 2015-03-15:
@@ -246,3 +247,5 @@ Following lists the changes per released version.
 .. _issue12: https://bitbucket.org/Moo7/waftools/issue/12/makefile-export-fails-when-using
 .. _issue13: https://bitbucket.org/Moo7/waftools/issue/13/package-version-045-install-fails-on
 .. _issue14: https://bitbucket.org/Moo7/waftools/issue/14/eclipse-generation-does-not-generate
+.. _issue17: https://bitbucket.org/Moo7/waftools/issue/17/command-line-macro-defines-are-not
+ 
