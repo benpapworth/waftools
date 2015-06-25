@@ -2,6 +2,13 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.11**, 2015-06-25:
+
+- *general*; updated to waf version 1.8.10
+- *ccenv*; add */DEBUG* link option; used for exporting debug program database
+- *ccenv*; add */Fd<appname>.pdb* CL link option; specifies debug program database name
+
+
 **v0.4.10**, 2015-03-15:
 
 - *general*; updated to waf version 1.8.7

@@ -97,7 +97,7 @@ try:
 except:
 	import configparser
 
-from waflib import Scripting, Errors, Logs, Utils
+from waflib import Scripting, Errors, Logs, Utils, Context
 from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallContext
 from waflib.Tools.compiler_c import c_compiler
 from waflib.Tools.compiler_cxx import cxx_compiler
@@ -287,20 +287,17 @@ def configure_msvc(conf):
 	:param conf: configuration context 
 	:type conf: waflib.Configure.ConfigurationContext
 	'''
-	flags = ['/Wall']
-	
 	if conf.options.debug:
-		flags.extend(['/Od', '/Zi'])
-		defines = []
+		pdbname = str(getattr(Context.g_module, Context.APPNAME)).lower().replace(' ', '-')
+		cflags = ('/Wall', '/Od', '/Zi', '/Fd%s.pdb' % pdbname)
+		conf.env.append_unique('LINKFLAGS', '/DEBUG')
 	else:
-		flags.extend(['/Ox'])
-		defines = ['NDEBUG']
+		cflags = ('/Wall', '/Ox')
+		conf.env.append_unique('DEFINES', 'NDEBUG')
 
 	for cc in ('CFLAGS', 'CXXFLAGS'):
-		for flag in flags:
+		for cflag in cflags:
 			conf.env.append_unique(cc, flag)
-	for define in defines:
-		conf.env.append_unique('DEFINES', define)
 	
 
 def configure_gcc(conf):
