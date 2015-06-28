@@ -143,7 +143,7 @@ def options(opt):
 
 
 def configure(conf):
-	conf.check_waf_version(mini='1.7.6', maxi='1.8.9')	
+	conf.check_waf_version(mini='1.7.6', maxi='1.9.0')	
 	conf.env.PREFIX = str(conf.env.PREFIX).replace('\\', '/')
 	conf.env.CCROSSINI = getattr(conf.options, CCROSS_OPT)
 	conf.env.CCROSS = get_ccross(conf.env.CCROSSINI)
