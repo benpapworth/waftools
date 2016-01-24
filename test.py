@@ -44,6 +44,7 @@ Available options:
                     waftools packge from PyPi will be used.
 
     -v | --version  [optional] waftools package from PyPi to be used.
+    -w | --waf      [optional] waf version to be used.
 
 '''
 
@@ -139,10 +140,12 @@ def create_env(top, python):
 	return (python, pip, waf, wafinstall)
 
 
-def waftools_setup(python, pip, git, wafinstall, devel, version):
+def waftools_setup(python, pip, git, wafinstall, devel, version, wafversion):
 	'''setup waftools test environment.
 	'''
 	exe('%s clone https://bitbucket.org/Moo7/waftools/waftools.git waftools' % git)
+	wargs = ['--skip-env']
+	if wafversion!=None: wargs.extend(['-v%s' % wafversion])
 	
 	if devel:
 		top = os.getcwd()
@@ -150,12 +153,12 @@ def waftools_setup(python, pip, git, wafinstall, devel, version):
 			cd('waftools')
 			exe(python, args=['setup.py', 'sdist', 'install'])
 			cd('waftools')
-			exe(python, args=['wafinstall.py', '--skip-env'])
+			exe(python, args=['wafinstall.py'] + wargs)
 		finally:
 			cd(top)
 	else:
 		exe(pip, args=['install', 'waftools==%s' % (version) if version else 'waftools'])
-		exe(wafinstall, args=['--skip-env'])
+		exe(wafinstall, args=wargs)
 
 
 def waftools_cmake(waf):
@@ -247,9 +250,10 @@ if __name__ == "__main__":
 	git=None
 	devel=False
 	version=None
+	wafversion=None
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'hg:p:rv:', ['help', 'git=', 'python=', 'devel', 'version='])
+		opts, args = getopt.getopt(sys.argv[1:], 'hg:p:dv:w:', ['help', 'git=', 'python=', 'devel', 'version=', 'waf='])
 		for opt, arg in opts:
 			if opt in ('-h', '--help'):
 				usage()
@@ -262,6 +266,9 @@ if __name__ == "__main__":
 				devel = True
 			elif opt in ('-v', '--version'):
 				version = arg
+			elif opt in ('-w', '--waf'):
+				wafversion = arg
+				
 	except getopt.GetoptError as err:
 		print(str(err))
 		usage()
@@ -276,7 +283,7 @@ if __name__ == "__main__":
 	try:
 		(python, pip, waf, wafinstall) = create_env(top, python)
 		cd(top)
-		waftools_setup(python, pip, git, wafinstall, devel, version)
+		waftools_setup(python, pip, git, wafinstall, devel, version, wafversion)
 		waftools_test(waf)
 		waftools_cmake(waf)
 		waftools_bdist(waf)
