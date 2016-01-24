@@ -2,9 +2,11 @@ History
 -------
 Following lists the changes per released version.
 
-**v0.4.11**, 2015-06-25:
+**v0.4.11**, 2016-01-24:
 
-- *general*; updated to waf version 1.8.10
+- *general*; updated to waf version 1.8.19
+- *general*; tested with waf versions 1.8.10 ~ 1.8.19
+- *general*; tested with python-2.7.10 and python python-3.4.3
 - *ccenv*; add */DEBUG* link option; used for exporting debug program database
 - *ccenv*; add */Fd<appname>.pdb* CL link option; specifies debug program database name
 - *cppcheck*; presence is now optional, source code checking will be skipped durinig build when not available

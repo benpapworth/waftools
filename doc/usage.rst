@@ -287,6 +287,6 @@ For more information please refer to the detailed description of the
 :ref:`bdist <mod_bdist>` module.
 
 
-.. _waf: https://code.google.com/p/waf/
-.. _wafbook: http://docs.waf.googlecode.com/git/book_18/single.html
+.. _waf: https://waf.io/
+.. _wafbook: https://waf.io/book
 

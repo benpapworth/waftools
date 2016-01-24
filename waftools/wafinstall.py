@@ -54,7 +54,7 @@ except ImportError:
 
 
 WAF_URL = "https://github.com/waf-project/waf/archive"
-WAF_VERSION = "1.8.10"
+WAF_VERSION = "1.8.19"
 WAF_TOOLS = None
 
 HOME = os.path.expanduser('~')

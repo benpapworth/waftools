@@ -21,6 +21,6 @@ Using the *--tools* command line option, the *waf* tools to be installed from
 *waflib/Tools/extras* can be specified in a comma separated list. When omitted no 
 tools from *extras* will be installed.
 
-.. _waf: https://code.google.com/p/waf/
-.. _wafbook: http://docs.waf.googlecode.com/git/book_18/single.html
+.. _waf: https://waf.io/
+.. _wafbook: https://waf.io/book
 

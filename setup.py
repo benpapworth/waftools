@@ -51,7 +51,7 @@ setup(
 		"Programming Language :: C",
 		"Programming Language :: C++",
 		"Programming Language :: Python :: 2.7",
-		"Programming Language :: Python :: 3",
+		"Programming Language :: Python :: 3.4",
 		"Topic :: Software Development :: Build Tools",
 		"Topic :: Software Development :: Embedded Systems",
 		"Topic :: Utilities",

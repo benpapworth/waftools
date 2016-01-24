@@ -6,6 +6,6 @@ the other modules (e.g. **Eclipse**, **Makefile**) are originally based on
 existing tools and examples as provided by Thomas Nagy, the author of the waf_
 meta build system.
 
-.. _waf: https://code.google.com/p/waf/
+.. _waf: https://waf.io/
 .. _cppcheck: http://cppcheck.sourceforge.net/
 

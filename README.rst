@@ -42,8 +42,8 @@ free to drop me a note by creating an issue_ at the waftools_ projects
 page.
 
 
-.. _waf: https://code.google.com/p/waf/
-.. _wafbook: http://docs.waf.googlecode.com/git/book_18/single.html
+.. _waf: https://waf.io
+.. _wafbook: https://waf.io/book/
 .. _issue: https://bitbucket.org/Moo7/waftools/issues
 .. _pythonhosted: https://pythonhosted.org/waftools
 .. _waftools: https://bitbucket.org/Moo7/waftools

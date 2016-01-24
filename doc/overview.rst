@@ -24,6 +24,6 @@ Following provides a non-exhausting list of functions provided by this package:
 - List dependencies between build tasks
 
 
-.. _waf: https://code.google.com/p/waf/
-.. _wafbook: http://docs.waf.googlecode.com/git/book_18/single.html
+.. _waf: https://waf.io/
+.. _wafbook: https://waf.io/book
 
