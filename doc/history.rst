@@ -2,6 +2,12 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.12**, 2016-01-24:
+
+- *eclipse*; added missing deps import
+- *eclipse*; warn instead of abort when C++ compiler has not been configured
+
+
 **v0.4.11**, 2016-01-24:
 
 - *general*; updated to waf version 1.8.19

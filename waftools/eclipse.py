@@ -109,6 +109,8 @@ from xml.dom import minidom
 from waflib import Utils, Logs, Errors, Context
 from waflib.Build import BuildContext
 import waftools
+from waftools import deps
+
 
 def options(opt):
 	'''Adds command line options to the *waf* build environment 
@@ -239,14 +241,14 @@ def detect_project_duplicates(bld, targets):
 	cnt = len(anomalies.keys())
 	if cnt != 0:
 		Logs.info('')
-		Logs.warn('WARNING ECLIPSE EXPORT: TASK LOCATION CONFLICTS(%s)' % cnt)
-		Logs.info('Failed to create project files for:')
+		Logs.warn('warning: %s task location conflicts detected!' % cnt)
+		Logs.info('failed to create project files for:')
 		s = ' {n:<15} {l:<40}'
 		Logs.info(s.format(n='(name)', l='(location)'))
 		for (name, location) in anomalies.items():
 			Logs.info(s.format(n=name, l=location))
 		Logs.info('')
-		Logs.info('TIPS:')
+		Logs.info('tips:')
 		Logs.info('- use one task per directory/wscript.')
 		Logs.info('- don\'t place tasks in the top level directory/wscript.')
 		Logs.info('')
@@ -273,13 +275,13 @@ class EclipseProject(object):
 		content = self.xml_clean(self.get_content())
 		node = self.make_node()
 		node.write(content)
-		Logs.pprint('YELLOW', 'exported: %s' % node.abspath())
+		Logs.info('exported: %s' % node.abspath())
 
 	def cleanup(self):
 		node = self.find_node()
 		if node:
 			node.delete()
-			Logs.pprint('YELLOW', 'removed: %s' % node.abspath())
+			Logs.info('removed: %s' % node.abspath())
 
 	def find_node(self):
 		name = self.get_fname()   
@@ -390,7 +392,7 @@ class CDTProject(EclipseProject):
 		super(CDTProject, self).__init__(bld, tgen, '.cproject', ECLIPSE_CDT_PROJECT)
 		
 		if not set(('c', 'cxx')) & set(tgen.features):
-			bld.fatal("ERROR: '%s' is not a C/C++ build task" % tgen.get_name())
+			bld.fatal("error: '%s' is not a C/C++ build task" % tgen.get_name())
 		
 		d = tgen.env.DEST_OS
 		c = tgen.env.DEST_CPU
@@ -424,7 +426,12 @@ class CDTProject(EclipseProject):
 		ar = os.path.splitext(os.path.basename(ar))[0]
 		cc = tgen.env.CC[0]
 		self.cdt['c'] = os.path.splitext(os.path.basename(cc))[0]
-		self.cdt['cpp'] = os.path.splitext(os.path.basename(tgen.env.CXX[0]))[0]
+		try:
+		    cxx = os.path.splitext(os.path.basename(tgen.env.CXX[0]))[0]
+		except IndexError:
+		    Logs.warn('warning: C++ compiler not configured, using C compiler only!')
+		    cxx = cc
+		self.cdt['cpp'] = cxx				
 		self.cdt['ar'] = ar
 		self.cdt['as'] = ar.replace('ar', 'as')
 		self.cdt['cc_path'] = os.path.dirname(cc).replace('\\', '/')

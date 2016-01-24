@@ -7,7 +7,7 @@ import sphinx_rtd_theme
 
 AUTHOR = 'Michel Mooij'
 YEAR = '2016'
-VERSION = '0.4.11'
+VERSION = '0.4.12'
 RELEASE = VERSION
 
 
