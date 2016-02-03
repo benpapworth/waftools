@@ -427,10 +427,10 @@ class CDTProject(EclipseProject):
 		cc = tgen.env.CC[0]
 		self.cdt['c'] = os.path.splitext(os.path.basename(cc))[0]
 		try:
-		    cxx = os.path.splitext(os.path.basename(tgen.env.CXX[0]))[0]
+			cxx = os.path.splitext(os.path.basename(tgen.env.CXX[0]))[0]
 		except IndexError:
-		    Logs.warn('warning: C++ compiler not configured, using C compiler only!')
-		    cxx = cc
+			Logs.warn('warning: C++ compiler not configured, using C compiler only!')
+			cxx = cc
 		self.cdt['cpp'] = cxx				
 		self.cdt['ar'] = ar
 		self.cdt['as'] = ar.replace('ar', 'as')
@@ -841,6 +841,15 @@ class CDTProject(EclipseProject):
 			for include in includes:
 				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
 				listoption.set('value', include)
+
+		includes = Utils.to_list(self.bld.env.INCLUDES)
+		includes = [i.abspath() if hasattr(i, 'abspath') else i for i in includes]
+		includes = [i.replace('\\', '/') for i in includes]
+		for include in includes:
+			if os.path.exists(include):
+				listoption = ElementTree.SubElement(option, 'listOptionValue', {'builtIn':'false'})
+				listoption.set('value', '"%s"' % (include))
+
 
 	def compiler_add_defines(self, compiler, language):
 		if self.language != language:
