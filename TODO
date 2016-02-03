@@ -11,10 +11,6 @@ msdev:
 - programs using shared libraries can't be started/debugged (add to environment?)
 	Project Properties -> Configuration Properties -> Debugging -> Environment; PATH=path/containing/shared/library
 
-eclipse:
-- add build in include paths when exporting .cproject using following command:
-        echo | `gcc -print-prog-name=cc1` -v
-
 externel deps:
 - finish playground/pkg.py module; uses external packages using autoconf,make,cmake,...
 
