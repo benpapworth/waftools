@@ -96,6 +96,7 @@ try:
 	import ConfigParser as configparser
 except:
 	import configparser
+import subprocess	
 
 from waflib import Scripting, Errors, Logs, Utils, Context
 from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallContext
@@ -253,15 +254,17 @@ def configure_variants(conf, host):
 		if ini['c'][0] != 'msvc':
 			ar = '%s-ar' % (head) if head else 'ar'
 			conf.find_program(ar, var='AR')
-		configure_base(conf)
+		configure_base(conf, head)
 
 
-def configure_base(conf):
+def configure_base(conf, prefix=None):
 	'''Generic tool and compiler configuration settings used
 	 for both host and variant build environments.
 	
 	:param conf: configuration context 
 	:type conf: waflib.Configure.ConfigurationContext
+	:param prefix: optional cross compiler prefix 
+	:type prefix: str 
 	'''
 	conf.load('compiler_c')
 	conf.load('compiler_cxx')
@@ -269,7 +272,7 @@ def configure_base(conf):
 	if conf.env.CC_NAME is 'msvc':
 		configure_msvc(conf)
 	elif conf.env.CC_NAME is 'gcc':
-		configure_gcc(conf)
+		configure_gcc(conf, prefix)
 
 	conf.load('cppcheck')
 	conf.load('codeblocks')
@@ -297,16 +300,61 @@ def configure_msvc(conf):
 
 	for cc in ('CFLAGS', 'CXXFLAGS'):
 		for cflag in cflags:
-			conf.env.append_unique(cc, flag)
+			conf.env.append_unique(cc, cflag)
 	
 
-def configure_gcc(conf):
+def gcc_incdirs(prefix=None):
+	'''Returns list of build in include paths from GCC compiler.
+
+	:param opt: prefix optional cross compiler prefix 
+	:type opt: str
+	:return list of strings to include search paths.
+	'''
+	if not sys.platform.startswith("linux"):
+		return []
+
+	cmd="gcc -print-prog-name=cc1"
+	if prefix: cmd = prefix + "-" + cmd
+	
+	res = subprocess.check_output(cmd.split())
+	cmd="echo | %s -v" % (res.split()[0])
+	res = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+	return [l.strip() for l in res.splitlines() if l.startswith(" /")]
+
+
+def gcc_libdirs(prefix=None):
+	'''Returns list of build in library paths from GCC compiler.
+	
+	:param opt: prefix optional cross compiler prefix 
+	:type opt: str
+	:return list of strings to library search paths.
+	'''
+	if not sys.platform.startswith("linux"):
+		return []
+	
+	cmd="ld --verbose | grep SEARCH_DIR"
+	if prefix: cmd = prefix + "-" + cmd
+	
+	ld = subprocess.check_output(cmd, shell=True).split()
+	ld = [l.strip('SEARCH_DIR("').strip('");') for l in ld]
+	
+	cmd="gcc --print-search-dirs"
+	if prefix: cmd = prefix + "-" + cmd
+		
+	sd = subprocess.check_output(cmd.split()).split()[-1]
+	sd = sd.replace("=","").split(":")
+	return list(set(ld + sd))
+
+
+def configure_gcc(conf, prefix):
 	'''Configures general environment settings for GNU compilers; e.g. set
 	default C/C++ compiler flags and defines based on the value of the 
 	command line --debug option.
 	
 	:param conf: configuration context 
 	:type conf: waflib.Configure.ConfigurationContext
+	:param prefix: optional cross compiler prefix 
+	:type prefix: str 
 	'''
 	flags = ['-Wall', '-pthread']
 
@@ -322,6 +370,9 @@ def configure_gcc(conf):
 			conf.env.append_unique(cc, flag)
 	for define in defines:
 		conf.env.append_unique('DEFINES', define)
+
+	for include in gcc_incdirs(prefix):
+		conf.env.append_unique('INCLUDES', include)
 
 
 def build(bld, trees=[]):
