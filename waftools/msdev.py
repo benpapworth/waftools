@@ -490,24 +490,21 @@ class MsDevProject(MsDev):
 	def update_link_deps(self, tool):
 		'''Add libraries on which this project depends.'''
 		deps = tool.get('AdditionalDependencies')
-		if deps:
-			deps = deps.split(';')
-		else:
-			deps = []
+
+		deps = [] # clean out deps everytime
+
 		libs = self.get_link_libs(self.bld, self.gen)
 		for lib in libs:
 			dep = '%s.lib' % lib
 			if dep not in deps:
 				deps.append(dep)
 		if len(deps):
-			tool.set('AdditionalDependencies', ';'.join(deps))
+			add_deps = " ".join(deps) # work around when converting to vcxproj by inserting spaces
+			tool.set('AdditionalDependencies', add_deps)
 
 	def update_link_paths(self, tool):
 		deps = tool.get('AdditionalLibraryDirectories', '')
-		if deps:
-			deps = deps.split(';')
-		else:
-			deps = []
+		deps = []
 		dirs = self.get_link_paths(self.bld, self.gen)
 		for dep in dirs:
 			if dep not in deps:
@@ -592,7 +589,12 @@ class MsDevProject(MsDev):
 			else:
 				if self.type in (MsDev.STLIB, MsDev.SHLIB):
 					directory = '%s\\msdev' % tgen.path.get_bld().path_from(gen.path)
-					dirs.append(directory.replace('/', '\\'))
+					if directory not in dirs:
+						dirs.append(directory.replace('/', '\\'))
+				elif self.type in (MsDev.PROGRAM):
+					for directory in tgen.lib_paths:
+						if directory not in dirs:
+							dirs.append(directory.replace('/', '\\'))
 		return dirs
 
 	def get_include_files(self, bld, gen):
