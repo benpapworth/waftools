@@ -33,19 +33,35 @@ from waflib import Scripting, Logs, Utils
 from waflib.Build import BuildContext
 
 
+def indent_cleanup(self):
+	if self.options.indent_cleanup:
+		return True
+	return self.env.INDENT_CLEANUP[0]
+
+
 def options(opt):
 	opt.add_option('--indent-pro', dest='indent_pro', 
-		default=None, action='store', help='GNU indent configuration')
+		default=None, action='store', help='path to .indent.pro file')
 	opt.add_option('--indent-cleanup', dest='indent_cleanup', 
 		default=False, action='store_true', help='cleanup GNU indent backup files')
 
 
 def configure(conf):
-	conf.find_program('indent', var='INDENT', mandatory=False)
-	if conf.options.indent_pro:
-		conf.env.INDENT_PRO = conf.options.indent_pro
-	if conf.options.indent_cleanup:
-		conf.env.INDENT_CLEAN = [True]
+	ret = conf.find_program('indent', var='INDENT', mandatory=False)
+	if ret:
+		profile=conf.options.indent_pro
+		if profile:
+			if not os.path.exists(profile):
+				conf.fatal('file not found: --indent-pro=%s' % profile)
+		else:
+			profile = conf.find_file('.indent.pro', path_list=['.', dict(os.environ)['HOME'] ], mandatory=False)
+			if not profile:
+				profile = conf.find_file('indent.pro', path_list=['.', dict(os.environ)['HOME'] ], mandatory=False)
+		if profile:
+			profile = os.path.abspath(profile)
+			conf.env.INDENT_PROFILE = profile
+		
+		conf.env.INDENT_CLEANUP = [conf.options.indent_cleanup]
 
 
 class GnuIndentContext(BuildContext):
@@ -58,6 +74,10 @@ class GnuIndentContext(BuildContext):
 		if not self.all_envs:
 			self.load_envs()
 		self.recurse([self.run_dir])
+
+		if not len(self.env.INDENT):
+			self.fatal('GNU indent not found; please install it and reconfigure')
+			return
 
 		targets = self.targets.split(',') if self.targets!='' else None
 
@@ -103,7 +123,9 @@ class GnuIndentContext(BuildContext):
 			if err:
 				self.fatal("indent(%s): failure on '%r', err=%s" % (tgen.name, f, err))
 			if cleanup:
-				os.remove('%r~' % f)
+				if hasattr(f, 'abspath'): os.remove('%s~' % f.abspath())
+				else: os.remove('%s~' % f)
+
 
 	def exec_indent(self, tgen, sources, headers):
 		'''execute GNU indent on the source and include files of task generator
@@ -115,26 +137,13 @@ class GnuIndentContext(BuildContext):
 		:param headers:     list of include file names
 		:type headers:      list(str, str, ..)
 		'''
-		cleanup = False if self.env.INDENT_CLEAN==[] else True
-		command = self.env.INDENT
-		if command == []:
-			self.fatal('GNU indent not found; please install it and reconfigure')
-			return
-
 		env = dict(os.environ)
-		pro = self.env.INDENT_PRO
-		if pro == []:
-			pro = None
-		else:
-			if not os.path.isabs(pro):
-				pro = self.path.find_node(pro)
-				if not pro:
-					self.fatal('GNU indent profile file not found; please correct it and reconfigure')
-				pro = pro.abspath()
-			env['INDENT_PROFILE'] = pro
+		if len(self.env.INDENT_PROFILE):
+			env['INDENT_PROFILE'] = self.env.INDENT_PROFILE
+		cleanup = indent_cleanup(self)
 
 		Logs.info("indent(%s): formatting code" % tgen.name)
-		Logs.info("$INDENT_PROFILE = %s" % pro)
+		Logs.info("$INDENT_PROFILE = %s" % env['INDENT_PROFILE'])
 		self.indent(tgen, sources, env, cleanup)
 		self.indent(tgen, headers, env, cleanup)
 		Logs.info("indent(%s): finished" % tgen.name)

@@ -6,6 +6,9 @@ Following lists the changes per released version.
 
 - *eclipse*; added missing deps import
 - *eclipse*; warn instead of abort when C++ compiler has not been configured
+- issue16_; fixed external lib paths for msdev tool (visual studio 10.0)
+- *indent*; fixed crash when using --indent-cleanup option
+- *indent*; improved detection of .indent.pro configuration file
 
 
 **v0.4.11**, 2016-01-24:
@@ -255,5 +258,6 @@ Following lists the changes per released version.
 .. _issue12: https://bitbucket.org/Moo7/waftools/issue/12/makefile-export-fails-when-using
 .. _issue13: https://bitbucket.org/Moo7/waftools/issue/13/package-version-045-install-fails-on
 .. _issue14: https://bitbucket.org/Moo7/waftools/issue/14/eclipse-generation-does-not-generate
+.. _issue16: https://bitbucket.org/Moo7/waftools/issues/16/msdev-for-visual-studio-100-external-lib
 .. _issue17: https://bitbucket.org/Moo7/waftools/issue/17/command-line-macro-defines-are-not
  
