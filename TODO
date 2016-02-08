@@ -8,9 +8,7 @@ migrate:
 
 msdev:
 - missing export of command line arguments
-- programs using shared libraries can't be started/debugged (add to environment?)
-	Project Properties -> Configuration Properties -> Debugging -> Environment; PATH=path/containing/shared/library
 
-externel deps:
+external deps:
 - finish playground/pkg.py module; uses external packages using autoconf,make,cmake,...
 
