@@ -70,6 +70,10 @@ class GnuIndentContext(BuildContext):
 	fun = Scripting.default_cmd
 
 	def execute(self):
+		'''Entry point when executing the command (self.cmd).
+		
+		Format C/C++ source code and headers using GNU indent.
+		'''
 		self.restore()
 		if not self.all_envs:
 			self.load_envs()
@@ -96,8 +100,11 @@ class GnuIndentContext(BuildContext):
 		'''returns a tuple containing a list of source and header filenames 
 		defined for the given task generator.
 
-		:param opt: Task for which the input file names should be returned.
-		:type opt: waflib.Task.TaskGenerator
+		:param tgen: Task for which the input file names should be returned.
+		:type tgen: waflib.Task.TaskGenerator
+		
+		:returns: tuple containing source and header files of given task.
+		:rtype: tuple(str, str, ..)
 		'''
 		sources = tgen.to_list(getattr(tgen, 'source', []))
 		sources = [tgen.path.find_node(s) if isinstance(s, str) else s for s in sources]
@@ -114,6 +121,18 @@ class GnuIndentContext(BuildContext):
 		return (list(set(sources)), list(set(headers)))
 
 	def indent(self, tgen, files, env, cleanup=False):
+		'''execute GNU indent source code formater on given files names.
+
+		:param tgen: Task of which input files should be formatted
+		:type tgen: waflib.Task.TaskGenerator
+		
+		:param files: list of paths to source and header files
+		:type files: list(str, str, ..)
+		:param env: OS environment to be used when invoking indent
+		:type env: dict
+		:param cleanup: remove backup files (*~) when true
+		:type cleanup: bool
+		'''
 		command = '%s' % Utils.to_list(self.env.INDENT)[0]
 		for f in files:
 			cmd = '%s %s' % (command, os.path.basename(f))
