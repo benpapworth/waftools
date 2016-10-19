@@ -2,6 +2,11 @@ History
 -------
 Following lists the changes per released version.
 
+**v0.4.13**, 2016-10-19:
+
+- *eclipse*; add <prefix>/lib and <prefix>/lib64 to LD_LIBRARY_PATH of launchers
+
+
 **v0.4.12**, 2016-01-24:
 
 - *eclipse*; added missing deps import

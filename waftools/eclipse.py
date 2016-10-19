@@ -1065,13 +1065,15 @@ class CDTLaunch(Project):
 			if attrib.get('key') == 'org.eclipse.debug.core.MAPPED_RESOURCE_PATHS':
 				attrib.find('listEntry').set('value', '/%s' % self.tgen.get_name())
 
-		attrib = root.find('mapAttribute')
-		
+		attrib = root.find('mapAttribute')		
+		lpath = '{0}/lib:{0}/lib64'.format(os.path.abspath(self.bld.env.PREFIX).replace('\\', '/'))
 		deps = waftools.deps.get_deps(self.bld, self.tgen.get_name())
 		for tg in waftools.deps.get_tgens(self.bld, deps):
 			if set(('cshlib', 'cxxshlib')) & set(tg.features):
-				mapentry = ElementTree.SubElement(attrib, 'mapEntry', {'key':'PATH' if sys.platform=='win32' else 'LD_LIBRARY_PATH'})
-				mapentry.set('value', '${workspace_loc:/%s/%s}' % (tg.get_name(), self.build_dir))
+				lpath += ':${workspace_loc:/%s/%s}' % (tg.get_name(), self.build_dir)
+				
+		mapentry = ElementTree.SubElement(attrib, 'mapEntry', {'key':'PATH' if sys.platform=='win32' else 'LD_LIBRARY_PATH'})
+		mapentry.set('value', lpath)
 		return ElementTree.tostring(root)
 
 
